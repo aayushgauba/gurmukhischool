@@ -155,27 +155,28 @@
       <div class="col-md-8">
         <div class="form-container">
           <h5 class="card-title text-center">Registration</h5>
-          <form id="registrationForm">
+          <form id="registrationForm" method="post" action="{% url 'registration' %}">
+            {%csrf_token%}
             <div class="mb-3">
               <label for="firstName" class="form-label">First Name</label>
-              <input type="text" class="form-control" id="firstName" required>
+              <input type="text" class="form-control" id="firstName" name="firstName" required>
             </div>
             <div class="mb-3">
               <label for="lastName" class="form-label">Last Name</label>
-              <input type="text" class="form-control" id="lastName" required>
+              <input type="text" class="form-control" id="lastName" name="lastName" required>
             </div>
             <div class="mb-3">
               <label for="email" class="form-label">Email</label>
-              <input type="email" class="form-control" id="email" required>
+              <input type="email" class="form-control" id="email" name = "email" required>
             </div>
             <div class="mb-3">
               <label for="password" class="form-label">Password</label>
-              <input type="password" class="form-control" id="password" required>
+              <input type="password" class="form-control" id="password" name="password" required>
               <div id="passwordHelp" class="form-text">Password must be at least 8 characters long, contain one uppercase letter, one lowercase letter, one number, and one special character.</div>
             </div>
             <div class="mb-3">
               <label for="confirmPassword" class="form-label">Confirm Password</label>
-              <input type="password" class="form-control" id="confirmPassword" required>
+              <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
               <div id="passwordMatchError" class="form-error">Passwords do not match.</div>
             </div>
             <button type="submit" class="btn btn-primary">Register</button>
@@ -245,6 +246,8 @@
         passwordMatchError.textContent = 'Passwords do not match.';
         passwordMatchError.style.display = 'block';
         return;
+      } else {
+        document.getElementById("registrationForm").submit()
       }
 
       // If validation passes

@@ -16,8 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from portal.views import activate, account_activation_sent
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('pages.urls')),
+    path('portal/', include('portal.urls')),
+    path('activate/<uidb64>/<token>/', activate, name='activate'),
+    path('account_activation_sent/', account_activation_sent, name='account_activation_sent'),
 ]
