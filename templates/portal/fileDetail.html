@@ -251,48 +251,70 @@
             </div>
         </div>
 
-        <div class="content content-expanded">
-            <div class="card section-card">
-                <div class="card-header section-card-header">
-                    {{ folder.Title }}
-                    <div class="btn-group">
-                        <a href="" class="btn btn-primary"><i class="bi bi-clipboard-plus"></i> Add Assignment</a>
-                        <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle" type="button" id="fileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-file-earmark-plus"></i> Add File
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="fileDropdown">
-                                <li><a class="dropdown-item" href="{% url 'uploadFile' section_id folder.id %}">Upload New File</a></li>
-                            </ul>
-                        </div>
-                    </div>
+    <!-- Content -->
+    <div class="content">
+        <div class="section-card">
+            <div class="section-card-header">
+                <span>File Details</span>
+                <div class="btn-group">
+                    <a href="#" class="btn btn-primary btn-sm">Edit</a>
+                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete</button>
                 </div>
-                <div class="card-body section-card-body">
-                    <table class="file-system-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for file in files %}
-                            <tr class="file-row">
-                                <td class="folder-level-1"><a href="#" class="file"><i class="bi bi-file-earmark"></i> {{file.file}}</a></td>
-                                <td><a href="{% url 'fileView' file.id %}" class="folder">View</a></td>
-                            </tr>
-                            {%endfor%}
-                            <tr class="file-row">
-                                <td class="folder-level-1"><a href="#" class="assignment"><i class="bi bi-clipboard-check"></i> Assignment 1</a></td>
-                                <td><a href="#" class="folder">View</a></td>
-                            </tr>
+            </div>
+            <div class="section-card-body">
+                <h2>{{ file.file }}</h2>
+                <p>Type: {{ file_type }}</p>
+                <a href="{{ file.file.url }}" class="btn btn-primary" target="_blank">Download</a>
 
-                        </tbody>
-                    </table>
+                <div class="viewer mt-4">
+                    {% if file_type in 'jpg jpeg png gif' %}
+                        <img src="{{ file.file.url }}" alt="{{ file.name }}" class="img-fluid">
+                    {% elif file_type in 'mp4 webm ogg' %}
+                        <video controls class="w-100">
+                            <source src="{{ file.file.url }}" type="video/{{ file_type }}">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% elif file_type in 'mp3 wav ogg' %}
+                        <audio controls class="w-100">
+                            <source src="{{ file.file.url }}" type="audio/{{ file_type }}">
+                            Your browser does not support the audio element.
+                        </audio>
+                    {% elif file_type in 'pdf' %}
+                        <embed src="{{ file.file.url }}" type="application/pdf" width="100%" height="600px">
+                    {% else %}
+                        <p>Cannot preview this file type. Please <a href="{{ file.file.url }}" class="btn btn-primary" target="_blank">Download</a> to view it.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete the file <strong>{{ file.file.name }}</strong>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'delete_file' file.pk %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+    
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>

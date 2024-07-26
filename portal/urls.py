@@ -15,9 +15,9 @@ urlpatterns = [
     path('section/<int:section_id>/order/up', views.moveSectionUp, name = "moveSectionUp"),
     path('section/<int:section_id>/order/down', views.moveSectionDown, name = "moveSectionDown"),
     path('section/<int:section_id>/visibility', views.changeVisibility, name = "changeVisibility"),
+    path('file/<int:file_id>', views.fileView, name = "fileView"),
+    path('file/delete/<int:pk>/', views.delete_file, name='delete_file'),
     path('login', views.login, name='login'),
     path('registration', views.registration, name='registration'),
     path('student', views.stuMode, name = 'student')
-]
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

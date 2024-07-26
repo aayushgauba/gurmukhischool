@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from portal.views import activate, account_activation_sent
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,4 +26,4 @@ urlpatterns = [
     path('portal/', include('portal.urls')),
     path('activate/<uidb64>/<token>/', activate, name='activate'),
     path('account_activation_sent/', account_activation_sent, name='account_activation_sent'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

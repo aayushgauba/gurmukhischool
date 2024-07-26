@@ -10,7 +10,11 @@ from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from .forms import UploadedFileForm
 from .models import UploadedFile
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+import os
 
+@login_required
 def course(request, course_id):
     user = request.user
     course = Courses.objects.get(id = course_id)
@@ -19,22 +23,48 @@ def course(request, course_id):
     files  = UploadedFile.objects.all()
     return render(request, "portal/course.html", {"course":course, "user":user, "sections":sections, "folders":folders, "files":files})
 
+@login_required
+def fileView(request, file_id):
+    file = UploadedFile.objects.get(id = file_id)
+    context = {
+        'file': file,
+        'file_type': file.file.url.split('.')[-1].lower()
+    }
+    return render(request, 'portal/fileDetail.html', context)
+
+@login_required
+@require_POST
+def delete_file(request, pk):
+    file = UploadedFile.objects.get(pk=pk)
+    folder_id = file.folder_id
+    folder = Folder.objects.get(id = folder_id)
+    section_id = folder.Section_id
+    if request.method == 'POST':
+        if file.file.path and os.path.exists(file.file.path):
+            os.remove(file.file.path)
+            file.delete()
+        return redirect('folder', section_id, folder_id)
+
+@login_required
 def uploadFile(request, section_id, folder_id):
     if request.method == 'POST':
         form = UploadedFileForm(request.POST, request.FILES, folder_id=folder_id)
         if form.is_valid():
             form.save()
-            return redirect('success')
+            return redirect('folder', section_id, folder_id)
     else:
         form = UploadedFileForm(folder_id=folder_id)
     return render(request, 'portal/fileAdd.html', {'form': form})
 
+@login_required
 def folder(request, section_id, folder_id):
     user = request.user
     folder = Folder.objects.get(id = folder_id)
+    files = UploadedFile.objects.filter(folder_id = folder.id)
     course = Courses.objects.get(id = folder.Course_id)
-    return render(request, "portal/folderView.html", {"course":course, "user":user, "folder":folder, "section_id":section_id})
+    return render(request, "portal/folderView.html", {"course":course, "user":user, "folder":folder, "section_id":section_id, "files":files})
 
+@login_required
 def moveSectionUp(request, section_id):
     section = Section.objects.get(id = section_id)
     course_id = section.Course_id
@@ -46,6 +76,7 @@ def moveSectionUp(request, section_id):
         section_new.save()
     return redirect("course", course_id)
 
+@login_required
 def moveSectionDown(request, section_id):
     section = Section.objects.get(id = section_id)
     count = Section.objects.filter(Course_id = section.Course_id).count()
@@ -60,6 +91,7 @@ def moveSectionDown(request, section_id):
         section_new.save()
     return redirect("course", course_id)
 
+@login_required
 def changeVisibility(request, section_id):
     section = Section.objects.get(id = section_id)
     if section.Status == True:
@@ -70,8 +102,7 @@ def changeVisibility(request, section_id):
     course_id = section.Course_id
     return redirect("course", course_id)
 
-
-
+@login_required
 def courses(request):
     user = request.user
     courses = Courses.objects.all()
@@ -79,6 +110,7 @@ def courses(request):
         return render(request, "portal/courses.html", {"user":user, "courses":courses})
     else:
         return redirect("index")
+
 
 def registration(request):
     if request.method == 'POST':
@@ -116,6 +148,7 @@ def activate(request, uidb64, token):
     else:
         return render(request, 'portal/invalidAccountActivation.html')
 
+@login_required
 def courseAdd(request):
     user = request.user
     if request.method == 'POST':
@@ -125,6 +158,7 @@ def courseAdd(request):
         return redirect("courses")
     return render(request,"portal/courseAdd.html", {"user":user})
 
+@login_required
 def sectionAdd(request, course_id):
     user = request.user
     course = Courses.objects.get(id = course_id)
@@ -137,7 +171,7 @@ def sectionAdd(request, course_id):
         return redirect("course", course_id)
     return render(request,"portal/sectionAdd.html", {"user":user, "course":course})
 
-
+@login_required
 def stuMode(request):
     user = request.user
     change = CustomUser.objects.get(username = user.username)
@@ -147,6 +181,7 @@ def stuMode(request):
 def account_activation_sent(request):
     return render(request, 'portal/invalidAccountActivation.html')
 
+@login_required
 def folderAdd(request, section_id):
     user = request.user
     section = Section.objects.get(id = section_id)
