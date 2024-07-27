@@ -1,4 +1,3 @@
-{% load crispy_forms_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -255,90 +254,124 @@
         <div class="content content-expanded">
             <div class="card section-card">
                 <div class="card-header section-card-header">
-                    {{ folder.Title }}
+                    <span>{{ assignment.title }}</span>
                     <div class="btn-group">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAssignmentModal"><i class="bi bi-clipboard-plus"></i> Add Assignment</button>
-                        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#uploadFileModal"><i class="bi bi-file-earmark-plus"></i> Add File</button>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editAssignmentModal" data-assignment-title="{{ assignment.title }}" data-assignment-description="{{ assignment.description }}" data-assignment-due-date="{{ assignment.due_date }}">Edit</button>
+                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAssignmentModal">Delete</button>
+                        <div class="dropdown">
+                            <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                Add Files
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addExistingFileModal">Add Existing File</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addNewFileModal">Add New File</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body section-card-body">
-                    <table class="file-system-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {%if files%}
-                            {% for file in files %}
-                            <tr class="file-row">
-                                <td class="folder-level-1"><a href="#" class="file"><i class="bi bi-file-earmark"></i> {{file.file}}</a></td>
-                                <td><a href="{% url 'fileView' file.id %}" class="folder">View</a></td>
-                            </tr>
-                            {%endfor%}
-                            {%endif%}
-                            {% if assignments %}
-                            {%for assignment in assignments%}
-                            <tr class="file-row">
-                                <td class="folder-level-1"><a href="" class="assignment"><i class="bi bi-clipboard-check"></i>{{assignment.title}}</a></td>
-                                <td><a href="{% url 'viewAssignment' section_id folder.id assignment.id %}" class="folder">View</a></td>
-                            </tr>
-                            {%endfor%}
-                            {%endif%}
-                        </tbody>
-                    </table>
+                    <p>{{ assignment.description }}</p>
+                    <p>Due Date: {{ assignment.due_date }}</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal for creating assignments -->
-    <div class="modal fade" id="createAssignmentModal" tabindex="-1" aria-labelledby="createAssignmentModalLabel" aria-hidden="true">
+    <!-- Edit Assignment Modal -->
+    <div class="modal fade" id="editAssignmentModal" tabindex="-1" aria-labelledby="editAssignmentModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createAssignmentModalLabel">Create Assignment</h5>
+                    <h5 class="modal-title" id="editAssignmentModalLabel">Edit Assignment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="createAssignmentForm" action="{% url 'createAssignment' section_id folder.id %}" method="post">
+                    <form method="post" action="{% url 'editAssignment' section_id folder_id assignment.id %}">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="assignmentTitle" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="assignmentTitle" name="title" required>
+                            <input type="text" class="form-control" id="assignmentTitle" name="title">
                         </div>
                         <div class="mb-3">
                             <label for="assignmentDescription" class="form-label">Description</label>
-                            <textarea class="form-control" id="assignmentDescription" name="description" rows="3" required></textarea>
+                            <textarea class="form-control" id="assignmentDescription" name="description" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="assignmentDueDate" class="form-label">Due Date</label>
-                            <input type="date" class="form-control" id="assignmentDueDate" name="due_date" required>
+                            <input type="date" class="form-control" id="assignmentDueDate" name="due_date">
                         </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Create Assignment</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal for uploading files -->
-    <div class="modal fade" id="uploadFileModal" tabindex="-1" aria-labelledby="uploadFileModalLabel" aria-hidden="true">
+    <!-- Delete Assignment Modal -->
+    <div class="modal fade" id="deleteAssignmentModal" tabindex="-1" aria-labelledby="deleteAssignmentModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="uploadFileModalLabel">Upload File</h5>
+                    <h5 class="modal-title" id="deleteAssignmentModalLabel">Delete Assignment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form method="post" action="{% url 'uploadFile' folder.id section_id %}" enctype="multipart/form-data">
+                    <p>Are you sure you want to delete this assignment?</p>
+                </div>
+                <div class="modal-footer">
+                    <form method="post" action="{% url 'deleteAssignment' section_id folder_id assignment.id %}">
                         {% csrf_token %}
-                        {{form|crispy}}
-                        <button type="submit" class="btn btn-primary">Upload</button>
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Existing File Modal -->
+    <div class="modal fade" id="addExistingFileModal" tabindex="-1" aria-labelledby="addExistingFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addExistingFileModalLabel">Add Existing File</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="existingFileSelect" class="form-label">Select File</label>
+                            <select class="form-select" id="existingFileSelect" name="existing_file">
+                                <!-- Populate with existing files -->
+                                <option value="file1">File 1</option>
+                                <option value="file2">File 2</option>
+                                <option value="file3">File 3</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add File</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New File Modal -->
+    <div class="modal fade" id="addNewFileModal" tabindex="-1" aria-labelledby="addNewFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addNewFileModalLabel">Add New File</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="newFile" class="form-label">Upload New File</label>
+                            <input type="file" class="form-control" id="newFile" name="new_file">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Upload File</button>
                     </form>
                 </div>
             </div>
@@ -347,6 +380,25 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Prefill modal with assignment data
+        var editAssignmentModal = document.getElementById('editAssignmentModal');
+        editAssignmentModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var title = button.getAttribute('data-assignment-title');
+            var description = button.getAttribute('data-assignment-description');
+            var dueDate = button.getAttribute('data-assignment-due-date');
+
+            var modalTitle = editAssignmentModal.querySelector('.modal-title');
+            var modalBodyInputTitle = editAssignmentModal.querySelector('.modal-body input#assignmentTitle');
+            var modalBodyInputDescription = editAssignmentModal.querySelector('.modal-body textarea#assignmentDescription');
+            var modalBodyInputDueDate = editAssignmentModal.querySelector('.modal-body input#assignmentDueDate');
+
+            modalTitle.textContent = 'Edit Assignment';
+            modalBodyInputTitle.value = title;
+            modalBodyInputDescription.value = description;
+            modalBodyInputDueDate.value = dueDate;
+        });
+
         function toggleFolder(folderElement) {
             const folderRow = folderElement.parentElement.parentElement;
             let nextRow = folderRow.nextElementSibling;
@@ -365,4 +417,6 @@
     </script>
 </body>
 </html>
+
+
 

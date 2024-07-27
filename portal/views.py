@@ -9,7 +9,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from .forms import UploadedFileForm
-from .models import UploadedFile
+from .models import UploadedFile, Assignment
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 import os
@@ -43,8 +43,50 @@ def delete_file(request, pk):
         if file.file.path and os.path.exists(file.file.path):
             os.remove(file.file.path)
             file.delete()
+        elif file.file.path and not os.path.exists(file.file.path):
+            file.delete()
         return redirect('folder', section_id, folder_id)
 
+@login_required
+def viewAssignment(request, section_id, folder_id, assignment_id):
+    assignment = Assignment.objects.get(id = assignment_id)
+    files = UploadedFile.objects.all()
+    return render(request, "portal/assignmentDetail.html", {"assignment":assignment, "files":files, "section_id":section_id, "folder_id":folder_id})
+
+@require_POST
+@login_required
+def createAssignment(request, section_id, folder_id):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        due_date = request.POST.get('due_date')
+        Assignment.objects.create(title = title, description = description, due_date = due_date, folder_id = folder_id)
+        return redirect('folder', section_id, folder_id)
+
+@require_POST
+@login_required
+def editAssignment(request, section_id, folder_id, assignment_id):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        due_date = request.POST.get('due_date')
+        assignment = Assignment.objects.get(id = assignment_id)
+        assignment.title = title
+        assignment.description = description
+        if due_date != "":
+            assignment.due_date = due_date
+        assignment.save()
+        return redirect('viewAssignment', section_id, folder_id, assignment_id)
+
+@require_POST
+@login_required
+def deleteAssignment(request, section_id, folder_id, assignment_id):
+    if request.method == 'POST':
+        assignment = Assignment.objects.get(id = assignment_id)
+        assignment.delete()
+        return redirect('folder',section_id, folder_id)
+
+@require_POST
 @login_required
 def uploadFile(request, section_id, folder_id):
     if request.method == 'POST':
@@ -54,15 +96,16 @@ def uploadFile(request, section_id, folder_id):
             return redirect('folder', section_id, folder_id)
     else:
         form = UploadedFileForm(folder_id=folder_id)
-    return render(request, 'portal/fileAdd.html', {'form': form})
 
 @login_required
 def folder(request, section_id, folder_id):
     user = request.user
+    form = UploadedFileForm(folder_id=folder_id)
     folder = Folder.objects.get(id = folder_id)
     files = UploadedFile.objects.filter(folder_id = folder.id)
+    assignments = Assignment.objects.filter(folder_id = folder.id)
     course = Courses.objects.get(id = folder.Course_id)
-    return render(request, "portal/folderView.html", {"course":course, "user":user, "folder":folder, "section_id":section_id, "files":files})
+    return render(request, "portal/folderView.html", {"course":course,"assignments":assignments, "user":user, "form":form, "folder":folder, "section_id":section_id, "files":files})
 
 @login_required
 def moveSectionUp(request, section_id):
