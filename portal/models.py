@@ -34,7 +34,7 @@ class Section(models.Model):
     Status = models.BooleanField(default=True)
 
 class UploadedFile(models.Model):
-    folder_id = models.IntegerField(blank = True)
+    folder_id = models.IntegerField(blank = True, null=True)
     file = models.FileField(upload_to='uploads/', unique = True)
 
 class Folder(models.Model):

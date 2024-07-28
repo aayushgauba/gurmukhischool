@@ -48,10 +48,50 @@ def delete_file(request, pk):
         return redirect('folder', section_id, folder_id)
 
 @login_required
+def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
+    if request.method == "POST":
+        file_id = request.POST.get('existing_file')
+        file = UploadedFile.objects.get(id = file_id)
+        assignment = Assignment.objects.get(id = assignment_id)
+        assignment.files.add(file)
+        return redirect("viewAssignment", section_id,folder_id, assignment_id)
+
+@require_POST
+@login_required
+def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
+    if request.method == "POST":
+        form = UploadedFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            file = form.save()
+            assignment = Assignment.objects.get(id = assignment_id)
+            assignment.files.add(file)
+            return redirect("viewAssignment", section_id,folder_id, assignment_id)
+    else:
+        form = UploadedFileForm()
+
+@require_POST
+@login_required
+def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
+    if request.method == "POST":
+        file_id = request.POST.get('file_id')
+        assignment = Assignment.objects.get(id = assignment_id)
+        file = UploadedFile.objects.get(id = file_id)
+        assignment.files.remove(file)
+        if not file.folder_id:
+            if file.file.path and os.path.exists(file.file.path):
+                os.remove(file.file.path)
+                file.delete()
+            elif file.file.path and not os.path.exists(file.file.path):
+                file.delete()
+        return redirect("viewAssignment", section_id, folder_id, assignment_id)
+
+@login_required
 def viewAssignment(request, section_id, folder_id, assignment_id):
     assignment = Assignment.objects.get(id = assignment_id)
     files = UploadedFile.objects.all()
-    return render(request, "portal/assignmentDetail.html", {"assignment":assignment, "files":files, "section_id":section_id, "folder_id":folder_id})
+    files = files.exclude(id__in = assignment.files.values_list('id', flat=True))
+    form = UploadedFileForm()
+    return render(request, "portal/assignmentDetail.html", {"assignment":assignment, "form":form, "files":files, "section_id":section_id, "folder_id":folder_id})
 
 @require_POST
 @login_required
