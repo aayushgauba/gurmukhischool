@@ -19,9 +19,7 @@ def course(request, course_id):
     user = request.user
     course = Courses.objects.get(id = course_id)
     sections = Section.objects.filter(Course_id = course.id).order_by("ONum")
-    folders = Folder.objects.filter(id = course_id)
-    files  = UploadedFile.objects.all()
-    return render(request, "portal/course.html", {"course":course, "user":user, "sections":sections, "folders":folders, "files":files})
+    return render(request, "portal/course.html", {"course":course, "user":user, "sections":sections})
 
 @login_required
 def fileView(request, file_id):
@@ -34,11 +32,8 @@ def fileView(request, file_id):
 
 @login_required
 @require_POST
-def delete_file(request, pk):
+def delete_file(request, pk, section_id, folder_id):
     file = UploadedFile.objects.get(pk=pk)
-    folder_id = file.folder_id
-    folder = Folder.objects.get(id = folder_id)
-    section_id = folder.Section_id
     if request.method == 'POST':
         if file.file.path and os.path.exists(file.file.path):
             os.remove(file.file.path)
@@ -100,7 +95,9 @@ def createAssignment(request, section_id, folder_id):
         title = request.POST.get('title')
         description = request.POST.get('description')
         due_date = request.POST.get('due_date')
-        Assignment.objects.create(title = title, description = description, due_date = due_date, folder_id = folder_id)
+        assignment = Assignment.objects.create(title = title, description = description, due_date = due_date)
+        folder = Folder.objects.get(id = folder_id)
+        folder.Assignments.add(assignment)
         return redirect('folder', section_id, folder_id)
 
 @require_POST
@@ -130,22 +127,22 @@ def deleteAssignment(request, section_id, folder_id, assignment_id):
 @login_required
 def uploadFile(request, section_id, folder_id):
     if request.method == 'POST':
-        form = UploadedFileForm(request.POST, request.FILES, folder_id=folder_id)
+        form = UploadedFileForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            uploaded_file = form.save()
+            folder = Folder.objects.get(id = folder_id)
+            folder.Files.add(uploaded_file)
             return redirect('folder', section_id, folder_id)
     else:
-        form = UploadedFileForm(folder_id=folder_id)
+        form = UploadedFileForm()
 
 @login_required
 def folder(request, section_id, folder_id):
     user = request.user
-    form = UploadedFileForm(folder_id=folder_id)
+    form = UploadedFileForm()
     folder = Folder.objects.get(id = folder_id)
-    files = UploadedFile.objects.filter(folder_id = folder.id)
-    assignments = Assignment.objects.filter(folder_id = folder.id)
     course = Courses.objects.get(id = folder.Course_id)
-    return render(request, "portal/folderView.html", {"course":course,"assignments":assignments, "user":user, "form":form, "folder":folder, "section_id":section_id, "files":files})
+    return render(request, "portal/folderView.html", {"course":course, "user":user, "form":form, "folder":folder, "section_id":section_id})
 
 @login_required
 def moveSectionUp(request, section_id):
@@ -275,7 +272,8 @@ def folderAdd(request, section_id):
         Count = Section.objects.filter(Course_id = course_id).count()
         if Count is None:
             Count = 0
-        Folder.objects.create(Title = title, Course_id = course_id, Section_id = section.id)
+        folder = Folder.objects.create(Title = title, Course_id = course_id)
+        section.Folders.add(folder)
         return redirect("course", course_id)
     return render(request,"portal/folderAdd.html", {"user":user, "course":course, "section":section})    
 

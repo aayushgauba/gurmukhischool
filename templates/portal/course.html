@@ -278,7 +278,7 @@
                         </div>
                     </div>
                     <div class="card-body section-card-body">
-                        {%if folders%}
+                        {%if section.Folders.all %}
                         <table class="file-system-table">
                             <thead>
                                 <tr>
@@ -287,26 +287,43 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for folder in folders %}
-                                {%if folder.Section_id == section.id%}
-                                <tr class="folder-row">
-                                    <td><a href="#" class="folder" onclick="toggleFolder(this)"><i class="bi bi-folder"></i>{{folder.Title}}</a></td>
-                                    <td><a href="{% url 'folder' section.id folder.id %}" class="folder">View</a></td>
-                                </tr>
-                                {%for file in files%}
-                                {% if file.folder_id == folder.id %}
-                                <tr class="file-row hidden">
-                                    <td class="folder-level-1"><a href="#" class="file"><i class="bi bi-file-earmark">{{file.file}}</i> </a></td>
-                                    <td><a href="#" class="folder">View</a></td>
-                                </tr>
-                                {%endif%}
-                                {%endfor%}
-                                <tr class="file-row hidden">
-                                    <td class="folder-level-1"><a href="#" class="assignment"><i class="bi bi-clipboard-check"></i> Assignment 1</a></td>
-                                    <td><a href="#" class="folder">View</a></td>
-                                </tr>
-                                {%endif%}
-                                {%endfor%}
+                                {% for folder in section.Folders.all %}
+                                    <tr class="folder-row">
+                                        <td>
+                                            <a href="#" class="folder" onclick="toggleFolder(this)">
+                                                <i class="bi bi-folder"></i> {{ folder.Title }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'folder' section.id folder.id %}" class="folder">View</a>
+                                        </td>
+                                    </tr>
+                                    {% if folder.Files.all %}
+                                    {% for file in folder.Files.all %}
+                                            <tr class="file-row hidden">
+                                                <td class="folder-level-1">
+                                                    <a href="#" class="file">
+                                                        <i class="bi bi-file-earmark"></i> {{ file.file }}
+                                                    </a>
+                                                </td>
+                                                <td>
+                                                    <a href="#" class="folder">View</a>
+                                                </td>
+                                            </tr>
+                                    {% endfor %}
+                                    {%endif%}
+                                    <tr class="file-row hidden">
+                                        <td class="folder-level-1">
+                                            <a href="#" class="assignment">
+                                                <i class="bi bi-clipboard-check"></i> Assignment 1
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <a href="#" class="folder">View</a>
+                                        </td>
+                                    </tr>                            
+                                    {% endfor %}
+                            
                             </tbody>
                         </table>
                         {%endif%}
