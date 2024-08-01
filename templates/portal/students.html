@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gurudwara File System</title>
+    <title>Students - Gurudwara File System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
+        .content {
+  margin-left: 0; /* Remove sidebar margin */
+  padding: 20px;
+  width: 100%; /* Set content width to 100% */
+}
+
         body {
             font-family: 'Mukta', sans-serif;
             background-color: #f2f3f4;
@@ -55,89 +61,28 @@
             padding: 20px;
         }
 
-        .section-card {
-            margin-bottom: 40px; /* Increased margin for larger spacing */
-            border: 1px solid #ffc107;
-            border-radius: 8px; /* Rounded corners */
-            overflow: hidden; /* Ensure children elements do not overflow the card */
-        }
-
-        .section-card-header {
-            background-color: #ffc107;
-            color: #000;
-            font-weight: 600;
-            padding: 20px; /* Increased padding */
-            font-size: 1.25rem; /* Larger font size */
-        }
-
-        .section-card-body {
-            padding: 20px; /* Increased padding */
-            background-color: #ffffff; /* White background for card body */
-        }
-
-        .file-system-table {
+        .student-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
             color: #000000;
         }
 
-        .file-system-table th,
-        .file-system-table td {
+        .student-table th,
+        .student-table td {
             padding: 15px; /* Increased padding */
             text-align: left;
             border-bottom: 1px solid #dddddd;
         }
 
-        .folder {
-            color: #343a40; /* Dark color for folder */
-            cursor: pointer;
-        }
-
-        .file {
-            color: #000000; /* Black for file */
-        }
-
-        .assignment {
-            color: #007bff; /* Blue color for assignments */
-        }
-
-        .folder-level-1 {
-            padding-left: 20px;
-        }
-
-        .folder-level-2 {
-            padding-left: 40px;
-        }
-
-        .content-expanded {
-            margin-left: 280px; /* Ensure content margin aligns with the sidebar */
-            padding: 20px;
-            width: calc(100% - 280px); /* Make content take up the full available width */
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .course-card {
-            margin-bottom: 20px;
-        }
-
-        .course-card .card {
-            border: 1px solid #FFC107; /* Yellow border */
-        }
-
-        .course-card .card-body {
-            background-color: #fffbe6; /* Light yellow background */
-            color: #343a40; /* Dark text */
-        }
-
-        .course-card .btn-primary {
-            background-color: #FFC107 !important; /* Yellow button */
-            border: none;
-            color: #000;
+        .student-table th {
+            background-color: #ffc107; /* Yellow background for table header */
+            color: #000000; /* Black text for table header */
             font-weight: 600;
+        }
+
+        .student-name {
+            color: #007bff; /* Blue color for student names */
         }
 
         .btn-primary {
@@ -147,32 +92,8 @@
             font-weight: 600;
         }
 
-        .course-card .btn-primary:hover,
         .btn-primary:hover {
             background-color: #e0a800; /* Darker yellow on hover */
-        }
-
-        .navbar-custom {
-            background-color: #FFC107; /* Yellow color */
-        }
-
-        .navbar-custom .navbar-brand {
-            color: #000; /* Black color for text */
-            font-weight: 600;
-        }
-
-        .navbar-custom .navbar-toggler {
-            border-color: #000; /* Black color for toggler border */
-        }
-
-        .navbar-custom .navbar-toggler-icon {
-            color: #000; /* Black color for toggler icon */
-        }
-
-        @media (max-width: 992px) {
-            .content {
-                margin-left: 0; /* Remove content margin on smaller screens */
-            }
         }
     </style>
 </head>
@@ -181,7 +102,7 @@
     <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <span class="fs-4 logo">ੴ</span> Gurudwara Portal
+                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
@@ -194,7 +115,7 @@
         <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
                 <span class="fs-4 logo">ੴ</span>
-                <span class="ms-2">Gurudwara Portal</span>
+                <span class="ms-2">{{user.usertype}} Portal</span>
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
@@ -228,7 +149,7 @@
             <div class="dropdown">
                 <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                     <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
-                    <strong>{{ user.last_name }}, {{ user.first_name }}</strong>
+                    <strong>{{user.last_name}}, {{user.first_name}}</strong>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
                     <li><a class="dropdown-item" href="#">Settings</a></li>
@@ -240,29 +161,93 @@
         </div>
 
         <!-- Content -->
-        <div class="container content">
-            <h1>Add Section</h1>
-            <form method="post" action="{% url 'sectionAdd' course.id %}">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="sectionName" class="form-label">Section Name</label>
-                    <input type="text" class="form-control" id="sectionName" name="title" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Add Section</button>
-            </form>
+        <div class="content content-expanded">
+            <h2>Students</h2>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control" id="student-search" placeholder="Search students" aria-label="Search students" aria-describedby="button-addon2">
+                <button class="btn btn-primary" type="button" id="button-addon2" onclick="searchStudents()">Search</button>
+            </div>
+            <table class="student-table" id="student-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Grade</th>
+                        <th>Course</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Replace the following with dynamic content -->
+                    <tr>
+                        <td class="student-name">John Doe</td>
+                        <td>15</td>
+                        <td>10th</td>
+                        <td>
+                            <select class="form-select" aria-label="Select course">
+                                <option selected>Select Course</option>
+                                <option value="1">Math</option>
+                                <option value="2">Science</option>
+                                <option value="3">History</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary">Update</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="student-name">Jane Smith</td>
+                        <td>16</td>
+                        <td>11th</td>
+                        <td>
+                            <select class="form-select" aria-label="Select course">
+                                <option selected>Select Course</option>
+                                <option value="1">Math</option>
+                                <option value="2">Science</option>
+                                <option value="3">History</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary">Update</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="student-name">Michael Brown</td>
+                        <td>17</td>
+                        <td>12th</td>
+                        <td>
+                            <select class="form-select" aria-label="Select course">
+                                <option selected>Select Course</option>
+                                <option value="1">Math</option>
+                                <option value="2">Science</option>
+                                <option value="3">History</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary">Update</button>
+                        </td>
+                    </tr>
+                    <!-- End dynamic content -->
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function toggleFolder(folderElement) {
-            const folderRow = folderElement.parentElement.parentElement;
-            let nextRow = folderRow.nextElementSibling;
+        function searchStudents() {
+            // Implement your search logic here
+            const searchTerm = document.getElementById('student-search').value.toLowerCase();
+            const rows = document.querySelectorAll('#student-table tbody tr');
 
-            while (nextRow && !nextRow.classList.contains('folder-row')) {
-                nextRow.classList.toggle('hidden');
-                nextRow = nextRow.nextElementSibling;
-            }
+            rows.forEach(row => {
+                const name = row.querySelector('.student-name').textContent.toLowerCase();
+                if (name.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         }
     </script>
 </body>

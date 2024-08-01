@@ -237,6 +237,11 @@
                         <i class="bi bi-check2-square"></i> Messages
                     </a>
                 </li>
+                <li>
+                    <a href="{% url 'students' %}" class="nav-link text-white">
+                        <i class="bi bi-people"></i> Students
+                    </a>
+                </li>
             </ul>
             <hr>
             <div class="dropdown">
@@ -256,14 +261,17 @@
         <!-- Content -->
         <div class="content content-expanded">
             <div class="d-flex justify-content-between mb-3">
-                <h2 class="course-heading">Course Name</h2>
+                <h2 class="course-heading">{{course.Title}}</h2>
+                {%if user.is_superuser and user.usertype == 'Teacher' %}
                 <a href="{% url 'sectionAdd' course.id %}" class="btn btn-primary">Add Section</a>
+                {%endif%}
             </div>
             {% if sections %}
                 {% for section in sections %}
                 <div class="card section-card">
                     <div class="card-header section-card-header">
                         {{ section.Title }}
+                        {%if user.is_superuser and user.usertype == 'Teacher' %}
                         <div class="btn-group">
                             {%if section.Status == True%}
                                 <a href = "{% url 'changeVisibility' section.id %}" class="btn btn-secondary-custom hide-form-btn"><i class="bi bi-eye-slash"></i> Hide</a>
@@ -272,10 +280,13 @@
                             {%endif%}
                             <a href = "{% url 'folderAdd' section.id %}" class="btn btn-primary create-folder-btn"><i class="bi bi-folder-plus"></i> Create Folder</a>
                         </div>
+                        {%endif%}
+                        {%if user.is_superuser and user.usertype == 'Teacher' %}
                         <div class="section-buttons">
                             <a href = "{% url 'moveSectionUp' section.id%}" class="btn btn-sm btn-outline-secondary up-btn"><i class="bi bi-arrow-up"></i></a>
                             <a href = "{% url 'moveSectionDown' section.id%}" class="btn btn-sm btn-outline-secondary down-btn"><i class="bi bi-arrow-down"></i></a>
                         </div>
+                        {%endif%}
                     </div>
                     <div class="card-body section-card-body">
                         {%if section.Folders.all %}
@@ -307,21 +318,23 @@
                                                     </a>
                                                 </td>
                                                 <td>
-                                                    <a href="#" class="folder">View</a>
                                                 </td>
                                             </tr>
                                     {% endfor %}
                                     {%endif%}
+                                    {%if folder.Assignments.all %}
+                                    {%for assignment in folder.Assignments.all %}
                                     <tr class="file-row hidden">
                                         <td class="folder-level-1">
                                             <a href="#" class="assignment">
-                                                <i class="bi bi-clipboard-check"></i> Assignment 1
+                                                <i class="bi bi-clipboard-check"></i> {{assignment.title}}
                                             </a>
                                         </td>
                                         <td>
-                                            <a href="#" class="folder">View</a>
                                         </td>
-                                    </tr>                            
+                                    </tr>
+                                    {%endfor%}
+                                    {%endif%}                            
                                     {% endfor %}
                             
                             </tbody>

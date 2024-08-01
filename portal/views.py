@@ -11,8 +11,10 @@ from django.contrib.auth.tokens import default_token_generator
 from .forms import UploadedFileForm
 from .models import UploadedFile, Assignment
 from django.contrib.auth.decorators import login_required
+from .decorators import superuser_required
 from django.views.decorators.http import require_POST
 import os
+
 
 @login_required
 def course(request, course_id):
@@ -20,6 +22,12 @@ def course(request, course_id):
     course = Courses.objects.get(id = course_id)
     sections = Section.objects.filter(Course_id = course.id).order_by("ONum")
     return render(request, "portal/course.html", {"course":course, "user":user, "sections":sections})
+
+@superuser_required
+@login_required
+def students(request):
+    students = CustomUser.objects.filter(usertype = 'Student')
+    return render(request, "portal/students.html", {"students":students})
 
 @login_required
 def fileView(request, file_id):
@@ -30,6 +38,7 @@ def fileView(request, file_id):
     }
     return render(request, 'portal/fileDetail.html', context)
 
+@superuser_required
 @login_required
 @require_POST
 def delete_file(request, pk, section_id, folder_id):
@@ -42,6 +51,7 @@ def delete_file(request, pk, section_id, folder_id):
             file.delete()
         return redirect('folder', section_id, folder_id)
 
+@superuser_required
 @login_required
 def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
     if request.method == "POST":
@@ -51,6 +61,7 @@ def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
         assignment.files.add(file)
         return redirect("viewAssignment", section_id,folder_id, assignment_id)
 
+@superuser_required
 @require_POST
 @login_required
 def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
@@ -64,6 +75,7 @@ def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
     else:
         form = UploadedFileForm()
 
+@superuser_required
 @require_POST
 @login_required
 def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
@@ -88,6 +100,7 @@ def viewAssignment(request, section_id, folder_id, assignment_id):
     form = UploadedFileForm()
     return render(request, "portal/assignmentDetail.html", {"assignment":assignment, "form":form, "files":files, "section_id":section_id, "folder_id":folder_id})
 
+@superuser_required
 @require_POST
 @login_required
 def createAssignment(request, section_id, folder_id):
@@ -100,6 +113,7 @@ def createAssignment(request, section_id, folder_id):
         folder.Assignments.add(assignment)
         return redirect('folder', section_id, folder_id)
 
+@superuser_required
 @require_POST
 @login_required
 def editAssignment(request, section_id, folder_id, assignment_id):
@@ -115,6 +129,7 @@ def editAssignment(request, section_id, folder_id, assignment_id):
         assignment.save()
         return redirect('viewAssignment', section_id, folder_id, assignment_id)
 
+@superuser_required
 @require_POST
 @login_required
 def deleteAssignment(request, section_id, folder_id, assignment_id):
@@ -123,6 +138,7 @@ def deleteAssignment(request, section_id, folder_id, assignment_id):
         assignment.delete()
         return redirect('folder',section_id, folder_id)
 
+@superuser_required
 @require_POST
 @login_required
 def uploadFile(request, section_id, folder_id):
@@ -144,6 +160,7 @@ def folder(request, section_id, folder_id):
     course = Courses.objects.get(id = folder.Course_id)
     return render(request, "portal/folderView.html", {"course":course, "user":user, "form":form, "folder":folder, "section_id":section_id})
 
+@superuser_required
 @login_required
 def moveSectionUp(request, section_id):
     section = Section.objects.get(id = section_id)
@@ -156,6 +173,7 @@ def moveSectionUp(request, section_id):
         section_new.save()
     return redirect("course", course_id)
 
+@superuser_required
 @login_required
 def moveSectionDown(request, section_id):
     section = Section.objects.get(id = section_id)
@@ -171,6 +189,7 @@ def moveSectionDown(request, section_id):
         section_new.save()
     return redirect("course", course_id)
 
+@superuser_required
 @login_required
 def changeVisibility(request, section_id):
     section = Section.objects.get(id = section_id)
@@ -238,6 +257,7 @@ def courseAdd(request):
         return redirect("courses")
     return render(request,"portal/courseAdd.html", {"user":user})
 
+@superuser_required
 @login_required
 def sectionAdd(request, course_id):
     user = request.user
@@ -255,7 +275,7 @@ def sectionAdd(request, course_id):
 def stuMode(request):
     user = request.user
     change = CustomUser.objects.get(username = user.username)
-    change.usertype = "Teacher"
+    change.usertype = "Student"
     change.save()
 
 def account_activation_sent(request):

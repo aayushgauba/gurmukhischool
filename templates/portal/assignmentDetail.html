@@ -256,6 +256,7 @@
             <div class="card section-card">
                 <div class="card-header section-card-header">
                     <span>{{ assignment.title }}</span>
+                    {% if user.is_superuser and user.usertype == 'Teacher' %}
                     <div class="btn-group">
                         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editAssignmentModal" data-assignment-title="{{ assignment.title }}" data-assignment-description="{{ assignment.description }}" data-assignment-due-date="{{ assignment.due_date }}">Edit</button>
                         <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAssignmentModal">Delete</button>
@@ -271,6 +272,7 @@
                             </ul>
                         </div>
                     </div>
+                    {%endif%}
                 </div>
                 <div class="card-body section-card-body">
                     <p>{{ assignment.description }}</p>
@@ -291,7 +293,9 @@
                                 <td>{{ file.file.name }}</td>
                                 <td>
                                     <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewFileModal" data-file-url="{{ file.file.url }}">View</button>
+                                    {% if user.is_superuser and user.usertype == 'Teacher' %}
                                     <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteFileModal" data-file-id="{{ file.id }}">Delete</button>
+                                    {%endif%}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -301,6 +305,7 @@
                 {%endif%}
             </div>
         </div>
+        {% if user.is_superuser and user.usertype == 'Teacher' %}
         <div class="modal fade" id="deleteAssignmentModal" tabindex="-1" aria-labelledby="deleteAssignmentModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -368,7 +373,7 @@
                 </div>
             </div>
         </div>
-        
+        {%endif%}
         <!-- View File Modal -->
         <div class="modal fade" id="viewFileModal" tabindex="-1" aria-labelledby="viewFileModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
@@ -384,6 +389,7 @@
             </div>
         </div>
         
+        {% if user.is_superuser and user.usertype == 'Teacher' %}
         <!-- Add Existing File Modal -->
         <div class="modal fade" id="addExistingFileModal" tabindex="-1" aria-labelledby="addExistingFileModalLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -434,7 +440,8 @@
                     </div>
                 </div>
             </div>
-        </div>        
+        </div>     
+        {%endif%}   
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', (event) => {
