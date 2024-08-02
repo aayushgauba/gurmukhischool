@@ -101,7 +101,7 @@
     <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
+                <span class="fs-4 logo">ੴ</span> {{ user.usertype }} Portal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
@@ -113,7 +113,7 @@
         <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
                 <span class="fs-4 logo">ੴ</span>
-                <span class="ms-2">{{user.usertype}} Portal</span>
+                <span class="ms-2">{{ user.usertype }} Portal</span>
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
@@ -147,7 +147,7 @@
             <div class="dropdown">
                 <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
                     <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
-                    <strong>{{user.last_name}}, {{user.first_name}}</strong>
+                    <strong>{{ user.last_name }}, {{ user.first_name }}</strong>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
                     <li><a class="dropdown-item" href="#">Settings</a></li>
@@ -159,35 +159,35 @@
         </div>
 
         <div class="content content-expanded">
-            <h2>Students</h2>
+            <h2>Add Students</h2>
             <div class="input-group mb-3">
                 <input type="text" class="form-control" id="student-search" placeholder="Search students" aria-label="Search students" aria-describedby="button-addon2">
                 <button class="btn btn-primary" type="button" id="button-addon2" onclick="searchStudents()">Search</button>
             </div>
-            <a href="{% url 'addStudents' course.id %}" class="btn btn-primary mb-3">Add Student</a>
-            <table class="student-table" id="student-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Age</th>
-                        <th>Grade</th>
-                        <th>Course</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                    <tr>
-                        <td class="student-name">{{student.first_name}} {{student.first_name}}</td>
-                        <td>17</td>
-                        <td>12th</td>
-                        <td>
-                            <button class="btn btn-primary">Update</button>
-                        </td>
-                    </tr>
-                    {%endfor%}
-                </tbody>
-            </table>
+            <form method="post" action="{% url 'addStudents' course.id %}">
+                {% csrf_token %}
+                <table class="student-table" id="student-table">
+                    <thead>
+                        <tr>
+                            <th>Select</th>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in all_students %}
+                        <tr>
+                            <td><input type="checkbox" name="selected_students" value="{{ student.id }}"></td>
+                            <td class="student-name">{{ student.first_name }} {{ student.last_name }}</td>
+                            <td>{{ student.age }}</td>
+                            <td>{{ student.grade }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="submit" class="btn btn-primary mt-3">Submit</button>
+            </form>
         </div>
     </div>
 
@@ -197,7 +197,7 @@
             const searchTerm = document.getElementById('student-search').value.toLowerCase();
             const rows = document.querySelectorAll('#student-table tbody tr');
 
-            rows.forEach(row0 => {
+            rows.forEach(row => {
                 const name = row.querySelector('.student-name').textContent.toLowerCase();
                 if (name.includes(searchTerm)) {
                     row.style.display = '';

@@ -29,9 +29,10 @@ def course(request, course_id):
 @teacher_required
 @superuser_required
 @login_required
-def students(request):
+def students(request, course_id):
+    course = Courses.objects.get(id = course_id)
     students = CustomUser.objects.filter(usertype = 'Student')
-    return render(request, "portal/students.html", {"students":students})
+    return render(request, "portal/students.html", {"students":students, "course":course})
 
 @login_required
 def fileView(request, file_id):
@@ -285,6 +286,23 @@ def sectionAdd(request, course_id):
         Section.objects.create(Title = title, Course_id = course_id, ONum = Count)
         return redirect("course", course_id)
     return render(request,"portal/sectionAdd.html", {"user":user, "course":course})
+
+def addStudents(request, course_id):
+    course = Courses.objects.get(id=course_id)
+    enrolled_students = course.People.all()
+    all_students = CustomUser.objects.filter(usertype="Student").exclude(id__in=enrolled_students)
+    if request.method == 'POST':
+        selected_students = request.POST.getlist('selected_students')
+        for student_id in selected_students:
+            student = CustomUser.objects.get(id=student_id)
+            course.People.add(student)
+        return redirect('students', course.id)
+    else:
+        context = {
+            'course': course,
+            'all_students': all_students
+        }
+        return render(request, "portal/studentAdd.html", context)
 
 @login_required
 def stuMode(request):

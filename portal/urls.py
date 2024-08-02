@@ -5,7 +5,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('students', views.students, name='students'),
+    path('students/<int:course_id>', views.students, name='students'),
     path('', views.courses, name='courses'),
     path('courses/add', views.courseAdd, name='courseAdd'),
     path('courses/<int:course_id>', views.course, name='course'),
@@ -26,6 +26,7 @@ urlpatterns = [
     path('file/<int:file_id>', views.fileView, name = "fileView"),
     path('file/delete/<int:pk>/<int:section_id>/<int:folder_id>', views.delete_file, name='delete_file'),
     path('login', views.login, name='login'),
+    path('students/add/<int:course_id>', views.addStudents, name='addStudents'),
     path('registration', views.registration, name='registration'),
     path('student', views.stuMode, name = 'student')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -27,7 +27,7 @@ class Courses(models.Model):
     Description = models.TextField()
     Status = models.BooleanField(default=True)
     People = models.ManyToManyField(CustomUser, blank=True)
-    
+
 class UploadedFile(models.Model):
     file = models.FileField(upload_to='uploads/', unique = True)
 
@@ -51,6 +51,3 @@ class Section(models.Model):
     ONum = models.IntegerField()
     Status = models.BooleanField(default=True)
     Folders = models.ManyToManyField(Folder, blank = True)
-
-
-
