@@ -26,7 +26,8 @@ class Courses(models.Model):
     Title = models.CharField(max_length=20, unique=True)
     Description = models.TextField()
     Status = models.BooleanField(default=True)
-
+    People = models.ManyToManyField(CustomUser, blank=True)
+    
 class UploadedFile(models.Model):
     file = models.FileField(upload_to='uploads/', unique = True)
 

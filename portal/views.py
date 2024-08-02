@@ -254,7 +254,6 @@ def activate(request, uidb64, token):
         user = CustomUser.objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
         user = None
-
     if user is not None and default_token_generator.check_token(user, token):
         user.is_active = True
         user.save()
@@ -291,8 +290,8 @@ def sectionAdd(request, course_id):
 def stuMode(request):
     user = request.user
     change = CustomUser.objects.get(username = user.username)
-    change.usertype = "Student"
-    change.is_superuser = False
+    change.usertype = "Teacher"
+    change.is_superuser = True
     change.save()
 
 def account_activation_sent(request):
