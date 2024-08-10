@@ -9,7 +9,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
 from .forms import UploadedFileForm, FileUploadForm
-from .models import UploadedFile, Assignment
+from .models import UploadedFile, Assignment, filestoAssignment
 from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required
 from django.views.decorators.http import require_POST
@@ -114,10 +114,11 @@ def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
 def viewAssignment(request, section_id, folder_id, assignment_id):
     assignment = Assignment.objects.get(id = assignment_id)
     files = UploadedFile.objects.all()
+    submissions = filestoAssignment.objects.all()
     files = files.exclude(id__in = assignment.files.values_list('id', flat=True))
     form = UploadedFileForm()
     studentform = FileUploadForm(user_id = request.user.id, assignment_id = assignment_id)
-    return render(request, "portal/assignmentDetail.html", {"assignment":assignment, "form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id})
+    return render(request, "portal/assignmentDetail.html", {"submissions":submissions, "assignment":assignment, "form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id})
 
 @teacher_required
 @superuser_required
@@ -159,6 +160,15 @@ def deleteAssignment(request, section_id, folder_id, assignment_id):
         assignment = Assignment.objects.get(id = assignment_id)
         assignment.delete()
         return redirect('folder',section_id, folder_id)
+
+@require_POST
+@login_required
+def deleteSubmission(request, section_id, folder_id, assignment_id):
+    if request.method == 'POST':
+        submission_id = request.POST.get('submission_id')
+        submission = filestoAssignment.objects.get(id = submission_id)
+        submission.delete()
+        return redirect('viewAssignment', section_id, folder_id, assignment_id)
 
 @teacher_required
 @superuser_required
