@@ -8,7 +8,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
-from .forms import UploadedFileForm
+from .forms import UploadedFileForm, FileUploadForm
 from .models import UploadedFile, Assignment
 from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required
@@ -83,6 +83,15 @@ def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
     else:
         form = UploadedFileForm()
 
+@require_POST
+@login_required
+def submitFilesToAssignment(request, section_id, folder_id, assignment_id):
+    if request.method == "POST":
+        form = FileUploadForm(request.POST, request.FILES, user_id = request.user.id, assignment_id = assignment_id)
+        if form.is_valid():
+            form.save()
+            return redirect("viewAssignment", section_id, folder_id, assignment_id)
+
 @teacher_required
 @superuser_required
 @require_POST
@@ -107,7 +116,8 @@ def viewAssignment(request, section_id, folder_id, assignment_id):
     files = UploadedFile.objects.all()
     files = files.exclude(id__in = assignment.files.values_list('id', flat=True))
     form = UploadedFileForm()
-    return render(request, "portal/assignmentDetail.html", {"assignment":assignment, "form":form, "files":files, "section_id":section_id, "folder_id":folder_id})
+    studentform = FileUploadForm(user_id = request.user.id, assignment_id = assignment_id)
+    return render(request, "portal/assignmentDetail.html", {"assignment":assignment, "form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id})
 
 @teacher_required
 @superuser_required
