@@ -251,11 +251,39 @@
                 </ul>
             </div>
         </div>
+<!-- Upload Assignment Modal -->
+<div class="modal fade" id="uploadAssignmentModal" tabindex="-1" aria-labelledby="uploadAssignmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadAssignmentModalLabel">Upload Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="assignmentFile" class="form-label">Choose File</label>
+                        <input type="file" class="form-control" id="assignmentFile" name="assignment_file" required>
+                    </div>
+                    <input type="hidden" name="assignment_id" id="assignmentId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
         <div class="content content-expanded">
             <div class="card section-card">
                 <div class="card-header section-card-header">
                     <span>{{ assignment.title }}</span>
+                    {% if user.usertype == 'Student' %}
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadAssignmentModal" data-assignment-id="{{ assignment.id }}">Upload Assignment</button>
+                    {% endif %}
                     {% if user.is_superuser and user.usertype == 'Teacher' %}
                     <div class="btn-group">
                         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editAssignmentModal" data-assignment-title="{{ assignment.title }}" data-assignment-description="{{ assignment.description }}" data-assignment-due-date="{{ assignment.due_date }}">Edit</button>

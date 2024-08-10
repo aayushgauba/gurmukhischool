@@ -287,6 +287,9 @@ def sectionAdd(request, course_id):
         return redirect("course", course_id)
     return render(request,"portal/sectionAdd.html", {"user":user, "course":course})
 
+@teacher_required
+@superuser_required
+@login_required
 def addStudents(request, course_id):
     course = Courses.objects.get(id=course_id)
     enrolled_students = course.People.all()
@@ -308,8 +311,8 @@ def addStudents(request, course_id):
 def stuMode(request):
     user = request.user
     change = CustomUser.objects.get(username = user.username)
-    change.usertype = "Teacher"
-    change.is_superuser = True
+    change.usertype = "Student"
+    change.is_superuser = False
     change.save()
 
 def account_activation_sent(request):

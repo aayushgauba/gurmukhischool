@@ -21,7 +21,12 @@ class CustomUser(AbstractUser):
     usertype = models.CharField(max_length=20, choices=USER_TYPES, blank = True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     birth_date = models.DateField(blank=True, null=True)
-    
+
+class filestoAssignment(models.Model):
+    file = models.FileField(upload_to='uploads/', unique = True)
+    user_id = models.IntegerField()
+    assignment_id = models.IntegerField()
+
 class Courses(models.Model):
     Title = models.CharField(max_length=20, unique=True)
     Description = models.TextField()
