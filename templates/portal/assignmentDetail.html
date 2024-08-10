@@ -336,6 +336,11 @@
                     <div class="card">
                         <div class="card-body">
                             <h6 class="card-title">{{ submission.file.name }}</h6>
+                            {% if submission.Date <= assignment.due_date %}
+                            <span class="badge bg-success">On Time</span>
+                        {% else %}
+                            <span class="badge bg-danger">Late</span>
+                        {% endif %}
                             <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewFileModal" data-file-url="{{ submission.file.url }}">View</button>
                             <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteSubmissionModal" submission-file-id="{{ submission.id }}">Delete</button>
                         </div>

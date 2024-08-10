@@ -114,7 +114,7 @@ def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
 def viewAssignment(request, section_id, folder_id, assignment_id):
     assignment = Assignment.objects.get(id = assignment_id)
     files = UploadedFile.objects.all()
-    submissions = filestoAssignment.objects.all()
+    submissions = filestoAssignment.objects.filter(user_id = request.user.id, assignment_id = assignment_id)
     files = files.exclude(id__in = assignment.files.values_list('id', flat=True))
     form = UploadedFileForm()
     studentform = FileUploadForm(user_id = request.user.id, assignment_id = assignment_id)
@@ -167,7 +167,9 @@ def deleteSubmission(request, section_id, folder_id, assignment_id):
     if request.method == 'POST':
         submission_id = request.POST.get('submission_id')
         submission = filestoAssignment.objects.get(id = submission_id)
-        submission.delete()
+        if submission.file.path and os.path.exists(submission.file.path):
+            os.remove(submission.file.path)
+            submission.delete()
         return redirect('viewAssignment', section_id, folder_id, assignment_id)
 
 @teacher_required

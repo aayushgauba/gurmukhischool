@@ -26,6 +26,7 @@ class filestoAssignment(models.Model):
     file = models.FileField(upload_to='uploads/', unique = True)
     user_id = models.IntegerField()
     assignment_id = models.IntegerField()
+    Date = models.DateField(auto_now_add=True)
 
 class Courses(models.Model):
     Title = models.CharField(max_length=20, unique=True)
