@@ -57,3 +57,8 @@ class Section(models.Model):
     ONum = models.IntegerField()
     Status = models.BooleanField(default=True)
     Folders = models.ManyToManyField(Folder, blank = True)
+
+class Grade(models.Model):
+    assignment_id = models.IntegerField()
+    user_id = models.IntegerField()
+    grade = models.IntegerField()

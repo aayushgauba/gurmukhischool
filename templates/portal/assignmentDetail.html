@@ -327,7 +327,7 @@
         </div>
         {%endif%}
 
-        {% if submissions %}
+        {% if submissions and request.user.usertype == 'Student' and not request.user.is_superuser %}
         <div class="mt-4">
             <h5 class="mb-3">My Submissions</h5>
             <div class="row">
@@ -356,6 +356,29 @@
             </div>
         </div>
         {% endif %}
+        {% if users%}
+        <div class="table-responsive mt-4">
+            <h5 class="mb-3">Submissions</h5>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {%for user in users%}
+                    <tr>
+                        <td>{{user.first_name}} {{user.last_name}}</td>
+                        <td>
+                            <a class="btn btn-secondary btn-sm" href = "{%url 'submissions' user.id folder_id assignment.id %}">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {%endif%}
     </div>
 </div>
         
