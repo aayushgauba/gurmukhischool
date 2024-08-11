@@ -333,8 +333,8 @@ def addStudents(request, course_id):
 def stuMode(request):
     user = request.user
     change = CustomUser.objects.get(username = user.username)
-    change.usertype = "Student"
-    change.is_superuser = False
+    change.usertype = "Teacher"
+    change.is_superuser = True
     change.save()
 
 def account_activation_sent(request):
