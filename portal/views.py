@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from portal.models import CustomUser, Courses, Section, Folder
+from portal.models import CustomUser, Courses, Section, Folder, Grade
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -254,11 +254,36 @@ def courses(request):
     else:
         return redirect("index")
 
+@teacher_required
+@superuser_required
+@login_required
+@require_POST
+def assignGradeToAssignment(request, folder_id, user_id, assignment_id):
+    try:
+        grade = Grade.objects.get(user_id=user_id, assignment_id=assignment_id)
+        newGrade = request.POST.get("grade")
+        grade.grade = newGrade
+        grade.save()
+    except Grade.DoesNotExist:
+        newGrade = request.POST.get("grade")
+        Grade.objects.create(user_id=user_id, assignment_id=assignment_id, grade=newGrade)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    return redirect("submissions", folder_id, user_id, assignment_id)
+
+@teacher_required
+@superuser_required
+@login_required
 def submissions(request, folder_id, user_id, assignment_id):
+    try:
+        grade = Grade.objects.get(user_id = user_id, assignment_id= assignment_id)
+    except Grade.DoesNotExist:
+        grade = None
     folder = Folder.objects.get(id = folder_id)
     submissions = filestoAssignment.objects.filter(user_id =user_id, assignment_id = assignment_id)
+    assignment = Assignment.objects.get(id = assignment_id)
     user = CustomUser.objects.get(id = user_id)
-    return render(request, "portal/submissionView.html", context = {"submissions":submissions, "folder":folder, "user": user})
+    return render(request, "portal/submissionView.html", context = {"submissions":submissions, "grade":grade, "folder":folder, "user": user, "assignment":assignment})
 
 def registration(request):
     if request.method == 'POST':

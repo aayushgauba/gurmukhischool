@@ -187,7 +187,11 @@
             color: #fff;
             font-weight: 600;
         }
-
+        .grade-display {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #007bff;
+        }
         .btn-secondary-custom:hover {
             background-color: #5a6268 !important;
         }
@@ -263,8 +267,10 @@
             <div class="card section-card">
                 <div class="card-header section-card-header">
                     {{ user.first_name }} {{ user.last_name }}
+                    <div class="grade-display">Grade: {{grade.grade }} %</div>
+
                     <div class="btn-group">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAssignmentModal"><i class="bi bi-clipboard-plus"></i> Assign Grade</button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignGradeModal"><i class="bi bi-bar-chart"></i> Assign Grade</button>
                     </div>
                 </div>
                 <div class="card-body section-card-body">
@@ -299,6 +305,29 @@
             <div class="modal-footer">
                 <a id="downloadFileButton" href="#" class="btn btn-primary" download>Download</a>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Assigning Grade -->
+<div class="modal fade" id="assignGradeModal" tabindex="-1" aria-labelledby="assignGradeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignGradeModalLabel">Assign Grade</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignGradeForm" action ="{% url 'assignGradeToAssignment' folder.id user.id assignment.id %}" method="post">
+                    {%csrf_token%}
+                    <div class="mb-3">
+                        <label for="gradeInput" class="form-label">Grade (1-100)</label>
+                        <input type="number" class="form-control" id="gradeInput" name="grade" min="1" max="100" required>
+                    </div>
+                    <input type="hidden" id="submissionIdInput" name="submission_id">
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
             </div>
         </div>
     </div>

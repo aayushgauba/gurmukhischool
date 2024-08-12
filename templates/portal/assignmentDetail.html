@@ -371,7 +371,7 @@
                     <tr>
                         <td>{{user.first_name}} {{user.last_name}}</td>
                         <td>
-                            <a class="btn btn-secondary btn-sm" href = "{%url 'submissions' user.id folder_id assignment.id %}">View</a>
+                            <a class="btn btn-secondary btn-sm" href = "{%url 'submissions' folder_id user.id assignment.id %}">View</a>
                         </td>
                     </tr>
                     {% endfor %}
