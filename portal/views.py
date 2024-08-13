@@ -274,6 +274,33 @@ def assignGradeToAssignment(request, folder_id, user_id, assignment_id):
 @teacher_required
 @superuser_required
 @login_required
+def gradesforAssignment(request, folder_id, assignment_id):
+    gradeArray = []
+    course_id = Folder.objects.get(id = folder_id).Course_id
+    Course = Courses.objects.get(id = course_id)
+    for people in Course.People.all():
+        try:
+            grade = Grade.objects.get(assignment_id = assignment_id, user_id = people.id).grade
+        except Grade.DoesNotExist:
+            grade = None
+        dict = {"id":people.id, "people":str(people.first_name +" "+people.last_name), "grade": grade}
+        gradeArray.append(dict)
+    if request.method == "POST":
+        for people in gradeArray:
+            grade_new = request.POST.get(str("grade_"+str(people['id'])))
+            if grade_new is not None:
+                try:
+                    grade = Grade.objects.get(assignment_id = assignment_id, user_id = people['id'])
+                    grade.grade = grade_new
+                    grade.save()
+                except Grade.DoesNotExist:
+                    savegrade = Grade.objects.create(assignment_id = assignment_id, user_id = people['id'], grade = grade_new)
+        return redirect("gradesforAssignment", folder_id, assignment_id)    
+    return render(request, "portal/gradeStudents.html", {"grades":gradeArray, "course":Course})
+
+@teacher_required
+@superuser_required
+@login_required
 def submissions(request, folder_id, user_id, assignment_id):
     try:
         grade = Grade.objects.get(user_id = user_id, assignment_id= assignment_id)

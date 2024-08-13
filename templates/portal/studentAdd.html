@@ -164,7 +164,7 @@
                 <input type="text" class="form-control" id="student-search" placeholder="Search students" aria-label="Search students" aria-describedby="button-addon2">
                 <button class="btn btn-primary" type="button" id="button-addon2" onclick="searchStudents()">Search</button>
             </div>
-            <form method="post" action="{% url 'addStudents' course.id %}">
+            <form method="post" action="">
                 {% csrf_token %}
                 <table class="student-table" id="student-table">
                     <thead>

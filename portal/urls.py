@@ -29,6 +29,7 @@ urlpatterns = [
     path('section/<int:section_id>/folder/assignment/delete/<int:folder_id>/<int:assignment_id>', views.deleteFilesFromAssignment, name='deleteFilesFromAssignment'),
     path('section/<int:section_id>/folder/assignment/upload/<int:folder_id>/<int:assignment_id>/new', views.addNewFilesToAssignment, name='addNewFilesToAssignment'),
     path('section/<int:section_id>/folder/assignment/submit/<int:folder_id>/<int:assignment_id>', views.submitFilesToAssignment, name='submitFilesToAssignment'),
+    path('grade/view/<int:folder_id>/folder/assignment/<int:assignment_id>', views.gradesforAssignment, name='gradesforAssignment'),
     path('file/<int:file_id>', views.fileView, name = "fileView"),
     path('file/delete/<int:pk>/<int:section_id>/<int:folder_id>', views.delete_file, name='delete_file'),
     path('login', views.login, name='login'),

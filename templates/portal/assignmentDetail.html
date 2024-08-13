@@ -280,6 +280,7 @@
             {% endif %}
             {% if user.is_superuser and user.usertype == 'Teacher' %}
             <div class="btn-group">
+                <a class="btn btn-primary btn-sm" href="{% url 'gradesforAssignment' folder_id assignment.id %}">Assign Grades</a>
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editAssignmentModal" data-assignment-title="{{ assignment.title }}" data-assignment-description="{{ assignment.description }}" data-assignment-due-date="{{ assignment.due_date }}">Edit</button>
                 <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAssignmentModal">Delete</button>
                 <div class="dropdown">

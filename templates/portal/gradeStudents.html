@@ -1,0 +1,344 @@
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gurudwara File System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f2f3f4;
+            color: #000000;
+            padding-top: 60px;
+        }
+
+        .sidebar-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            background-color: #343a40;
+            color: #ffffff;
+            height: 100vh;
+            padding-top: 1rem;
+        }
+
+        .sidebar-custom a {
+            color: #ffffff;
+        }
+
+        .sidebar-custom a:hover {
+            color: #ffcc00;
+        }
+
+        .sidebar-custom .nav-link.active {
+            background-color: #ffcc00;
+            color: #000000;
+        }
+
+        .sidebar-custom .nav-link.active:hover {
+            background-color: #ffcc00;
+            color: #000000;
+        }
+
+        .sidebar-custom .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffcc00;
+        }
+
+        .content {
+            margin-left: 280px;
+            padding: 20px;
+        }
+
+        .section-card {
+            margin-bottom: 40px;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .section-card-header {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            padding: 20px;
+            font-size: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-card-body {
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+        .file-system-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #000000;
+        }
+
+        .file-system-table th,
+        .file-system-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #dddddd;
+        }
+
+        .folder {
+            color: #343a40;
+            cursor: pointer;
+        }
+
+        .file {
+            color: #000000;
+        }
+
+        .assignment {
+            color: #007bff;
+        }
+
+        .folder-level-1 {
+            padding-left: 20px;
+        }
+
+        .folder-level-2 {
+            padding-left: 40px;
+        }
+
+        .content-expanded {
+            margin-left: 280px;
+            padding: 20px;
+            width: calc(100% - 280px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .course-card {
+            margin-bottom: 20px;
+        }
+
+        .course-card .card {
+            border: 1px solid #FFC107;
+        }
+
+        .course-card .card-body {
+            background-color: #fffbe6;
+            color: #343a40;
+        }
+
+        .course-card .btn-primary {
+            background-color: #FFC107 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background-color: #FFC107 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .course-card .btn-primary:hover,
+        .btn-primary:hover {
+            background-color: #e0a800;
+        }
+
+        .navbar-custom {
+            background-color: #FFC107;
+        }
+
+        .navbar-custom .navbar-brand {
+            color: #000;
+            font-weight: 600;
+        }
+
+        .navbar-custom .navbar-toggler {
+            border-color: #000;
+        }
+
+        .navbar-custom .navbar-toggler-icon {
+            color: #000;
+        }
+
+        @media (max-width: 992px) {
+            .content {
+                margin-left: 0;
+            }
+        }
+
+        .btn-secondary-custom {
+            background-color: #6c757d !important;
+            border: none;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .btn-secondary-custom:hover {
+            background-color: #5a6268 !important;
+        }
+
+        .section-card-header .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="d-flex">
+        <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                <span class="fs-4 logo">ੴ</span>
+                <span class="ms-2">{{user.usertype}} Portal</span>
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="{% url 'courses' %}" class="nav-link active" aria-current="page">
+                        <i class="bi bi-book"></i> Courses
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-check2-square"></i> Attendance
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link text-white">
+                        <i class="bi bi-bar-chart"></i> Grades
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link text-white">
+                        <i class="bi bi-check2-square"></i> Messages
+                    </a>
+                </li>
+            </ul>
+            <hr>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
+                    <strong>{{user.last_name}}, {{user.first_name}}</strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href="#">Settings</a></li>
+                    <li><a class="dropdown-item" href="#">Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#">Sign out</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="content content-expanded">
+            <h2>Grade Students</h2>
+            <form method="post">
+                {% csrf_token %}
+                <table class="table table-bordered table-striped" id="student-table">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Name</th>
+                            <th>Grade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for grade in grades %}
+                        <tr>
+                            <td class="student-name">{{ grade.people }}</td>
+                            <td>
+                                <input type="number" name="grade_{{ grade.id }}" value="{{ grade.grade }}" class="form-control" min="0" max="100" placeholder="Enter grade">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="submit" class="btn btn-primary mt-3">Submit</button>
+            </form>
+            
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', (event) => {
+    const deleteFileModal = document.getElementById('deleteFileModal');
+    deleteFileModal.addEventListener('show.bs.modal', function (event) {
+        // Button that triggered the modal
+        const button = event.relatedTarget;
+        // Extract info from data-* attributes
+        const fileId = button.getAttribute('data-file-id');
+        // Update the modal's hidden input field
+        const modal = this;
+        modal.querySelector('#deleteFileId').value = fileId;
+    });
+});
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    const deleteFileModal = document.getElementById('deleteSubmissionModal');
+    deleteFileModal.addEventListener('show.bs.modal', function (event) {
+        // Button that triggered the modal
+        const button = event.relatedTarget;
+        // Extract info from data-* attributes
+        const fileId = button.getAttribute('submission-file-id');
+        // Update the modal's hidden input field
+        const modal = this;
+        modal.querySelector('#deleteSubmissionId').value = fileId;
+    });
+});
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var viewFileModal = document.getElementById('viewFileModal');
+            viewFileModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var fileUrl = button.getAttribute('data-file-url');
+
+                var fileContent = document.getElementById('fileContent');
+                fileContent.innerHTML = '';
+
+                // Determine file type and create appropriate element
+                var fileExtension = fileUrl.split('.').pop().toLowerCase();
+                var element;
+                if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+                    element = document.createElement('img');
+                    element.src = fileUrl;
+                    element.className = 'img-fluid';
+                } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                    element = document.createElement('video');
+                    element.src = fileUrl;
+                    element.controls = true;
+                    element.className = 'w-100';
+                } else if (['mp3', 'wav', 'ogg', 'm4a'].includes(fileExtension)) {
+                    element = document.createElement('audio');
+                    element.src = fileUrl;
+                    element.controls = true;
+                    element.className = 'w-100';
+                } else {
+                    element = document.createElement('p');
+                    element.textContent = 'File type not supported for viewing.';
+                }
+
+                fileContent.appendChild(element);
+            });
+        });
+    </script>
+</body>
+</html>
