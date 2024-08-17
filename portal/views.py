@@ -347,6 +347,42 @@ def submissions(request, folder_id, user_id, assignment_id):
     user = CustomUser.objects.get(id = user_id)
     return render(request, "portal/submissionView.html", context = {"submissions":submissions, "grade":grade, "folder":folder, "user": user, "assignment":assignment})
 
+def PasswordResetView(request):
+    if request.method == 'POST':
+        email = request.POST['email']
+        if CustomUser.objects.get(email = email):
+            user = CustomUser.objects.get(email=email)
+            current_site = get_current_site(request)
+            subject = 'Reset Your Password'
+            message = render_to_string('email/resetPassword.html', {
+                'user': user,
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                'token': default_token_generator.make_token(user),
+                'protocol': 'https' if request.is_secure() else 'http',
+            })
+            send_mail(subject, '', 'gurmukhischoolstl@outlook.com', [user.email],  html_message=message)
+            return redirect('login')
+    return render(request, 'portal/passwordResetInitial.html')
+
+def reset(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = CustomUser.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+        user = None
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            password1 = request.POST['password1']
+            password2 = request.POST['password2']
+            if password1 == password2:
+                user.password = make_password(password1)
+                user.save()
+                return redirect('login')
+        return render(request, 'portal/passwordReset.html')
+    else:
+        return redirect('reset')
+
 def registration(request):
     if request.method == 'POST':
         firstname = request.POST.get('firstName')
@@ -368,6 +404,8 @@ def registration(request):
             send_mail(subject, '', 'gurmukhischoolstl@outlook.com', [user.email],  html_message=message)
             return redirect('account_activation_sent')
     return render(request,"registration.html")
+
+
 
 def activate(request, uidb64, token):
     try:
