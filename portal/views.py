@@ -271,18 +271,40 @@ def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_i
         print(f"An error occurred: {e}")
     return redirect("submissions", folder_id, user_id, assignment_id)
 
+@login_required
 def grades(request, course_id):
-    grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id)
-    gradeArray = []
-    final = 0
-    print(grades.count())
-    for grade in grades:
-        dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":grade.grade}
-        gradeArray.append(dict)
-        final = final + grade.grade
-    finals = final/grades.count()
-    course = Courses.objects.get(id = course_id)
-    return render(request, "portal/grades.html", {"grades":gradeArray, "course":course, "final":finals})
+    if not request.user.is_superuser and request.user.usertype == "Student":
+        grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id)
+        gradeArray = []
+        final = 0
+        print(grades.count())
+        for grade in grades:
+            dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":grade.grade}
+            gradeArray.append(dict)
+            final = final + grade.grade
+        finals = final/grades.count()
+        course = Courses.objects.get(id = course_id)
+        return render(request, "portal/grades.html", {"grades":gradeArray, "course":course, "final":finals})
+    elif request.user.is_superuser and request.user.usertype == "Teacher":
+        grades = Grade.objects.filter(course_id = course_id)
+        sections = Section.objects.filter(Course_id=course_id)
+        folders = Folder.objects.filter(section__in=sections.values_list('id', flat=True))
+        assignments = Assignment.objects.filter(folder__in=folders.values_list('id', flat=True)).distinct()        
+        gradeArray = []
+        final = 0
+        print(grades.count())
+        for assignment in assignments:
+            grades = Grade.objects.filter(assignment_id = assignment.id)
+            average = 0
+            for grade in grades:
+                average = average + grade.grade
+            average = average / grades.count()
+            dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":average}
+            gradeArray.append(dict)
+            final = final + average
+        finals = final/assignments.count()
+        course = Courses.objects.get(id = course_id)
+        return render(request, "portal/grades.html", {"grades":gradeArray, "course":course, "final":finals})
 
 @teacher_required
 @superuser_required

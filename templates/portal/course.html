@@ -228,20 +228,22 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="{%url 'grades' course.id %}" class="nav-link">
                         <i class="bi bi-bar-chart"></i> Grades
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="#" class="nav-link">
                         <i class="bi bi-check2-square"></i> Messages
                     </a>
                 </li>
+                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
                 <li>
-                    <a href="{% url 'students' course.id %}" class="nav-link text-white">
+                    <a href="{% url 'students' course.id %}" class="nav-link">
                         <i class="bi bi-people"></i> Students
                     </a>
                 </li>
+                {%endif%}
             </ul>
             <hr>
             <div class="dropdown">

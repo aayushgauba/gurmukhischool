@@ -281,7 +281,7 @@
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="{% url 'courses' %}" class="nav-link active" aria-current="page">
+                    <a href="{% url 'courses' %}" class="nav-link" aria-current="page">
                         <i class="bi bi-book"></i> Courses
                     </a>
                 </li>
@@ -291,12 +291,12 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="{%url 'grades' course.id %}" class="nav-link active">
                         <i class="bi bi-bar-chart"></i> Grades
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="#" class="nav-link">
                         <i class="bi bi-check2-square"></i> Messages
                     </a>
                 </li>

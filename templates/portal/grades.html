@@ -281,7 +281,7 @@
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="{% url 'courses' %}" class="nav-link active" aria-current="page">
+                    <a href="{% url 'courses' %}" class="nav-link" aria-current="page">
                         <i class="bi bi-book"></i> Courses
                     </a>
                 </li>
@@ -291,12 +291,12 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="{%url 'grades' course.id %}" class="nav-link active">
                         <i class="bi bi-bar-chart"></i> Grades
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link text-white">
+                    <a href="#" class="nav-link">
                         <i class="bi bi-check2-square"></i> Messages
                     </a>
                 </li>
@@ -317,6 +317,8 @@
         </div>
         </div>
         <div class="content content-expanded">
+            {% if not request.user.is_superuser and request.user.usertype == "Student" %}
+            {%if grades%}
             <div class="table-header">Grades</div>
             <table class="grading-table">
                 <thead>
@@ -338,6 +340,33 @@
                     </tr>
                 </tbody>
             </table>
+            {%endif%}
+            {%endif%}
+            {% if request.user.is_superuser and request.user.usertype == "Teacher" %}
+            {%if grades%}
+            <div class="table-header">Average Grades</div>
+            <table class="grading-table">
+                <thead>
+                    <tr>
+                        <th>Assignment</th>
+                        <th>Average Grade (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grade in grades %}
+                    <tr>
+                        <td>{{grade.title}}</td>
+                        <td>{{grade.grade}}</td>
+                    </tr>
+                    {%endfor%}
+                    <tr class="final-grade-row">
+                        <td><strong>Final Grade</strong></td>
+                        <td><strong>{{final}}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            {%endif%}
+            {%endif%}
         </div> 
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
