@@ -60,5 +60,6 @@ class Section(models.Model):
 
 class Grade(models.Model):
     assignment_id = models.IntegerField()
+    course_id = models.IntegerField()
     user_id = models.IntegerField()
     grade = models.IntegerField()

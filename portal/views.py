@@ -258,18 +258,31 @@ def courses(request):
 @superuser_required
 @login_required
 @require_POST
-def assignGradeToAssignment(request, folder_id, user_id, assignment_id):
+def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_id):
     try:
-        grade = Grade.objects.get(user_id=user_id, assignment_id=assignment_id)
+        grade = Grade.objects.get(user_id=user_id, assignment_id=assignment_id, course_id = course_id)
         newGrade = request.POST.get("grade")
         grade.grade = newGrade
         grade.save()
     except Grade.DoesNotExist:
         newGrade = request.POST.get("grade")
-        Grade.objects.create(user_id=user_id, assignment_id=assignment_id, grade=newGrade)
+        Grade.objects.create(user_id=user_id, assignment_id=assignment_id, grade=newGrade, course_id= course_id)
     except Exception as e:
         print(f"An error occurred: {e}")
     return redirect("submissions", folder_id, user_id, assignment_id)
+
+def grades(request, course_id):
+    grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id)
+    gradeArray = []
+    final = 0
+    print(grades.count())
+    for grade in grades:
+        dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":grade.grade}
+        gradeArray.append(dict)
+        final = final + grade.grade
+    finals = final/grades.count()
+    course = Courses.objects.get(id = course_id)
+    return render(request, "portal/grades.html", {"grades":gradeArray, "course":course, "final":finals})
 
 @teacher_required
 @superuser_required
@@ -280,7 +293,7 @@ def gradesforAssignment(request, folder_id, assignment_id):
     Course = Courses.objects.get(id = course_id)
     for people in Course.People.all():
         try:
-            grade = Grade.objects.get(assignment_id = assignment_id, user_id = people.id).grade
+            grade = Grade.objects.get(assignment_id = assignment_id, course_id= course_id, user_id = people.id).grade
         except Grade.DoesNotExist:
             grade = None
         dict = {"id":people.id, "people":str(people.first_name +" "+people.last_name), "grade": grade}
@@ -290,11 +303,11 @@ def gradesforAssignment(request, folder_id, assignment_id):
             grade_new = request.POST.get(str("grade_"+str(people['id'])))
             if grade_new is not None:
                 try:
-                    grade = Grade.objects.get(assignment_id = assignment_id, user_id = people['id'])
+                    grade = Grade.objects.get(assignment_id = assignment_id, course_id= course_id, user_id = people['id'])
                     grade.grade = grade_new
                     grade.save()
                 except Grade.DoesNotExist:
-                    savegrade = Grade.objects.create(assignment_id = assignment_id, user_id = people['id'], grade = grade_new)
+                    savegrade = Grade.objects.create(assignment_id = assignment_id, course_id= course_id, user_id = people['id'], grade = grade_new)
         return redirect("gradesforAssignment", folder_id, assignment_id)    
     return render(request, "portal/gradeStudents.html", {"grades":gradeArray, "course":Course})
 
