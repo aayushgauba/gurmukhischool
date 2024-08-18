@@ -265,8 +265,9 @@
             <div class="d-flex justify-content-between mb-3">
                 <h2 class="course-heading">{{course.Title}}</h2>
                 {%if user.is_superuser and user.usertype == 'Teacher' %}
-                <a href="{% url 'sectionAdd' course.id %}" class="btn btn-primary">Add Section</a>
-                {%endif%}
+                <button type="button" class="btn btn-primary create-folder-btn" data-bs-toggle="modal" data-bs-target="#createSectionModal" data-section-id="{{ section.id }}"> Add Section
+                </button>
+                    {%endif%}
             </div>
             {% if sections %}
                 {% for section in sections %}
@@ -280,7 +281,9 @@
                             {%else%}
                                 <a href = "{% url 'changeVisibility' section.id %}" class="btn btn-secondary-custom show-form-btn"><i class="bi bi-eye"></i> Show</a>
                             {%endif%}
-                            <a href = "{% url 'folderAdd' section.id %}" class="btn btn-primary create-folder-btn"><i class="bi bi-folder-plus"></i> Create Folder</a>
+                            <button type="button" class="btn btn-primary create-folder-btn" data-bs-toggle="modal" data-bs-target="#createFolderModal" data-section-id="{{ section.id }}">
+                                <i class="bi bi-folder-plus"></i> Create Folder
+                            </button>                      
                         </div>
                         {%endif%}
                         {%if user.is_superuser and user.usertype == 'Teacher' %}
@@ -349,9 +352,69 @@
             {% endif %}
         </div>
     </div>
+ <!-- Modal -->
+
+ <div class="modal fade" id="createSectionModal" tabindex="-1" aria-labelledby="createSectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createSectionModalLabel">Create Section</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createSectionForm" action="{% url 'sectionAdd' course.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="sectionTitle" class="form-label">Section Name</label>
+                        <input type="text" class="form-control" id="sectionTitle" name="title" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> 
+
+<div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createFolderModalLabel">Create Folder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createAssignmentForm" action="{% url 'folderAdd' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="folderTitle" class="form-label">Folder Name</label>
+                        <input type="text" class="form-control" id="folderTitle" name="title" required>
+                    </div>
+                    <!-- Hidden field to store section ID -->
+                    <input type="hidden" id="sectionIdInput" name="section_id" value="">
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // JavaScript to set section ID in the hidden input field
+document.querySelectorAll('.create-folder-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        const sectionId = button.getAttribute('data-section-id');
+        const sectionIdInput = document.querySelector('#sectionIdInput');
+        sectionIdInput.value = sectionId;
+    });
+});
+
         function toggleFolder(folderElement) {
             const folderRow = folderElement.parentElement.parentElement;
             let nextRow = folderRow.nextElementSibling;
@@ -364,11 +427,12 @@
 
 
         document.querySelectorAll('.create-folder-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                alert('Create Folder button clicked.');
-                // Implement your folder creation logic here
-            });
-        });
+    button.addEventListener('click', () => {
+        const sectionId = button.getAttribute('data-section-id');
+        const sectionIdInput = document.querySelector('#sectionIdInput');
+        sectionIdInput.value = sectionId;
+    });
+});
     </script>
 </body>
 </html>

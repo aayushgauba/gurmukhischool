@@ -433,17 +433,16 @@ def courseAdd(request):
 @teacher_required
 @superuser_required
 @login_required
+@require_POST
 def sectionAdd(request, course_id):
     user = request.user
     course = Courses.objects.get(id = course_id)
-    if request.method == 'POST':
-        title = request.POST.get('title')
-        Count = Section.objects.filter(Course_id = course_id).count()
-        if Count is None:
+    title = request.POST.get('title')
+    Count = Section.objects.filter(Course_id = course_id).count()
+    if Count is None:
             Count = 0
-        Section.objects.create(Title = title, Course_id = course_id, ONum = Count)
-        return redirect("course", course_id)
-    return render(request,"portal/sectionAdd.html", {"user":user, "course":course})
+    Section.objects.create(Title = title, Course_id = course_id, ONum = Count)
+    return redirect("course", course_id)
 
 @teacher_required
 @superuser_required
@@ -479,20 +478,18 @@ def account_activation_sent(request):
 @teacher_required
 @superuser_required
 @login_required
-def folderAdd(request, section_id):
-    user = request.user
+@require_POST
+def folderAdd(request):
+    section_id = request.POST.get('section_id')
     section = Section.objects.get(id = section_id)
     course_id = section.Course_id
-    course = Courses.objects.get(id = course_id)
-    if request.method == 'POST':
-        title = request.POST.get('title')
-        Count = Section.objects.filter(Course_id = course_id).count()
-        if Count is None:
-            Count = 0
-        folder = Folder.objects.create(Title = title, Course_id = course_id)
-        section.Folders.add(folder)
-        return redirect("course", course_id)
-    return render(request,"portal/folderAdd.html", {"user":user, "course":course, "section":section})    
+    title = request.POST.get('title')
+    Count = Section.objects.filter(Course_id = course_id).count()
+    if Count is None:
+        Count = 0
+    folder = Folder.objects.create(Title = title, Course_id = course_id)
+    section.Folders.add(folder)
+    return redirect("course", course_id)
 
 def login(request):
     if request.method == 'POST':
