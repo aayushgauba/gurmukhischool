@@ -420,15 +420,15 @@ def activate(request, uidb64, token):
     else:
         return render(request, 'portal/invalidAccountActivation.html')
 
+@teacher_required
+@superuser_required
 @login_required
+@require_POST
 def courseAdd(request):
-    user = request.user
-    if request.method == 'POST':
-        title = request.POST.get('title')
-        description = request.POST.get('description')
-        Courses.objects.create(Title = title, Description = description)
-        return redirect("courses")
-    return render(request,"portal/courseAdd.html", {"user":user})
+    title = request.POST.get('title')
+    description = request.POST.get('description')
+    Courses.objects.create(Title = title, Description = description)
+    return redirect("courses")
 
 @teacher_required
 @superuser_required
