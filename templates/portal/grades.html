@@ -296,7 +296,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link">
+                    <a href="{% url 'announcements' %}" class="nav-link">
                         <i class="bi bi-check2-square"></i> Messages
                     </a>
                 </li>
@@ -340,6 +340,8 @@
                     </tr>
                 </tbody>
             </table>
+            {%else%}
+                <center>No grades have been posted yet</center>
             {%endif%}
             {%endif%}
             {% if request.user.is_superuser and request.user.usertype == "Teacher" %}
@@ -365,6 +367,8 @@
                     </tr>
                 </tbody>
             </table>
+            {%else%}
+                <center>No grades have been posted yet</center>
             {%endif%}
             {%endif%}
         </div> 

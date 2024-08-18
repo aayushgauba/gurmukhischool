@@ -38,5 +38,6 @@ urlpatterns = [
     path('students/add/<int:course_id>', views.addStudents, name='addStudents'),
     path('registration', views.registration, name='registration'),
     path('reset/<uidb64>/<token>/', views.reset, name='resetEmail'),
-    path('student', views.stuMode, name = 'student')
+    path('student', views.stuMode, name = 'student'),
+    path('announcements', views.announcements, name = 'announcements')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

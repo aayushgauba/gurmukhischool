@@ -233,8 +233,8 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link">
-                        <i class="bi bi-check2-square"></i> Messages
+                    <a href="{% url 'announcements' %}" class="nav-link">
+                        <i class="bi bi-megaphone"></i> Announcements
                     </a>
                 </li>
                 {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
