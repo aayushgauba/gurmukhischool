@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from tinymce.models import HTMLField
 
 class CustomUser(AbstractUser):
     WEB_MANAGER = 'webmanager'
@@ -33,7 +34,9 @@ class Courses(models.Model):
     Description = models.TextField()
     Status = models.BooleanField(default=True)
     People = models.ManyToManyField(CustomUser, blank=True)
-
+    def __str__(self):
+        return self.Title
+    
 class UploadedFile(models.Model):
     file = models.FileField(upload_to='uploads/', unique = True)
 
@@ -44,6 +47,12 @@ class Assignment(models.Model):
     files = models.ManyToManyField(UploadedFile, blank=True)
     def __str__(self):
         return self.title
+
+class Announcement(models.Model):
+    title = models.CharField(max_length=200)
+    recipients = models.ManyToManyField(Courses, blank=False)
+    content = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class Folder(models.Model):
     Title = models.CharField(max_length=200)

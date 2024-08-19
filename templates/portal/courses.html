@@ -175,57 +175,7 @@ body {
     }
 }
     </style>
-</head>
-<body>
-    <!-- Navbar for smaller screens -->
-    <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
-            </button>
-        </div>
-    </nav>
 
-    <div class="d-flex">
-        <!-- Sidebar -->
-        <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
-            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-                <span class="fs-4 logo">ੴ</span>
-                <span class="ms-2">{{user.usertype}} Portal</span>
-            </a>
-            <hr>
-            <ul class="nav nav-pills flex-column mb-auto">
-                <li class="nav-item">
-                    <a href="{% url 'courses' %}" class="nav-link active" aria-current="page">
-                        <i class="bi bi-book"></i> Courses
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{% url 'announcements' %}" class="nav-link">
-                        <i class="bi bi-megaphone"></i> Announcements
-                    </a>
-                </li>
-
-
-            </ul>
-            <hr>
-            <div class="dropdown">
-                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
-                    <strong>{{user.last_name}}, {{user.first_name}}</strong>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
-                    <li><a class="dropdown-item" href="#">Settings</a></li>
-                    <li><a class="dropdown-item" href="#">Profile</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#">Sign out</a></li>
-                </ul>
-            </div>
-        </div>
         <!-- Content Area -->
         <div class="content flex-grow-1">
             <h1 class="mb-4">Courses</h1>

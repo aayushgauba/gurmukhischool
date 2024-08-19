@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from portal.models import CustomUser, Courses, Section, Folder, Grade
+from portal.models import CustomUser, Courses, Section, Folder, Grade, Announcement
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -8,7 +8,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
-from .forms import UploadedFileForm, FileUploadForm
+from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm
 from .models import UploadedFile, Assignment, filestoAssignment
 from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required
@@ -312,7 +312,34 @@ def grades(request, course_id):
         return render(request, "portal/grades.html", {"grades":[], "course":course, "final":0})
 
 def announcements(request):
-    return render(request, "portal/announcements.html")
+    if request.user.usertype == "Teacher" and request.user.is_superuser:
+        announcements = Announcement.objects.all()
+    elif request.user.usertype == "Student" and not request.user.is_superuser:
+        student = CustomUser.objects.get(id=request.user.id)
+        courses = Courses.objects.filter(People=student)
+        announcements = Announcement.objects.filter(recipients__in=courses)
+    else:
+        announcements = Announcement.objects.none()  # Handle other user types if necessary
+
+    return render(request, "portal/announcements.html", {"announcements": announcements})
+
+@teacher_required
+@superuser_required
+@login_required
+def create_announcement(request):
+    if request.method == 'POST':
+        print("Form submitted")
+        form = AnnouncementForm(request.POST)
+        if form.is_valid():
+            print("Form is valid")
+            form.save()
+            return redirect('announcements')  # Redirect to the announcements page after saving
+        else:
+            print("Form is not valid")
+            print(form.errors)
+    else:
+        form = AnnouncementForm()
+    return render(request, 'portal/announcementCreate.html', {'form': form})
 
 @teacher_required
 @superuser_required
