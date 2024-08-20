@@ -281,7 +281,7 @@
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="{% url 'courses' %}" class="nav-link" aria-current="page">
+                    <a href="{% url 'courses' %}" class="nav-link">
                         <i class="bi bi-book"></i> Courses
                     </a>
                 </li>
@@ -291,15 +291,18 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{%url 'grades' course.id %}" class="nav-link active">
+                    <a href="{%url 'grades' course.id %}" class="nav-link active" aria-current="page">
                         <i class="bi bi-bar-chart"></i> Grades
                     </a>
                 </li>
+
+                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
                 <li>
-                    <a href="{% url 'announcements' %}" class="nav-link">
-                        <i class="bi bi-check2-square"></i> Messages
+                    <a href="{% url 'students' course.id %}" class="nav-link">
+                        <i class="bi bi-people"></i> Students
                     </a>
                 </li>
+                {%endif%}
             </ul>
             <hr>
             <div class="dropdown">

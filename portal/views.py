@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from portal.models import CustomUser, Courses, Section, Folder, Grade, Announcement
+from portal.models import CustomUser, Courses, Section, Folder, Grade, Announcement, Attendance
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -13,8 +13,12 @@ from .models import UploadedFile, Assignment, filestoAssignment
 from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required
 from django.views.decorators.http import require_POST
+from asgiref.sync import sync_to_async
 import os
-
+import asyncio
+import threading
+import calendar
+from datetime import datetime
 
 @login_required
 def course(request, course_id):
@@ -248,11 +252,11 @@ def changeVisibility(request, section_id):
 @login_required
 def courses(request):
     user = request.user
-    courses = Courses.objects.all()
-    if user:
-        return render(request, "portal/courses.html", {"user":user, "courses":courses})
-    else:
-        return redirect("index")
+    if request.user.usertype == "Teacher" and request.user.is_superuser:
+        courses = Courses.objects.all()
+    elif request.user.usertype == "Student" and not request.user.is_superuser:
+        courses = Courses.objects.filter(People = user)
+    return render(request, "portal/courses.html", {"user":user, "courses":courses})
 
 @teacher_required
 @superuser_required
@@ -323,6 +327,129 @@ def announcements(request):
 
     return render(request, "portal/announcements.html", {"announcements": announcements})
 
+def mark_attendance(request, course_id, day, month, year):
+    if request.method == 'POST':
+        selected_day = request.POST.get('day')
+        selected_month = request.POST.get('month')
+        selected_year = request.POST.get('year')
+
+        students = Courses.objects.get(id=course_id).People.all()
+
+        for student in students:
+            status = 'Absent'  # Default to absent
+            if f'attendance_status_{student.id}' in request.POST:
+                status = 'Present'
+
+            # Update or create the attendance record
+            Attendance.objects.update_or_create(
+                student=student,
+                day=selected_day,
+                month=selected_month,
+                year=selected_year,
+                defaults={'status': status}
+            )
+
+        return redirect('attendance', course_id=course_id)
+    else:
+        all_students = Courses.objects.get(id=course_id).People.all()
+        course = Courses.objects.get(id=course_id)
+
+        # Query attendance records for the given day, month, and year
+        attendance_records = Attendance.objects.filter(
+            day=day, month=month, year=year
+        )
+
+        attendanceArray =[]
+        # Create a dictionary to easily check if a student was present or absent
+        for record in attendance_records:
+            if record.status == "Present":
+                attendanceArray.append(record.student_id)
+        print(attendanceArray)
+        context = {
+            'course': course,
+            'all_students': all_students,
+            'day': day,
+            'month': month,
+            'year': year,
+            'attendance_dict': attendanceArray
+        }
+        return render(request, 'portal/attendanceAdd.html', context)
+
+def attendance(request, course_id, year=None, month=None):
+    course = Courses.objects.get(id = course_id)
+    if not year or not month:
+        # Default to the current year and month if none are provided
+        year = datetime.now().year
+        month = datetime.now().month
+
+    cal = calendar.Calendar()
+    month_days = list(cal.itermonthdays2(year, month))
+    today = datetime.now().day if year == datetime.now().year and month == datetime.now().month else None
+
+    prev_month = month - 1
+    next_month = month + 1
+
+    prev_year = year
+    next_year = year
+
+    if prev_month == 0:
+        prev_month = 12
+        prev_year -= 1
+
+    if next_month == 13:
+        next_month = 1
+        next_year += 1
+
+    weeks = []
+    week = [None] * 7 
+
+    for day, weekday in month_days:
+        if day == 0:
+            continue
+        week[weekday] = day
+        if weekday == 6:
+            weeks.append(week)
+            week = [None] * 7
+    if any(week):
+        weeks.append(week)
+
+    print(weeks)
+
+    context = {
+        'year': year,
+        'month': month,
+        'month_days': month_days,
+        'today': today,
+        'prev_year': prev_year,
+        'prev_month': prev_month,
+        'next_year': next_year,
+        'next_month': next_month,
+        'weeks': weeks,
+        'course':course,
+    }
+
+    return render(request, 'portal/attendance.html', context)
+
+def send_announcement_emails(announcement):
+    recipients = set()
+    for course in announcement.recipients.all():  # Convert QuerySet to list
+        students = course.People.filter(usertype='student').distinct()
+        for student in students:
+            if student.email not in recipients:
+                print(f"Sending email to: {student.email}")
+                recipients.add(student.email)
+                try:
+                    send_mail(
+                        subject=f'New Announcement: {announcement.title}',
+                        message=announcement.content,
+                        from_email='gurmukhischoolstl@outlook.com',
+                        recipient_list=[student.email],
+                        fail_silently=False,
+                    )
+                    print(f"Email sent to: {student.email}")
+                except Exception as e:
+                    print(f"Failed to send email to: {student.email}, error: {e}")
+
 @teacher_required
 @superuser_required
 @login_required
@@ -332,7 +459,11 @@ def create_announcement(request):
         form = AnnouncementForm(request.POST)
         if form.is_valid():
             print("Form is valid")
-            form.save()
+            announcement = form.save()
+
+            # Schedule the async task after the response is returned
+            threading.Thread(target=send_announcement_emails, args=(announcement,)).start()
+
             return redirect('announcements')  # Redirect to the announcements page after saving
         else:
             print("Form is not valid")

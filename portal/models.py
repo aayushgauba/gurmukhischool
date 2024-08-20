@@ -54,6 +54,13 @@ class Announcement(models.Model):
     content = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+class Attendance(models.Model):
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    day = models.PositiveIntegerField()
+    month = models.PositiveIntegerField()
+    year = models.PositiveIntegerField()  # Optional if you need to track the year
+    status = models.CharField(max_length=10, choices=[('Present', 'Present'), ('Absent', 'Absent')])
+
 class Folder(models.Model):
     Title = models.CharField(max_length=200)
     Course_id = models.IntegerField()

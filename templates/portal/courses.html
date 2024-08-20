@@ -1,181 +1,307 @@
+{% load crispy_forms_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Courses - {{user.usertype}} Portal</title>
+    <title>Gurudwara File System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-body {
-    font-family: 'Mukta', sans-serif;
-    background-color: #f2f3f4;
-    color: #000000;
-    padding-top: 60px; /* Adjust top padding to accommodate fixed navbar */
-}
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f2f3f4;
+            color: #000000;
+            padding-top: 60px;
+        }
 
-.sidebar-custom {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 280px;
-    background-color: #343a40; /* Dark color for sidebar */
-    color: #ffffff;
-    height: 100vh;
-    padding-top: 1rem;
-}
+        .sidebar-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            background-color: #343a40;
+            color: #ffffff;
+            height: 100vh;
+            padding-top: 1rem;
+        }
 
-.sidebar-custom a {
-    color: #ffffff;
-}
+        .sidebar-custom a {
+            color: #ffffff;
+        }
 
-.sidebar-custom a:hover {
-    color: #ffcc00; /* Yellow on hover */
-}
+        .sidebar-custom a:hover {
+            color: #ffcc00;
+        }
 
-.sidebar-custom .nav-link.active {
-    background-color: #ffcc00; /* Yellow for active link */
-    color: #000000;
-}
+        .sidebar-custom .nav-link.active {
+            background-color: #ffcc00;
+            color: #000000;
+        }
 
-.sidebar-custom .nav-link.active:hover {
-    background-color: #ffcc00; /* Yellow on hover for active link */
-    color: #000000;
-}
+        .sidebar-custom .nav-link.active:hover {
+            background-color: #ffcc00;
+            color: #000000;
+        }
 
-.sidebar-custom .logo {
-    font-size: 1.5rem; /* Adjust size as needed */
-    font-weight: 600;
-    color: #ffcc00; /* Yellow for logo */
-}
+        .sidebar-custom .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffcc00;
+        }
 
-.content {
-    margin-left: 280px; /* Adjust content margin to accommodate fixed sidebar */
-    padding: 20px;
-}
+        .content {
+            margin-left: 280px;
+            padding: 20px;
+        }
 
-.section-card {
-    margin-bottom: 40px; /* Increased margin for larger spacing */
-    border: 1px solid #ffc107;
-    border-radius: 8px; /* Rounded corners */
-    overflow: hidden; /* Ensure children elements do not overflow the card */
-}
+        .section-card {
+            margin-bottom: 40px;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            overflow: hidden;
+        }
 
-.section-card-header {
-    background-color: #ffc107;
-    color: #000;
-    font-weight: 600;
-    padding: 20px; /* Increased padding */
-    font-size: 1.25rem; /* Larger font size */
-}
+        .section-card-header {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            padding: 20px;
+            font-size: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-.section-card-body {
-    padding: 20px; /* Increased padding */
-    background-color: #ffffff; /* White background for card body */
-}
+        .section-card-body {
+            padding: 20px;
+            background-color: #ffffff;
+        }
 
-.file-system-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    color: #000000;
-}
+        .file-system-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #000000;
+        }
 
-.file-system-table th,
-.file-system-table td {
-    padding: 15px; /* Increased padding */
-    text-align: left;
-    border-bottom: 1px solid #dddddd;
-}
+        .file-system-table th,
+        .file-system-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #dddddd;
+        }
 
-.folder {
-    color: #343a40; /* Dark color for folder */
-    cursor: pointer;
-}
+        .folder {
+            color: #343a40;
+            cursor: pointer;
+        }
 
-.file {
-    color: #000000; /* Black for file */
-}
+        .file {
+            color: #000000;
+        }
 
-.assignment {
-    color: #007bff; /* Blue color for assignments */
-}
+        .assignment {
+            color: #007bff;
+        }
 
-.folder-level-1 {
-    padding-left: 20px;
-}
+        .folder-level-1 {
+            padding-left: 20px;
+        }
 
-.folder-level-2 {
-    padding-left: 40px;
-}
+        .folder-level-2 {
+            padding-left: 40px;
+        }
 
-.content-expanded {
-    margin-left: 280px; /* Ensure content margin aligns with the sidebar */
-    padding: 20px;
-    width: calc(100% - 280px); /* Make content take up the full available width */
-}
+        .content-expanded {
+            margin-left: 280px;
+            padding: 20px;
+            width: calc(100% - 280px);
+        }
 
-.hidden {
-    display: none;
-}
+        .hidden {
+            display: none;
+        }
 
-.course-card {
-    margin-bottom: 20px;
-}
+        .course-card {
+            margin-bottom: 20px;
+        }
 
-.course-card .card {
-    border: 1px solid #FFC107; /* Yellow border */
-}
+        .course-card .card {
+            border: 1px solid #FFC107;
+        }
 
-.course-card .card-body {
-    background-color: #fffbe6; /* Light yellow background */
-    color: #343a40; /* Dark text */
-}
+        .course-card .card-body {
+            background-color: #fffbe6;
+            color: #343a40;
+        }
 
-.course-card .btn-primary {
-    background-color: #FFC107 !important; /* Yellow button */
-    border: none;
-    color: #000;
-    font-weight: 600;
-}
+        .course-card .btn-primary {
+            background-color: #FFC107 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
 
-.btn-primary {
-    background-color: #FFC107 !important; /* Yellow button */
-    border: none;
-    color: #000;
-    font-weight: 600;
-}
+        .btn-primary {
+            background-color: #FFC107 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
 
-.course-card .btn-primary:hover,
-.btn-primary:hover {
-    background-color: #e0a800; /* Darker yellow on hover */
-}
+        .course-card .btn-primary:hover,
+        .btn-primary:hover {
+            background-color: #e0a800;
+        }
 
-.navbar-custom {
-    background-color: #FFC107; /* Yellow color */
-}
+        .navbar-custom {
+            background-color: #FFC107;
+        }
 
-.navbar-custom .navbar-brand {
-    color: #000; /* Black color for text */
-    font-weight: 600;
-}
+        .navbar-custom .navbar-brand {
+            color: #000;
+            font-weight: 600;
+        }
 
-.navbar-custom .navbar-toggler {
-    border-color: #000; /* Black color for toggler border */
-}
+        .navbar-custom .navbar-toggler {
+            border-color: #000;
+        }
 
-.navbar-custom .navbar-toggler-icon {
-    color: #000; /* Black color for toggler icon */
-}
+        .navbar-custom .navbar-toggler-icon {
+            color: #000;
+        }
 
-@media (max-width: 992px) {
-    .content {
-        margin-left: 0; /* Remove content margin on smaller screens */
-    }
-}
+        @media (max-width: 992px) {
+            .content {
+                margin-left: 0;
+            }
+        }
+
+        .btn-secondary-custom {
+            background-color: #6c757d !important;
+            border: none;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .btn-secondary-custom:hover {
+            background-color: #5a6268 !important;
+        }
+
+        .section-card-header .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+        .grading-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #000000;
+        }
+
+        .grading-table th,
+        .grading-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .grading-table th {
+            background-color: #ffcc00;
+            color: #000000;
+            font-weight: 600;
+        }
+
+        .grading-table td input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .final-grade-row {
+            background-color: #ffcc00;
+            font-weight: 600;
+        }
+
+        .final-grade-row td {
+            border-top: 2px solid #000;
+        }
+
+        .btn-primary {
+            background-color: #FFC107 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .table-header {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.75rem;
+            color: #343a40;
+            font-weight: 700;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            letter-spacing: 1px;
+            border: 2px solid #343a40;
+        }
+        .btn-primary:hover {
+            background-color: #e0a800;
+        }
     </style>
+</head>
+<body>
+    <!-- Navbar for mobile view -->
+    <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <span class="fs-4 logo">ੴ</span> {{ user.usertype }} Portal
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
+            </button>
+        </div>
+    </nav>
 
+    <!-- Sidebar and Main Content -->
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                <span class="fs-4 logo">ੴ</span>
+                <span class="ms-2">{{ user.usertype }} Portal</span>
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="{% url 'courses' %}" class="nav-link active" aria-current="page">
+                        <i class="bi bi-book"></i> Courses
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'announcements' %}" class="nav-link">
+                        <i class="bi bi-megaphone"></i> Announcements
+                    </a>
+                </li>
+            </ul>
+            <hr>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
+                    <strong>{{ user.last_name }}, {{ user.first_name }}</strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href="#">Settings</a></li>
+                    <li><a class="dropdown-item" href="#">Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="">Sign out</a></li>
+                </ul>
+            </div>
+        </div>
         <!-- Content Area -->
         <div class="content flex-grow-1">
             <h1 class="mb-4">Courses</h1>

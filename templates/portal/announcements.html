@@ -278,32 +278,15 @@
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="{% url 'courses' %}" class="nav-link" aria-current="page">
+                    <a href="{% url 'courses' %}" class="nav-link">
                         <i class="bi bi-book"></i> Courses
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="nav-link">
-                        <i class="bi bi-check2-square"></i> Attendance
-                    </a>
-                </li>
-                <li>
-                    <a href="" class="nav-link">
-                        <i class="bi bi-bar-chart"></i> Grades
-                    </a>
-                </li>
-                <li>
-                    <a href="" class="nav-link active">
+                    <a href="{% url 'announcements' %}" class="nav-link active">
                         <i class="bi bi-megaphone"></i> Announcements
                     </a>
                 </li>
-                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
-                <li>
-                    <a href="" class="nav-link">
-                        <i class="bi bi-people"></i> Students
-                    </a>
-                </li>
-                {%endif%}
             </ul>
             <hr>
             <div class="dropdown">
@@ -326,7 +309,9 @@
         <div class="section-card-header">
             Announcements
             <!-- Create Announcement Anchor Tag -->
-            <a href="/create-announcement" class="btn btn-primary float-right">Create Announcement</a>
+             {% if request.user.is_superuser and request.user.usertype == "Teacher" %}
+            <a href="{% url 'create_announcement' %}" class="btn btn-primary float-right">Create Announcement</a>
+            {%endif%}
         </div>
         <div class="section-card-body">
             <h2>Latest Announcements</h2>
