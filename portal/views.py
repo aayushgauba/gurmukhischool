@@ -11,7 +11,7 @@ from django.contrib.auth.tokens import default_token_generator
 from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm, ProfilePhotoForm
 from .models import UploadedFile, Assignment, filestoAssignment
 from django.contrib.auth.decorators import login_required
-from .decorators import superuser_required, teacher_required
+from .decorators import superuser_required, teacher_required, admin_required, approved_required
 from django.views.decorators.http import require_POST
 from asgiref.sync import sync_to_async
 import os
@@ -20,6 +20,7 @@ import threading
 import calendar
 from datetime import datetime
 
+@approved_required
 @login_required
 def course(request, course_id):
     user = request.user
@@ -30,6 +31,7 @@ def course(request, course_id):
         sections = Section.objects.filter(Course_id = course.id, Status = True).order_by("ONum")
     return render(request, "portal/course.html", {"course":course, "user":user, "sections":sections})
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -38,6 +40,7 @@ def students(request, course_id):
     students = course.People.all()
     return render(request, "portal/students.html", {"students":students, "course":course})
 
+@approved_required
 @login_required
 def fileView(request, file_id):
     file = UploadedFile.objects.get(id = file_id)
@@ -47,6 +50,7 @@ def fileView(request, file_id):
     }
     return render(request, 'portal/fileDetail.html', context)
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -61,6 +65,7 @@ def delete_file(request, pk, section_id, folder_id):
             file.delete()
         return redirect('folder', section_id, folder_id)
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -72,6 +77,7 @@ def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
         assignment.files.add(file)
         return redirect("viewAssignment", section_id,folder_id, assignment_id)
 
+@approved_required
 @teacher_required
 @superuser_required
 @require_POST
@@ -87,6 +93,7 @@ def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
     else:
         form = UploadedFileForm()
 
+@approved_required
 @require_POST
 @login_required
 def submitFilesToAssignment(request, section_id, folder_id, assignment_id):
@@ -96,6 +103,7 @@ def submitFilesToAssignment(request, section_id, folder_id, assignment_id):
             form.save()
             return redirect("viewAssignment", section_id, folder_id, assignment_id)
 
+@approved_required
 @teacher_required
 @superuser_required
 @require_POST
@@ -114,6 +122,7 @@ def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
                 file.delete()
         return redirect("viewAssignment", section_id, folder_id, assignment_id)
 
+@approved_required
 @login_required
 def viewAssignment(request, section_id, folder_id, assignment_id):
     assignment = Assignment.objects.get(id = assignment_id)
@@ -130,6 +139,7 @@ def viewAssignment(request, section_id, folder_id, assignment_id):
     files = files.exclude(id__in = assignment.files.values_list('id', flat=True))
     return render(request, "portal/assignmentDetail.html", context = context)
 
+@approved_required
 @teacher_required
 @superuser_required
 @require_POST
@@ -144,6 +154,7 @@ def createAssignment(request, section_id, folder_id):
         folder.Assignments.add(assignment)
         return redirect('folder', section_id, folder_id)
 
+@approved_required
 @teacher_required
 @superuser_required
 @require_POST
@@ -161,6 +172,7 @@ def editAssignment(request, section_id, folder_id, assignment_id):
         assignment.save()
         return redirect('viewAssignment', section_id, folder_id, assignment_id)
 
+@approved_required
 @teacher_required
 @superuser_required
 @require_POST
@@ -171,6 +183,7 @@ def deleteAssignment(request, section_id, folder_id, assignment_id):
         assignment.delete()
         return redirect('folder',section_id, folder_id)
 
+@approved_required
 @require_POST
 @login_required
 def deleteSubmission(request, section_id, folder_id, assignment_id):
@@ -182,6 +195,7 @@ def deleteSubmission(request, section_id, folder_id, assignment_id):
             submission.delete()
         return redirect('viewAssignment', section_id, folder_id, assignment_id)
 
+@approved_required
 @teacher_required
 @superuser_required
 @require_POST
@@ -197,6 +211,7 @@ def uploadFile(request, section_id, folder_id):
     else:
         form = UploadedFileForm()
 
+@approved_required
 @login_required
 def folder(request, section_id, folder_id):
     user = request.user
@@ -205,6 +220,7 @@ def folder(request, section_id, folder_id):
     course = Courses.objects.get(id = folder.Course_id)
     return render(request, "portal/folderView.html", {"course":course, "user":user, "form":form, "folder":folder, "section_id":section_id})
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -219,6 +235,7 @@ def moveSectionUp(request, section_id):
         section_new.save()
     return redirect("course", course_id)
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -236,6 +253,7 @@ def moveSectionDown(request, section_id):
         section_new.save()
     return redirect("course", course_id)
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -249,6 +267,7 @@ def changeVisibility(request, section_id):
     course_id = section.Course_id
     return redirect("course", course_id)
 
+@approved_required
 @login_required
 def courses(request):
     user = request.user
@@ -258,6 +277,7 @@ def courses(request):
         courses = Courses.objects.filter(People = user)
     return render(request, "portal/courses.html", {"user":user, "courses":courses})
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -275,6 +295,7 @@ def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_i
         print(f"An error occurred: {e}")
     return redirect("submissions", folder_id, user_id, assignment_id)
 
+@approved_required
 @login_required
 def grades(request, course_id):
     grades = Grade.objects.filter(course_id = course_id)
@@ -315,6 +336,7 @@ def grades(request, course_id):
         course = Courses.objects.get(id = course_id)
         return render(request, "portal/grades.html", {"grades":[], "course":course, "final":0})
 
+@approved_required
 def announcements(request):
     if request.user.usertype == "Teacher" and request.user.is_superuser:
         announcements = Announcement.objects.all()
@@ -327,6 +349,7 @@ def announcements(request):
 
     return render(request, "portal/announcements.html", {"announcements": announcements})
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -451,6 +474,7 @@ def attendance(request, course_id, year=None, month=None):
     }        
     return render(request, 'portal/attendance.html', context)
 
+@approved_required
 @require_POST
 @login_required
 def upload_profile_photo(request, course_id):
@@ -463,6 +487,7 @@ def upload_profile_photo(request, course_id):
         form = ProfilePhotoForm(instance=request.user)
     return render(request, 'upload_profile_photo.html', {'form': form})
 
+@approved_required
 @require_POST
 @login_required
 def upload_profile_photo(request):
@@ -475,11 +500,13 @@ def upload_profile_photo(request):
         form = ProfilePhotoForm(instance=request.user)
     return render(request, 'upload_profile_photo.html', {'form': form})
 
+@approved_required
 @login_required
 def signout(request):
     logout(request) 
     return redirect('login')
 
+@approved_required
 @login_required
 def profile(request, course_id):
     course = Courses.objects.get(id = course_id)
@@ -487,6 +514,7 @@ def profile(request, course_id):
     form = ProfilePhotoForm()
     return render(request, 'portal/profile.html', {'course':course, 'user':user, "form":form,})
 
+@approved_required
 @login_required
 def profile(request):
     user = request.user
@@ -513,6 +541,7 @@ def send_announcement_emails(announcement):
                 except Exception as e:
                     print(f"Failed to send email to: {student.email}, error: {e}")
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -535,6 +564,7 @@ def create_announcement(request):
         form = AnnouncementForm()
     return render(request, 'portal/announcementCreate.html', {'form': form})
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
@@ -562,6 +592,7 @@ def gradesforAssignment(request, folder_id, assignment_id):
         return redirect("gradesforAssignment", folder_id, assignment_id)    
     return render(request, "portal/gradeStudents.html", {"grades":gradeArray, "course":Course})
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required

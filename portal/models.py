@@ -23,6 +23,7 @@ class CustomUser(AbstractUser):
     usertype = models.CharField(max_length=20, choices=USER_TYPES, blank = True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     birth_date = models.DateField(blank=True, null=True)
+    approved = models.BooleanField(blank=False, default=False)
 
 class filestoAssignment(models.Model):
     file = models.FileField(upload_to='uploads/', unique = True)
