@@ -154,7 +154,6 @@
                     <strong>{{user.last_name}}, {{user.first_name}}</strong>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
-                    <li><a class="dropdown-item" href="#">Settings</a></li>
                     <li><a class="dropdown-item" href="{% url 'profile' course.id %}">Profile</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#">Sign out</a></li>
@@ -166,12 +165,10 @@
         <div class="content flex-grow-1">
             <h1 class="mb-4">Profile</h1>
             <div class="profile-container d-flex">
-                <img src="" alt="{{ user.first_name }} {{ user.last_name }}" class="profile-photo">
+                <img {% if user.profile_photo %}src="{{ user.profile_photo.url }}"{% endif %} alt="{{ user.first_name }} {{ user.last_name }}" class="profile-photo">
                 <div class="profile-info">
                     <h2>{{ user.first_name }} {{ user.last_name }}</h2>
                     <p><strong>Email:</strong> {{ user.email }}</p>
-                    <p><strong>Phone Number:</strong> {{ user.phone_number }}</p>
-                    <p><strong>Date of Birth:</strong> {{ user.birth_date }}</p>
                     <p><strong>User Type:</strong> {{ user.get_usertype_display }}</p>
                     <!-- Button to trigger modal -->
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changeProfilePhotoModal">
