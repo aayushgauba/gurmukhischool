@@ -1,3 +1,4 @@
+{% load crispy_forms_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -129,6 +130,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="{% url 'announcements' %}" class="nav-link">
+                        <i class="bi bi-megaphone"></i> Announcements
+                    </a>
+                </li>
+                {% if course %}
+                <li>
                     <a href="{% url 'attendance' course.id %}" class="nav-link">
                         <i class="bi bi-check2-square"></i> Attendance
                     </a>
@@ -145,6 +152,7 @@
                     </a>
                 </li>
                 {%endif%}
+                {%endif%}
             </ul>
             <hr>
             <div class="dropdown">
@@ -154,7 +162,11 @@
                     <strong>{{user.last_name}}, {{user.first_name}}</strong>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                    {% if course %}
                     <li><a class="dropdown-item" href="{% url 'profile' course.id %}">Profile</a></li>
+                    {%else%}
+                    <li><a class="dropdown-item" href="{% url 'profile'%}">Profile</a></li>
+                    {%endif%}
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#">Sign out</a></li>
                 </ul>
@@ -188,9 +200,13 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    {% if course %}
                     <form method="post" enctype="multipart/form-data" action="{% url 'upload_profile_photo' course.id %}">
+                    {%else%}
+                    <form method="post" enctype="multipart/form-data" action="{% url 'upload_profile_photo' %}"></form>
+                    {%endif%}
                         {% csrf_token %}
-                        {{ form.as_p }}
+                        {{ form|crispy }}
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-primary">Save changes</button>

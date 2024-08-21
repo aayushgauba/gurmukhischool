@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from portal.models import CustomUser, Courses, Section, Folder, Grade, Announcement, Attendance
 from django.contrib.auth.hashers import make_password, check_password
-from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth import authenticate, login as auth_login, logout
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
@@ -377,6 +377,7 @@ def mark_attendance(request, course_id, day, month, year):
         }
         return render(request, 'portal/attendanceAdd.html', context)
 
+@login_required
 def attendance(request, course_id, year=None, month=None):
     course = Courses.objects.get(id = course_id)
     if not year or not month:
@@ -450,6 +451,8 @@ def attendance(request, course_id, year=None, month=None):
     }        
     return render(request, 'portal/attendance.html', context)
 
+@require_POST
+@login_required
 def upload_profile_photo(request, course_id):
     if request.method == 'POST':
         form = ProfilePhotoForm(request.POST, request.FILES, instance=request.user)
@@ -460,11 +463,35 @@ def upload_profile_photo(request, course_id):
         form = ProfilePhotoForm(instance=request.user)
     return render(request, 'upload_profile_photo.html', {'form': form})
 
+@require_POST
+@login_required
+def upload_profile_photo(request):
+    if request.method == 'POST':
+        form = ProfilePhotoForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')  # Redirect to the user's profile page or any other page
+    else:
+        form = ProfilePhotoForm(instance=request.user)
+    return render(request, 'upload_profile_photo.html', {'form': form})
+
+@login_required
+def signout(request):
+    logout(request) 
+    return redirect('login')
+
+@login_required
 def profile(request, course_id):
     course = Courses.objects.get(id = course_id)
     user = request.user
     form = ProfilePhotoForm()
     return render(request, 'portal/profile.html', {'course':course, 'user':user, "form":form,})
+
+@login_required
+def profile(request):
+    user = request.user
+    form = ProfilePhotoForm()
+    return render(request, 'portal/profile.html', {'course':course, 'user':user, "form":form})
 
 def send_announcement_emails(announcement):
     recipients = set()
