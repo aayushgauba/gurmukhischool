@@ -44,4 +44,6 @@ urlpatterns = [
     path('attendance/<int:course_id>', views.attendance, name='attendance'),
     path('attendance/<int:course_id>/<int:year>/<int:month>/', views.attendance, name='attendance'),
     path('attendance/mark/<int:course_id>/<int:day>/<int:month>/<int:year>/', views.mark_attendance, name='mark_attendance'),
+    path('profile/<int:course_id>', views.profile, name='profile'),
+    path('profile/upload/photo/<int:course_id>', views.upload_profile_photo, name='upload_profile_photo'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

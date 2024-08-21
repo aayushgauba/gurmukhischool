@@ -8,7 +8,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
-from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm
+from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm, ProfilePhotoForm
 from .models import UploadedFile, Assignment, filestoAssignment
 from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required
@@ -327,6 +327,9 @@ def announcements(request):
 
     return render(request, "portal/announcements.html", {"announcements": announcements})
 
+@teacher_required
+@superuser_required
+@login_required
 def mark_attendance(request, course_id, day, month, year):
     if request.method == 'POST':
         selected_day = request.POST.get('day')
@@ -364,7 +367,6 @@ def mark_attendance(request, course_id, day, month, year):
         for record in attendance_records:
             if record.status == "Present":
                 attendanceArray.append(record.student_id)
-        print(attendanceArray)
         context = {
             'course': course,
             'all_students': all_students,
@@ -413,9 +415,13 @@ def attendance(request, course_id, year=None, month=None):
     if any(week):
         weeks.append(week)
 
-    print(weeks)
-
-    context = {
+    if not request.user.is_superuser and request.user.usertype == "Student":
+        attendance = Attendance.objects.filter(year = year, month = month, student = request.user, status = "Present").values_list('day', flat=True)
+        attendance_days = list(attendance)
+        absent = Attendance.objects.filter(year = year, month = month, student = request.user, status = "Absent").values_list('day', flat=True)
+        absent_days = list(absent)
+        print(absent_days)
+        context = {
         'year': year,
         'month': month,
         'month_days': month_days,
@@ -426,9 +432,39 @@ def attendance(request, course_id, year=None, month=None):
         'next_month': next_month,
         'weeks': weeks,
         'course':course,
+        'attendance':attendance_days,
+        'absent':absent_days,
     }
-
+    else:
+        context = {
+        'year': year,
+        'month': month,
+        'month_days': month_days,
+        'today': today,
+        'prev_year': prev_year,
+        'prev_month': prev_month,
+        'next_year': next_year,
+        'next_month': next_month,
+        'weeks': weeks,
+        'course':course,
+    }        
     return render(request, 'portal/attendance.html', context)
+
+def upload_profile_photo(request, course_id):
+    if request.method == 'POST':
+        form = ProfilePhotoForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile', course_id)  # Redirect to the user's profile page or any other page
+    else:
+        form = ProfilePhotoForm(instance=request.user)
+    return render(request, 'upload_profile_photo.html', {'form': form})
+
+def profile(request, course_id):
+    course = Courses.objects.get(id = course_id)
+    user = request.user
+    form = ProfilePhotoForm()
+    return render(request, 'portal/profile.html', {'course':course, 'user':user, "form":form,})
 
 def send_announcement_emails(announcement):
     recipients = set()

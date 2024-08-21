@@ -125,8 +125,8 @@
             <hr>
             <div class="dropdown">
                 <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
-                    <strong>{{user.last_name}}, {{user.first_name}}</strong>
+                    <img     {% if user.profile_photo %}src="{{ user.profile_photo.url }}"{% endif %} 
+                    width = "32" height ="32" class="rounded-circle me-2 ">                    <strong>{{user.last_name}}, {{user.first_name}}</strong>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
                     <li><a class="dropdown-item" href="#">Settings</a></li>
@@ -175,6 +175,29 @@
                         </tr>
                     {% endfor %}
                 </tbody>
+                {%endif%}
+                {% if not request.user.is_superuser and request.user.usertype == "Student" %}
+                        <tbody>
+        {% for week in weeks %}
+            <tr>
+                {% for day in week %}
+                    {% if day %}
+                        {% if day == today %}
+                            <td class="today">{{ day }}</td>
+                        {% elif day in attendance %}
+                            <td class="present">{{ day }}</td>
+                        {% elif day in absent %}
+                            <td class="absent">{{ day }}</td>
+                        {%else%}
+                        <td>{{ day }}</td>
+                        {% endif %}
+                    {% else %}
+                        <td></td> <!-- Empty cell for days outside the current month -->
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
                 {%endif%}
             </table>            
         </div>
