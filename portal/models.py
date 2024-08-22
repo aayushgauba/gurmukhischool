@@ -25,6 +25,14 @@ class CustomUser(AbstractUser):
     birth_date = models.DateField(blank=True, null=True)
     approved = models.BooleanField(blank=False, default=False)
 
+class CarouselImage(models.Model):
+    title = models.CharField(max_length=100)
+    image = models.FileField(upload_to='carousel_images/')
+    order = models.PositiveIntegerField(blank=True, null=True)
+    description = models.TextField()
+    def __str__(self):
+        return self.title
+
 class filestoAssignment(models.Model):
     file = models.FileField(upload_to='uploads/', unique = True)
     user_id = models.IntegerField()

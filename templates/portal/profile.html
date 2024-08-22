@@ -124,6 +124,7 @@
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
+                {% if request.user.usertype == "Teacher" or request.user.usertype == "Student" %}
                 <li class="nav-item">
                     <a href="{% url 'courses' %}" class="nav-link">
                         <i class="bi bi-book"></i> Courses
@@ -153,6 +154,30 @@
                 </li>
                 {%endif%}
                 {%endif%}
+                {%endif%}
+                {% if request.user.usertype == "Admin" %}
+                <li class="nav-item">
+                    <a href="{% url 'adminViewHome' %}" class="nav-link">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-images"></i> Carousel
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-people"></i> Users
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-telephone"></i> Contact
+                    </a>
+                </li>
+                {%endif%}
+
             </ul>
             <hr>
             <div class="dropdown">
@@ -201,9 +226,9 @@
                 </div>
                 <div class="modal-body">
                     {% if course %}
-                    <form method="post" enctype="multipart/form-data" action="{% url 'upload_profile_photo' course.id %}">
+                        <form method="post" enctype="multipart/form-data" action="{% url 'upload_profile_photo_with_course' course.id %}">
                     {%else%}
-                    <form method="post" enctype="multipart/form-data" action="{% url 'upload_profile_photo' %}"></form>
+                        <form method="post" enctype="multipart/form-data" action="{% url 'upload_profile_photo' %}">
                     {%endif%}
                         {% csrf_token %}
                         {{ form|crispy }}

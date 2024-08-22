@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gurudwara File System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f2f3f4;
+            color: #000000;
+            padding-top: 60px;
+        }
+
+        .sidebar-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            background-color: #343a40;
+            color: #ffffff;
+            height: 100vh;
+            padding-top: 1rem;
+        }
+
+        .sidebar-custom a {
+            color: #ffffff;
+        }
+
+        .sidebar-custom a:hover {
+            color: #ffcc00;
+        }
+
+        .sidebar-custom .nav-link.active {
+            background-color: #ffcc00;
+            color: #000000;
+        }
+
+        .sidebar-custom .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffcc00;
+        }
+
+        .content {
+            margin-left: 280px;
+            padding: 20px;
+        }
+
+        .section-card {
+            margin-bottom: 40px;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .section-card-header {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            padding: 20px;
+            font-size: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-card-body {
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+        .navbar-custom {
+            background-color: #FFC107;
+        }
+
+        .navbar-custom .navbar-brand {
+            color: #000;
+            font-weight: 600;
+        }
+
+        @media (max-width: 992px) {
+            .content {
+                margin-left: 0;
+            }
+        }
+
+        .btn-primary {
+            background-color: #FFC107 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #e0a800;
+        }
+
+        .file-system-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #000000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-system-table th,
+        .file-system-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #dddddd;
+        }
+
+        .file-system-table th {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .file-system-table tbody tr {
+            background-color: #ffffff;
+            transition: background-color 0.3s;
+        }
+
+        .file-system-table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .file-system-table tbody td {
+            position: relative;
+        }
+
+        .file-system-table tbody td:last-child {
+            text-align: center;
+        }
+
+        .file-system-table tbody td::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background-color: #ffc107;
+            transform: scaleY(0);
+            transition: transform 0.3s;
+        }
+
+        .file-system-table tbody tr:hover td::before {
+            transform: scaleY(1);
+        }
+
+        .btn-admit {
+            background-color: #ffc107;
+            color: #000;
+            border: 1px solid #ffc107;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-weight: 600;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .btn-admit:hover {
+            background-color: #000;
+            color: #ffc107;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Navbar for smaller screens -->
+    <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                <span class="fs-4 logo">ੴ</span>
+                <span class="ms-2">{{user.usertype}} Portal</span>
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="{% url 'adminViewHome' %}" class="nav-link active" aria-current="page">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-images"></i> Carousel
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-people"></i> Users
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-telephone"></i> Contact
+                    </a>
+                </li>
+            </ul>
+            <hr>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img {% if request.user.profile_photo %}src="{{ request.user.profile_photo.url }}"{% endif %} 
+                    width="32" height="32" class="rounded-circle me-2">
+                    <strong>{{request.user.last_name}}, {{request.user.first_name}}</strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href="#">Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#">Sign out</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2 class="mb-4">Waitlist</h2>
+            <div class="table-responsive">
+                {% if users %}
+                <table class="file-system-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {%for user in users%}
+                        <tr>
+                            <td>{{user.first_name}} {{user.last_name}}</td>
+                            <td>{{user.email}}</td>
+                            <td>
+                                <button type="button" class="btn btn-admit" data-bs-toggle="modal" data-bs-target="#admitModal" 
+                                        data-user-id="{{ user.id }}">
+                                    Admit
+                                </button>
+                            </td>                        </tr>
+                        {%endfor%}
+                        <!-- Add more rows as needed -->
+                    </tbody>
+                </table>
+                {%else%}
+                <center>No users in the waitlist</center>
+                {%endif%}
+            </div>
+        </div>
+        <!-- Modal Structure -->
+<div class="modal fade" id="admitModal" tabindex="-1" aria-labelledby="admitModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="admitModalLabel">Admit User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="admitForm" method="POST" action = "{% url 'adminViewHome' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="userType" class="form-label">Select User Type</label>
+              <select class="form-select" id="userType" name="user_type">
+                <option value="Student">Student</option>
+                <option value="Teacher">Teacher</option>
+                <option value="Admin">Admin</option>
+              </select>
+            </div>
+            <input type="hidden" name="user_id" id="userId">
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="submit" form="admitForm" class="btn btn-primary">Admit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+    </div>
+    <script>
+        var admitModal = document.getElementById('admitModal');
+        admitModal.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget; // Button that triggered the modal
+            var userId = button.getAttribute('data-user-id'); // Extract info from data-* attributes
+    
+            // Update the modal's content
+            var userIdInput = admitModal.querySelector('#userId');
+            userIdInput.value = userId;
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

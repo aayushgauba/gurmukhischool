@@ -1,0 +1,308 @@
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gurudwara File System - Carousel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        /* Reuse the provided CSS for consistency */
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f2f3f4;
+            color: #000000;
+            padding-top: 60px;
+        }
+
+        .sidebar-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            background-color: #343a40;
+            color: #ffffff;
+            height: 100vh;
+            padding-top: 1rem;
+        }
+
+        .sidebar-custom a {
+            color: #ffffff;
+        }
+
+        .sidebar-custom a:hover {
+            color: #ffcc00;
+        }
+
+        .sidebar-custom .nav-link.active {
+            background-color: #ffcc00;
+            color: #000000;
+        }
+
+        .sidebar-custom .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffcc00;
+        }
+
+        .content {
+            margin-left: 280px;
+            padding: 20px;
+        }
+
+        .section-card {
+            margin-bottom: 40px;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .section-card-header {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            padding: 20px;
+            font-size: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-card-body {
+            padding: 20px;
+            background-color: #ffffff;
+        }
+
+        .table-carousel {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #000000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-carousel th,
+        .table-carousel td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #dddddd;
+        }
+
+        .table-carousel th {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .table-carousel tbody tr {
+            background-color: #ffffff;
+            transition: background-color 0.3s;
+        }
+
+        .table-carousel tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .table-carousel tbody td {
+            position: relative;
+        }
+
+        .table-carousel tbody td:last-child {
+            text-align: center;
+        }
+
+        .table-carousel tbody td::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background-color: #ffc107;
+            transform: scaleY(0);
+            transition: transform 0.3s;
+        }
+
+        .table-carousel tbody tr:hover td::before {
+            transform: scaleY(1);
+        }
+
+        .btn-action {
+            background-color: #ffc107;
+            color: #000;
+            border: 1px solid #ffc107;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-weight: 600;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .btn-action:hover {
+            background-color: #000;
+            color: #ffc107;
+        }
+
+        .btn-add {
+            background-color: #FFC107;
+            color: #ffffff;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .btn-add:hover {
+            background-color: #e0a800;
+            color: #ffffff;
+        }
+
+        .btn-primary {
+            background-color: #FFC107 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #e0a800;
+        }
+
+        .modal-header {
+            background-color: #ffc107;
+            color: #000;
+            border-bottom: none;
+        }
+
+        .modal-footer {
+            border-top: none;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Reuse Navbar for smaller screens -->
+    <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <span class="fs-4 logo">ੴ</span> Carousel Manager
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
+
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="{% url 'adminViewHome' %}" class="nav-link">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link active">
+                        <i class="bi bi-images"></i> Carousel
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-people"></i> Users
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-link">
+                        <i class="bi bi-telephone"></i> Contact
+                    </a>
+                </li>
+            </ul>
+            <hr>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img {% if request.user.profile_photo %}src="{{ request.user.profile_photo.url }}"{% endif %} 
+                    width="32" height="32" class="rounded-circle me-2">
+                    <strong>{{request.user.last_name}}, {{request.user.first_name}}</strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href="#">Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#">Sign out</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2 class="mb-4">Carousel Manager</h2>
+            <!-- Add Button to trigger modal -->
+            <button class="btn btn-add mb-3" data-bs-toggle="modal" data-bs-target="#addContentModal">
+                <i class="bi bi-plus-lg"></i> Add New Content
+            </button>
+            <div class="table-responsive">
+                <table class="table-carousel">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="carouselTableBody">
+                        {%for image in images%}
+                        <tr>
+                            <td><img src="{{image.image.url}}" alt="Image 1" style="width: 100px; height: auto;"></td>
+                            <td>{{image.title}}</td>
+                            <td>{{image.description}}</td>
+                            <td>
+                                {%if image.order > 0 %}
+                                <button class="btn btn-action"><i class="bi bi-arrow-up"></i></button>
+                                {%endif%}
+                                <button class="btn btn-action"><i class="bi bi-arrow-down"></i></button>
+                                <button class="btn btn-action"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>
+                        {%endfor%}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding Content -->
+    <div class="modal fade" id="addContentModal" tabindex="-1" aria-labelledby="addContentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addContentModalLabel">Add New Carousel Content</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addContentForm" method="post" action="{% url 'carousel_management' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        
+    </script>
+</body>
+</html>

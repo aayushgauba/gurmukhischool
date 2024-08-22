@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from portal.models import CustomUser, Courses, Section, Folder, Grade, Announcement, Attendance
+from portal.models import CustomUser, Courses, Section, Folder, Grade, Announcement, Attendance, CarouselImage
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -8,7 +8,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
-from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm, ProfilePhotoForm
+from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm, ProfilePhotoForm, CarouselImageForm
 from .models import UploadedFile, Assignment, filestoAssignment
 from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required, admin_required, approved_required
@@ -19,6 +19,8 @@ import asyncio
 import threading
 import calendar
 from datetime import datetime
+
+
 
 @approved_required
 @login_required
@@ -76,6 +78,47 @@ def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
         assignment = Assignment.objects.get(id = assignment_id)
         assignment.files.add(file)
         return redirect("viewAssignment", section_id,folder_id, assignment_id)
+
+@login_required
+@approved_required
+def carousel_management(request):
+    images = CarouselImage.objects.all()
+    if images:
+        count = images.count()
+    else:
+        count = 0
+    if request.method == 'POST':
+        form = CarouselImageForm(request.POST, request.FILES)
+        if form.is_valid():
+            image = form.save()
+            image.order = count
+            image.save() 
+            return redirect('carousel_management')
+    else:
+        form = CarouselImageForm()
+    return render(request, 'portal/adminCarousel.html', {'images': images, 'form': form})
+
+def moveCarouselImageUp(request, image_id):
+    image = CarouselImage.objects.get(id = image_id)
+    order = image.order
+    if image >0:
+        newImage = CarouselImage.objects.get(order = (order-1))
+        image.order = order -1
+        newImage.order = order
+        image.save()
+        newImage.save()
+    return redirect("carousel_management")
+
+def moveCarouselImageUp(request, image_id):
+    image = CarouselImage.objects.get(id = image_id)
+    order = image.order
+    if image >0:
+        newImage = CarouselImage.objects.get(order = (order-1))
+        image.order = order -1
+        newImage.order = order
+        image.save()
+        newImage.save()
+    return redirect("carousel_management")
 
 @approved_required
 @teacher_required
@@ -275,6 +318,8 @@ def courses(request):
         courses = Courses.objects.all()
     elif request.user.usertype == "Student" and not request.user.is_superuser:
         courses = Courses.objects.filter(People = user)
+    elif request.user.usertype == "Admin" and request.user.is_superuser:
+        return redirect("adminViewHome")
     return render(request, "portal/courses.html", {"user":user, "courses":courses})
 
 @approved_required
@@ -400,6 +445,7 @@ def mark_attendance(request, course_id, day, month, year):
         }
         return render(request, 'portal/attendanceAdd.html', context)
 
+@approved_required
 @login_required
 def attendance(request, course_id, year=None, month=None):
     course = Courses.objects.get(id = course_id)
@@ -474,30 +520,33 @@ def attendance(request, course_id, year=None, month=None):
     }        
     return render(request, 'portal/attendance.html', context)
 
-@approved_required
-@require_POST
-@login_required
-def upload_profile_photo(request, course_id):
-    if request.method == 'POST':
-        form = ProfilePhotoForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('profile', course_id)  # Redirect to the user's profile page or any other page
-    else:
-        form = ProfilePhotoForm(instance=request.user)
-    return render(request, 'upload_profile_photo.html', {'form': form})
 
+@login_required
+@admin_required
+@approved_required
+def adminViewHome(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        user_type = request.POST.get('user_type')
+        user = CustomUser.objects.get(id=user_id)
+        user.usertype = user_type
+        user.approved = True
+        user.save()
+        return redirect("adminViewHome")
+    users = CustomUser.objects.filter(approved = False)
+    return render(request, "portal/adminHome.html", {"users":users})
+
+@login_required
 @approved_required
 @require_POST
-@login_required
-def upload_profile_photo(request):
-    if request.method == 'POST':
-        form = ProfilePhotoForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('profile')  # Redirect to the user's profile page or any other page
-    else:
-        form = ProfilePhotoForm(instance=request.user)
+def upload_profile_photo(request, course_id=None):
+    form = ProfilePhotoForm(request.POST, request.FILES, instance=request.user)
+    if form.is_valid():
+        form.save()
+        if course_id:
+            return redirect('profile', course_id=course_id)
+        else:
+            return redirect('profile')
     return render(request, 'upload_profile_photo.html', {'form': form})
 
 @approved_required
@@ -506,20 +555,14 @@ def signout(request):
     logout(request) 
     return redirect('login')
 
-@approved_required
-@login_required
-def profile(request, course_id):
-    course = Courses.objects.get(id = course_id)
+def profile(request, course_id=None):
+    if course_id:
+        course = Courses.objects.get(id=course_id)
+    else:
+        course = None
     user = request.user
     form = ProfilePhotoForm()
-    return render(request, 'portal/profile.html', {'course':course, 'user':user, "form":form,})
-
-@approved_required
-@login_required
-def profile(request):
-    user = request.user
-    form = ProfilePhotoForm()
-    return render(request, 'portal/profile.html', {'course':course, 'user':user, "form":form})
+    return render(request, 'portal/profile.html', {'course': course, 'user': user, 'form': form})
 
 def send_announcement_emails(announcement):
     recipients = set()

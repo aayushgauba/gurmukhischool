@@ -1,7 +1,7 @@
 from django import forms
 from .models import UploadedFile, filestoAssignment
 from tinymce.widgets import TinyMCE
-from .models import Announcement, Courses, CustomUser
+from .models import Announcement, Courses, CustomUser, CarouselImage
 from django_select2.forms import Select2MultipleWidget
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
@@ -10,6 +10,11 @@ class UploadedFileForm(forms.ModelForm):
     class Meta:
         model = UploadedFile
         fields = ('file',)
+
+class CarouselImageForm(forms.ModelForm):
+    class Meta:
+        model = CarouselImage
+        fields = ['title', 'image', 'description']
 
 class ProfilePhotoForm(forms.ModelForm):
     class Meta:
