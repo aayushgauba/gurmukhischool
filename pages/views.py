@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
 from .models import Contact
-
+from portal.models import CarouselImage
 
 def index(request):
-    return render(request,"index.html")
+    images = CarouselImage.objects.all()
+    images = images.order_by("order")
+    return render(request,"index.html", {"images":images})
 
 
 

@@ -81,8 +81,10 @@ def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
 
 @login_required
 @approved_required
+@admin_required
 def carousel_management(request):
     images = CarouselImage.objects.all()
+    images = images.order_by("order")
     if images:
         count = images.count()
     else:
@@ -98,10 +100,13 @@ def carousel_management(request):
         form = CarouselImageForm()
     return render(request, 'portal/adminCarousel.html', {'images': images, 'form': form})
 
+@login_required
+@approved_required
+@admin_required
 def moveCarouselImageUp(request, image_id):
     image = CarouselImage.objects.get(id = image_id)
     order = image.order
-    if image >0:
+    if order >0:
         newImage = CarouselImage.objects.get(order = (order-1))
         image.order = order -1
         newImage.order = order
@@ -109,16 +114,32 @@ def moveCarouselImageUp(request, image_id):
         newImage.save()
     return redirect("carousel_management")
 
-def moveCarouselImageUp(request, image_id):
+@login_required
+@approved_required
+@admin_required
+def moveCarouselImageDown(request, image_id):
     image = CarouselImage.objects.get(id = image_id)
     order = image.order
-    if image >0:
-        newImage = CarouselImage.objects.get(order = (order-1))
-        image.order = order -1
+    print(CarouselImage.objects.get(order = (order +1)))
+    if order < CarouselImage.objects.all().count():
+        newImage = CarouselImage.objects.get(order = (order+1))
+        image.order = order +1
         newImage.order = order
         image.save()
         newImage.save()
+    
     return redirect("carousel_management")
+
+@require_POST
+@login_required
+@approved_required
+@admin_required
+def delete_carousel_image(request):
+    if request.method == 'POST':
+        image_id = request.POST.get('image_id')
+        image =  CarouselImage.objects.get(id=image_id)
+        image.delete()
+        return redirect('carousel_management')
 
 @approved_required
 @teacher_required

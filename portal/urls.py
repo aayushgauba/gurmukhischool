@@ -51,5 +51,7 @@ urlpatterns = [
     path('profile/upload/photo/<int:course_id>', views.upload_profile_photo, name='upload_profile_photo_with_course'),
     path('profile/upload/photo', views.upload_profile_photo, name='upload_profile_photo'),
     path('carousel/photo/up/<int:image_id>', views.moveCarouselImageUp, name = "moveCarouselImageUp"),
+    path('carousel/photo/down/<int:image_id>', views.moveCarouselImageDown, name = "moveCarouselImageDown"),
+    path('delete_carousel_image/', views.delete_carousel_image, name='delete_carousel_image'),
     path('logout/', views.signout, name='logout'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
