@@ -193,14 +193,16 @@ def viewAssignment(request, section_id, folder_id, assignment_id):
     assignment = Assignment.objects.get(id = assignment_id)
     files = UploadedFile.objects.all()
     form = UploadedFileForm()
+    folder = Folder.objects.get(id = folder_id)
+    course = Courses.objects.get(id = folder.Course_id)
     studentform = FileUploadForm(user_id = request.user.id, assignment_id = assignment_id)
     if not request.user.is_superuser and request.user.usertype == "Student":
         submissions = filestoAssignment.objects.filter(user_id = request.user.id, assignment_id = assignment_id)
-        context = {"submissions":submissions, "assignment":assignment, "form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id}
+        context = {"submissions":submissions,"course":course, "assignment":assignment, "folder":folder,"form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id}
     elif request.user.is_superuser and request.user.usertype == "Teacher":
         submissions = filestoAssignment.objects.filter(assignment_id = assignment_id).distinct()
         users = CustomUser.objects.filter(id__in=filestoAssignment.objects.filter(assignment_id=assignment.id).values('user_id').distinct())
-        context = {"submissions":submissions, "assignment":assignment, "users":users, "form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id}
+        context = {"submissions":submissions, "assignment":assignment, "course":course, "users":users, "folder":folder, "form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id}
     files = files.exclude(id__in = assignment.files.values_list('id', flat=True))
     return render(request, "portal/assignmentDetail.html", context = context)
 
