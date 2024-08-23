@@ -171,6 +171,20 @@
             color: #ffc107;
         }
 
+        .date-filter {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .date-filter label {
+            margin-right: 10px;
+            font-weight: 600;
+        }
+
+        .date-filter input {
+            width: 200px;
+        }
     </style>
 </head>
 <body>
@@ -196,7 +210,7 @@
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a href="{% url 'adminViewHome' %}" class="nav-link active" aria-current="page">
+                    <a href="{% url 'adminViewHome' %}" class="nav-link">
                         <i class="bi bi-speedometer2"></i> Dashboard
                     </a>
                 </li>
@@ -211,7 +225,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'adminContactView' %}" class="nav-link">
+                    <a href="{% url 'adminContactView' %}" class="nav-link active" aria-current="page">
                         <i class="bi bi-telephone"></i> Contact
                     </a>
                 </li>
@@ -232,80 +246,93 @@
         </div>
 
         <div class="content">
-            <h2 class="mb-4">Waitlist</h2>
+            <h2 class="mb-4">Contact</h2>
+
+            <div class="date-filter">
+                <label for="filterDate">Filter by Date:</label>
+                <input type="date" id="filterDate" class="form-control">
+            </div>
+
             <div class="table-responsive">
-                {% if users %}
                 <table class="file-system-table">
                     <thead>
                         <tr>
                             <th>Name</th>
                             <th>Email</th>
+                            <th>Date</th>
+                            <th>Message</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {%for user in users%}
+                        {% for contact in contacts %}
                         <tr>
-                            <td>{{user.first_name}} {{user.last_name}}</td>
-                            <td>{{user.email}}</td>
+                            <td>{{ contact.name }}</td>
+                            <td>{{ contact.email }}</td>
+                            <td>{{ contact.date }}</td>
+                            <td>{{ contact.message }}</td>
                             <td>
-                                <button type="button" class="btn btn-admit" data-bs-toggle="modal" data-bs-target="#admitModal" 
-                                        data-user-id="{{ user.id }}">
-                                    Admit
+                                <button type="button" class="btn btn-admit" data-bs-toggle="modal" data-bs-target="#contactModal" 
+                                data-contact-id="{{ contact.id }}" data-contact-name="{{ contact.name }}">
+                                    View
                                 </button>
-                            </td>                        </tr>
-                        {%endfor%}
-                        <!-- Add more rows as needed -->
+                            </td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
-                {%else%}
-                <center>No users in the waitlist</center>
-                {%endif%}
             </div>
         </div>
-        <!-- Modal Structure -->
-<div class="modal fade" id="admitModal" tabindex="-1" aria-labelledby="admitModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="admitModalLabel">Admit User</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <form id="admitForm" method="POST" action = "{% url 'adminViewHome' %}">
-            {% csrf_token %}
-            <div class="mb-3">
-              <label for="userType" class="form-label">Select User Type</label>
-              <select class="form-select" id="userType" name="user_type">
-                <option value="Student">Student</option>
-                <option value="Teacher">Teacher</option>
-                <option value="Admin">Admin</option>
-              </select>
+    </div>
+
+    <div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="contactModalLabel">Contact Message</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Message details will be dynamically loaded here -->
+                    <p><strong>Name:</strong> <span id="contactName"></span></p>
+                    <p><strong>Email:</strong> <span id="contactEmail"></span></p>
+                    <p><strong>Date:</strong> <span id="contactDate"></span></p>
+                    <p><strong>Message:</strong> <span id="contactMessage"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
-            <input type="hidden" name="user_id" id="userId">
-          </form>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="submit" form="admitForm" class="btn btn-primary">Admit</button>
-        </div>
-      </div>
     </div>
-  </div>
-  
-    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        var admitModal = document.getElementById('admitModal');
-        admitModal.addEventListener('show.bs.modal', function (event) {
-            var button = event.relatedTarget; // Button that triggered the modal
-            var userId = button.getAttribute('data-user-id'); // Extract info from data-* attributes
-    
-            // Update the modal's content
-            var userIdInput = admitModal.querySelector('#userId');
-            userIdInput.value = userId;
+        document.addEventListener('DOMContentLoaded', function () {
+            var contactModal = document.getElementById('contactModal');
+
+            contactModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var contactId = button.getAttribute('data-contact-id');
+                var contactName = button.getAttribute('data-contact-name');
+
+                var modalTitle = contactModal.querySelector('.modal-title');
+                modalTitle.textContent = 'Contact Message from ' + contactName;
+
+                // Fetch contact details using contactId (e.g., via AJAX) and populate the modal
+            });
+
+            var filterDateInput = document.getElementById('filterDate');
+            filterDateInput.addEventListener('change', function () {
+                var filterDate = filterDateInput.value;
+                var rows = document.querySelectorAll('.file-system-table tbody tr');
+
+                rows.forEach(function (row) {
+                    var rowDate = row.querySelector('td:nth-child(3)').textContent;
+                    row.style.display = rowDate === filterDate ? '' : 'none';
+                });
+            });
         });
     </script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

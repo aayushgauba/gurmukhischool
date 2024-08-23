@@ -14,6 +14,7 @@ from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required, admin_required, approved_required
 from django.views.decorators.http import require_POST
 from asgiref.sync import sync_to_async
+from pages.models import Contact
 import os
 import asyncio
 import threading
@@ -556,6 +557,32 @@ def adminViewHome(request):
         return redirect("adminViewHome")
     users = CustomUser.objects.filter(approved = False)
     return render(request, "portal/adminHome.html", {"users":users})
+
+@login_required
+@admin_required
+@approved_required
+def adminUsers(request):
+    users = CustomUser.objects.filter(approved = True)
+    return render(request, "portal/adminUsers.html", {"users":users})
+
+@require_POST
+@login_required
+@admin_required
+@approved_required
+def admit_user(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        user = CustomUser.objects.get(id=user_id)
+        user.approved = False
+        user.save()
+        return redirect('adminViewHome')
+
+@login_required
+@admin_required
+@approved_required
+def adminContactView(request):
+    contacts = Contact.objects.all()
+    return render(request, 'portal/adminContact.html', {"contacts":contacts})
 
 @login_required
 @approved_required

@@ -114,7 +114,7 @@
       <div class="col-md-8">
         <div class="form-container">
           <h5 class="card-title">Contact Us</h5>
-          <form id="contactForm" method="post" action="{% url 'contact' %}">
+          <form id="contactForm" method="post">
             {%csrf_token%}
             <div class="mb-3">
               <label for="name" class="form-label">Name</label>
