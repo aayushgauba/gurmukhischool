@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('students/<int:course_id>', views.students, name='students'),
+    path('students/remove/<int:course_id>', views.removeStudentFromCourse, name='removeStudentFromCourse'),
     path('', views.courses, name='courses'),
     path('admin/', views.adminViewHome, name = 'adminViewHome'),
     path('admit/user/waitlist', views.admit_user, name='admit_user'),

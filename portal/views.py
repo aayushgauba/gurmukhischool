@@ -15,6 +15,8 @@ from .decorators import superuser_required, teacher_required, admin_required, ap
 from django.views.decorators.http import require_POST
 from asgiref.sync import sync_to_async
 from pages.models import Contact
+from django.core.exceptions import ValidationError
+import re
 import os
 import asyncio
 import threading
@@ -689,6 +691,17 @@ def gradesforAssignment(request, folder_id, assignment_id):
 @teacher_required
 @superuser_required
 @login_required
+def removeStudentFromCourse(request, course_id):
+    id = request.POST.get("student_id")
+    student = CustomUser.objects.get(id = id)
+    course = Courses.objects.get(id = course_id)
+    course.People.remove(student)
+    return redirect("students", course.id)
+
+@approved_required
+@teacher_required
+@superuser_required
+@login_required
 def submissions(request, folder_id, user_id, assignment_id):
     try:
         grade = Grade.objects.get(user_id = user_id, assignment_id= assignment_id)
@@ -742,9 +755,17 @@ def registration(request):
         lastname = request.POST.get('lastName')
         email = request.POST.get('email')
         password = request.POST.get('password')
-        if firstname and lastname and email and password:
-            CustomUser.objects.create(first_name=firstname, last_name=lastname, username = email, email=email, password= make_password(password))
-            user = CustomUser.objects.get(first_name=firstname, last_name=lastname, username = email, email=email)
+        phone = request.POST.get('phoneNumber')
+        try:
+            # Validate and format the phone number
+            phone = validate_phone_number(phone)
+        except ValidationError as e:
+            # Handle validation error by rendering the form again with an error message
+            return render(request, "registration.html", {"error": str(e)})
+        
+        if firstname and lastname and email and password and phone:
+            CustomUser.objects.create(first_name=firstname, last_name=lastname, phone_number = phone, username = email, email=email, password= make_password(password))
+            user = CustomUser.objects.get(first_name=firstname, last_name=lastname, username = email, phone_number = phone, email=email)
             current_site = get_current_site(request)
             subject = 'Activate Your Account'
             message = render_to_string('email/activation.html', {
@@ -755,10 +776,14 @@ def registration(request):
                 'protocol': 'https' if request.is_secure() else 'http',
             })
             send_mail(subject, '', 'gurmukhischoolstl@outlook.com', [user.email],  html_message=message)
-            return redirect('account_activation_sent')
+            return redirect('login')
     return render(request,"registration.html")
 
-
+def validate_phone_number(phone):
+    phone = re.sub(r'\D', '', phone)
+    if len(phone) != 10:
+        raise ValidationError("Phone number must be 10 digits.")
+    return phone
 
 def activate(request, uidb64, token):
     try:
