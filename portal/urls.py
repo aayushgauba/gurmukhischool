@@ -9,7 +9,6 @@ urlpatterns = [
     path('students/remove/<int:course_id>', views.removeStudentFromCourse, name='removeStudentFromCourse'),
     path('', views.courses, name='courses'),
     path('admin/', views.adminViewHome, name = 'adminViewHome'),
-    path('admin/make', views.makeadmin, name = 'makeadmin'),
     path('admit/user/waitlist', views.admit_user, name='admit_user'),
     path('admin/carousel', views.carousel_management, name = 'carousel_management'),
     path('admin/users', views.adminUsers, name = 'adminUsers'),
