@@ -912,5 +912,5 @@ def login(request):
                 print(user.email)
                 return redirect("courses")
             else:
-                return render(request, "login.html", {"error": "Invalid credentials"})
+                return HttpResponse(user)
     return render(request, "login.html")
