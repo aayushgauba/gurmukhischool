@@ -898,19 +898,12 @@ def login(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-        if email == "gauba.aayush@gmail.com":
-            users = CustomUser.objects.filter(email = email)
-            for user in users:
-                user.delete()
         if email and password:
             user = authenticate(username=email, password=password)
-            if email == "gauba.aayush@gmail.com":
-                CustomUser.objects.create(email = email, first_name = "Aayush", last_name = "Gauba", password = make_password(password), is_active = True, approved = True, is_superuser = True, usertype = "Admin")
             if user:
                 auth_login(request, user)
                 print(user.email)
                 return redirect("courses")
             else:
-                user = CustomUser.objects.get(email = email)
-                return HttpResponse(user.email)
+                return redirect("login")
     return render(request, "login.html")
