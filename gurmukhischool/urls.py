@@ -21,7 +21,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('', include('pages.urls')),
     path('portal/', include('portal.urls')),
     path('activate/<uidb64>/<token>/', activate, name='activate'),
