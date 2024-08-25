@@ -567,6 +567,8 @@ def adminViewHome(request):
         user_type = request.POST.get('user_type')
         user = CustomUser.objects.get(id=user_id)
         user.usertype = user_type
+        if user.usertype == "Teacher" or "Admin":
+            user.is_superuser = True
         user.approved = True
         user.save()
         return redirect("adminViewHome")
