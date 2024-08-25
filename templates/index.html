@@ -112,6 +112,7 @@
   <!-- Content -->
   <div class="content">
     <!-- Slider -->
+     {% if images %}
     <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
       <div class="carousel-indicators">
           {% for image in images %}
@@ -138,7 +139,7 @@
           <span class="visually-hidden">Next</span>
       </button>
   </div>
-  
+  {%endif%}
 
 <!-- Footer -->
   <!-- Footer -->
