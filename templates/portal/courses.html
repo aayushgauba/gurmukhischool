@@ -317,12 +317,35 @@
                 <div class="col-md-4 course-card">
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title">{{course.Title}}</h5>
-                            <p class="card-text">{{course.Description}}</p>
-                            <a href="{%url 'course' course.id %}" class="btn btn-primary">View Course</a>
+                            <h5 class="card-title">{{ course.Title }}</h5>
+                            <p class="card-text">{{ course.Description }}</p>
+                            <a href="{% url 'course' course.id %}" class="btn btn-primary">View Course</a>
+                            <button type="button" class="btn btn-secondary-custom" data-bs-toggle="modal" data-bs-target="#uploadSyllabusModal{{course.id}}">Upload Syllabus</button>
                         </div>
                     </div>
                 </div>
+                <!-- Syllabus Upload Modal -->
+<div class="modal fade" id="uploadSyllabusModal{{course.id}}" tabindex="-1" aria-labelledby="uploadSyllabusModal{{course.id}}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadSyllabusModal{{course.id}}">Upload Syllabus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadSyllabusForm" action="{% url 'upload_syllabus' course.id %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{form|crispy}}
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
                 {%endfor%}
             </div>
             {%endif%}

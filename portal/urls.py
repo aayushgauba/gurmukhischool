@@ -13,6 +13,7 @@ urlpatterns = [
     path('admin/carousel', views.carousel_management, name = 'carousel_management'),
     path('admin/users', views.adminUsers, name = 'adminUsers'),
     path('admin/contact', views.adminContactView, name = 'adminContactView'),
+    path('courses/syllabus/add/<int:course_id>', views.upload_syllabus, name = 'upload_syllabus'),
     path('courses/add', views.courseAdd, name='courseAdd'),
     path('courses/<int:course_id>', views.course, name='course'),
     path('section/<int:course_id>/add', views.sectionAdd, name='sectionAdd'),

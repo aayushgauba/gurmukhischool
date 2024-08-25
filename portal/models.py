@@ -43,6 +43,7 @@ class Courses(models.Model):
     Title = models.CharField(max_length=20, unique=True)
     Description = models.TextField()
     Status = models.BooleanField(default=True)
+    Syllabus = models.FileField(upload_to='syllabus/', blank=True)
     People = models.ManyToManyField(CustomUser, blank=True)
     def __str__(self):
         return self.Title

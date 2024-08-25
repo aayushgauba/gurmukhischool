@@ -16,6 +16,11 @@ class CarouselImageForm(forms.ModelForm):
         model = CarouselImage
         fields = ['title', 'image', 'description']
 
+class SyllabusUploadForm(forms.ModelForm):
+    class Meta:
+        model = Courses
+        fields = ['Syllabus']  # Only include the Syllabus field
+
 class ProfilePhotoForm(forms.ModelForm):
     class Meta:
         model = CustomUser

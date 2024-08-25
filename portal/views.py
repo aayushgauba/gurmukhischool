@@ -8,7 +8,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.contrib.auth.tokens import default_token_generator
-from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm, ProfilePhotoForm, CarouselImageForm
+from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm, ProfilePhotoForm, CarouselImageForm, SyllabusUploadForm
 from .models import UploadedFile, Assignment, filestoAssignment
 from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required, admin_required, approved_required
@@ -340,13 +340,14 @@ def changeVisibility(request, section_id):
 @login_required
 def courses(request):
     user = request.user
+    form = SyllabusUploadForm()
     if request.user.usertype == "Teacher" and request.user.is_superuser:
         courses = Courses.objects.all()
     elif request.user.usertype == "Student" and not request.user.is_superuser:
         courses = Courses.objects.filter(People = user)
     elif request.user.usertype == "Admin" and request.user.is_superuser:
         return redirect("adminViewHome")
-    return render(request, "portal/courses.html", {"user":user, "courses":courses})
+    return render(request, "portal/courses.html", {"user":user, "courses":courses, "form":form})
 
 @approved_required
 @teacher_required
@@ -730,6 +731,18 @@ def PasswordResetView(request):
             send_mail(subject, '', 'gurmukhischoolstl@outlook.com', [user.email],  html_message=message)
             return redirect('login')
     return render(request, 'portal/passwordResetInitial.html')
+
+@approved_required
+@teacher_required
+@superuser_required
+@login_required
+@require_POST
+def upload_syllabus(request, course_id):
+    course = Courses.objects.get(id=course_id)
+    form = SyllabusUploadForm(request.POST, request.FILES, instance=course)
+    if form.is_valid():
+        form.save()
+        return redirect('courses')  
 
 def reset(request, uidb64, token):
     try:
