@@ -900,6 +900,7 @@ def login(request):
         password = request.POST.get('password')
         if email and password:
             user = authenticate(username=email, password=password)
+            print(user)
             if user:
                 auth_login(request, user)
                 print(user.email)
