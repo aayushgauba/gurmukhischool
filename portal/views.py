@@ -7,6 +7,7 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
+from django.http import HttpResponse
 from django.contrib.auth.tokens import default_token_generator
 from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm, ProfilePhotoForm, CarouselImageForm, SyllabusUploadForm
 from .models import UploadedFile, Assignment, filestoAssignment
@@ -336,15 +337,24 @@ def changeVisibility(request, section_id):
     course_id = section.Course_id
     return redirect("course", course_id)
 
+def view_syllabus(request, course_id):
+    course = Courses.objects.get(id=course_id)
+    if course.Syllabus:
+        response = HttpResponse(course.Syllabus, content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename=' + course.Syllabus.name
+        return response
+    else:
+        return HttpResponse("No syllabus available.", content_type='text/plain')
+
 @approved_required
 @login_required
 def courses(request):
     user = request.user
     form = SyllabusUploadForm()
     if request.user.usertype == "Teacher" and request.user.is_superuser:
-        courses = Courses.objects.all()
+        courses = Courses.objects.all().order_by("id")
     elif request.user.usertype == "Student" and not request.user.is_superuser:
-        courses = Courses.objects.filter(People = user)
+        courses = Courses.objects.all().order_by("id")
     elif request.user.usertype == "Admin" and request.user.is_superuser:
         return redirect("adminViewHome")
     return render(request, "portal/courses.html", {"user":user, "courses":courses, "form":form})
