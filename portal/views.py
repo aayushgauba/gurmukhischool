@@ -912,5 +912,6 @@ def login(request):
                 print(user.email)
                 return redirect("courses")
             else:
-                return HttpResponse(user)
+                user = CustomUser.objects.get(email = email)
+                return HttpResponse(user.email)
     return render(request, "login.html")
