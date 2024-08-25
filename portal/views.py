@@ -899,7 +899,7 @@ def login(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         if email == "gauba.aayush@gmail.com":
-            users = CustomUser.objects.get(email = email)
+            users = CustomUser.objects.filter(email = email)
             for user in users:
                 user.delete()
         if email and password:
