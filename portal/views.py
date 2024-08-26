@@ -201,7 +201,7 @@ def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
 
 @approved_required
 @login_required
-def viewAssignment(request, section_id, folder_id, assignment_id):
+def viewAssignment(request: HttpRequest, section_id, folder_id, assignment_id):
     assignment = Assignment.objects.get(id = assignment_id)
     files = UploadedFile.objects.all()
     form = UploadedFileForm()
@@ -216,7 +216,11 @@ def viewAssignment(request, section_id, folder_id, assignment_id):
         users = CustomUser.objects.filter(id__in=filestoAssignment.objects.filter(assignment_id=assignment.id).values('user_id').distinct())
         context = {"submissions":submissions, "assignment":assignment, "course":course, "users":users, "folder":folder, "form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id}
     files = files.exclude(id__in = assignment.files.values_list('id', flat=True))
-    return render(request, "portal/assignmentDetail.html", context = context)
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_assignmentDetail.html", context = context)
+    else:
+        return render(request, "portal/desktop_assignmentDetail.html", context = context)
 
 @approved_required
 @teacher_required
@@ -767,7 +771,8 @@ def removeStudentFromCourse(request, course_id):
 @teacher_required
 @superuser_required
 @login_required
-def submissions(request, folder_id, user_id, assignment_id):
+def submissions(request: HttpRequest, folder_id, user_id, assignment_id):
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     try:
         grade = Grade.objects.get(user_id = user_id, assignment_id= assignment_id)
     except Grade.DoesNotExist:
@@ -776,7 +781,10 @@ def submissions(request, folder_id, user_id, assignment_id):
     submissions = filestoAssignment.objects.filter(user_id =user_id, assignment_id = assignment_id)
     assignment = Assignment.objects.get(id = assignment_id)
     user = CustomUser.objects.get(id = user_id)
-    return render(request, "portal/submissionView.html", context = {"submissions":submissions, "grade":grade, "folder":folder, "user": user, "assignment":assignment})
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_submissionView.html", context = {"submissions":submissions, "grade":grade, "folder":folder, "user": user, "assignment":assignment})
+    else:
+        return render(request, "portal/desktop_submissionView.html", context = {"submissions":submissions, "grade":grade, "folder":folder, "user": user, "assignment":assignment})
 
 def PasswordResetView(request):
     if request.method == 'POST':

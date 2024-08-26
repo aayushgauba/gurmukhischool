@@ -1,0 +1,239 @@
+{% load crispy_forms_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses | Sikh Study Circle Gurmukhi School</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f2f3f4;
+            color: #000000;
+            padding-bottom: 60px;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .header-custom {
+            background-color: #FFC107;
+            color: #000;
+            font-weight: 600;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-custom .navbar-toggler {
+            border: none;
+            color: #000;
+        }
+
+        .header-custom .navbar-brand {
+            font-size: 1.5rem;
+            color: #000;
+        }
+
+        .content {
+            padding: 70px 20px 20px; /* Adjusted padding for better spacing */
+            overflow-y: auto;
+        }
+
+        .course-card {
+            margin-bottom: 20px;
+        }
+
+        .course-card .card {
+            border: 1px solid #343a40;
+            border-radius: 10px;
+        }
+
+        .course-card .card-body {
+            background-color: #fffbe6;
+            color: #343a40;
+        }
+
+        .course-card .btn-primary {
+            background-color: #343a40 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .bottom-nav {
+            background-color: #343a40;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            height: 60px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .bottom-nav a {
+            color: #ffffff;
+            text-align: center;
+            font-size: 1rem; /* Adjust font size for better readability */
+            padding: 5px 0;
+        }
+
+        .bottom-nav a.active {
+            color: #FFC107;
+        }
+
+        .modal-header {
+            background-color: #FFC107;
+            color: #000;
+        }
+
+        .modal-footer .btn-primary {
+            background-color: #FFC107;
+            border: none;
+        }
+
+        .btn-primary:hover,
+        .btn-secondary-custom:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-secondary-custom {
+            background-color: #6c757d !important;
+            border: none;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .btn-secondary-custom:hover {
+            background-color: #5a6268 !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header for mobile app view -->
+    <header class="header-custom">
+        <a class="navbar-brand" href="#">
+            <span class="fs-4 logo">ੴ</span> {{ user.usertype }} Portal
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-list"></i>
+        </button>
+    </header>
+    <div class="content content-expanded">
+        <div class="card section-card">
+            <div class="card-header section-card-header d-flex justify-content-between align-items-center">
+                <div>
+                    {{ user.first_name }} {{ user.last_name }}
+                </div>
+                <div class="grade-display">Grade: {{ grade.grade }} %</div>
+    
+                <div class="btn-group">
+                    {%if user.is_superuser and user.usertype == "Teacher" %}
+
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignGradeModal">
+                        <i class="bi bi-bar-chart"></i> Assign Grade
+                    </button>
+                    {%endif%}
+                </div>
+            </div>
+            <div class="card-body section-card-body">
+                <table class="table table-responsive file-system-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if submissions %}
+                            {% for submission in submissions %}
+                                <tr class="file-row">
+                                    <td class="folder-level-1">
+                                        <a href="#" class="file"><i class="bi bi-file-earmark"></i> {{ submission.file }}</a>
+                                    </td>
+                                    <td>
+                                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewFileModal" data-file-url="{{ submission.file.url }}">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for viewing file -->
+    <div class="modal fade" id="viewFileModal" tabindex="-1" aria-labelledby="viewFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewFileModalLabel">View File</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="fileContent"></div>
+                </div>
+                <div class="modal-footer">
+                    <a id="downloadFileButton" href="#" class="btn btn-primary" download>Download</a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Assigning Grade -->
+    <div class="modal fade" id="assignGradeModal" tabindex="-1" aria-labelledby="assignGradeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignGradeModalLabel">Assign Grade</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="assignGradeForm" action="{% url 'assignGradeToAssignment' folder.id user.id assignment.id folder.Course_id %}" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="gradeInput" class="form-label">Grade (1-100)</label>
+                            <input type="number" class="form-control" id="gradeInput" name="grade" min="1" max="100" required>
+                        </div>
+                        <input type="hidden" id="submissionIdInput" name="submission_id">
+                        <button type="submit" class="btn btn-primary w-100">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <a href="{% url 'courses' %}" class="nav-link active"><i class="bi bi-book"></i><br>Courses</a>
+        {% if course.Syllabus %}
+        <a href="{% url 'view_syllabus' folder.Course_id %}" class="nav-link"><i class="bi bi-journal-text"></i><br>Syllabus</a>
+        {%endif%}
+        <a href="{% url 'attendance' folder.Course_id %}" class="nav-link"><i class="bi bi-calendar-check"></i><br>Attendance</a>
+        <a href="{%url 'grades' folder.Course_id %}" class="nav-link"><i class="bi bi-bar-chart-line"></i><br>Grades</a>
+        {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+        <a href="{% url 'students' folder.Course_id %}" class="nav-link"><i class="bi bi-people"></i><br>Students</a>
+        {%endif%}
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelector('.navbar-toggler').addEventListener('click', function () {
+            document.querySelector('#sidebarMenu').classList.toggle('show');
+        });
+    </script>
+</body>
+</html>
