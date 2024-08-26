@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from portal.models import CustomUser, Courses, Section, Folder, Grade, Announcement, Attendance, CarouselImage
 from django.contrib.auth.hashers import make_password, check_password
+from django.http import HttpRequest
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
@@ -26,23 +27,31 @@ from datetime import datetime
 
 @approved_required
 @login_required
-def course(request, course_id):
+def course(request: HttpRequest, course_id):
     user = request.user
     course = Courses.objects.get(id = course_id)
     if request.user.usertype == 'Teacher':
         sections = Section.objects.filter(Course_id = course.id).order_by("ONum")
     elif request.user.usertype == 'Student':
         sections = Section.objects.filter(Course_id = course.id, Status = True).order_by("ONum")
-    return render(request, "portal/course.html", {"course":course, "user":user, "sections":sections})
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_course.html", {"course":course, "user":user, "sections":sections})
+    else:   
+        return render(request, "portal/desktop_course.html", {"course":course, "user":user, "sections":sections})
 
 @approved_required
 @teacher_required
 @superuser_required
 @login_required
-def students(request, course_id):
+def students(request: HttpRequest, course_id):
     course = Courses.objects.get(id = course_id)
     students = course.People.all()
-    return render(request, "portal/students.html", {"students":students, "course":course})
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_students.html", {"students":students, "course":course})
+    else:
+        return render(request, "portal/desktop_students.html", {"students":students, "course":course})
 
 @approved_required
 @login_required
@@ -283,12 +292,16 @@ def uploadFile(request, section_id, folder_id):
 
 @approved_required
 @login_required
-def folder(request, section_id, folder_id):
+def folder(request: HttpRequest, section_id, folder_id):
     user = request.user
     form = UploadedFileForm()
     folder = Folder.objects.get(id = folder_id)
     course = Courses.objects.get(id = folder.Course_id)
-    return render(request, "portal/folderView.html", {"course":course, "user":user, "form":form, "folder":folder, "section_id":section_id})
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_folderView.html", {"course":course, "user":user, "form":form, "folder":folder, "section_id":section_id})
+    else:
+        return render(request, "portal/desktop_folderView.html", {"course":course, "user":user, "form":form, "folder":folder, "section_id":section_id})
 
 @approved_required
 @teacher_required
@@ -348,7 +361,7 @@ def view_syllabus(request, course_id):
 
 @approved_required
 @login_required
-def courses(request):
+def courses(request: HttpRequest):
     user = request.user
     form = SyllabusUploadForm()
     if request.user.usertype == "Teacher" and request.user.is_superuser:
@@ -357,7 +370,11 @@ def courses(request):
         courses = Courses.objects.all().order_by("id")
     elif request.user.usertype == "Admin" and request.user.is_superuser:
         return redirect("adminViewHome")
-    return render(request, "portal/courses.html", {"user":user, "courses":courses, "form":form})
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
+    if "mobile" in user_agent:
+        return render(request, 'portal/mobile_courses.html', {"user":user, "courses":courses, "form":form})
+    else:
+        return render(request, "portal/desktop_courses.html", {"user":user, "courses":courses, "form":form})
 
 @approved_required
 @teacher_required
@@ -379,7 +396,8 @@ def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_i
 
 @approved_required
 @login_required
-def grades(request, course_id):
+def grades(request: HttpRequest, course_id):
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     grades = Grade.objects.filter(course_id = course_id)
     if grades:
         if not request.user.is_superuser and request.user.usertype == "Student":
@@ -393,7 +411,10 @@ def grades(request, course_id):
                 final = final + grade.grade
             finals = final/grades.count()
             course = Courses.objects.get(id = course_id)
-            return render(request, "portal/grades.html", {"grades":gradeArray, "course":course, "final":finals})
+            if "mobile" in user_agent:
+                return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+            else:
+                return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals})
         elif request.user.is_superuser and request.user.usertype == "Teacher":
             grades = Grade.objects.filter(course_id = course_id)
             sections = Section.objects.filter(Course_id=course_id)
@@ -413,13 +434,20 @@ def grades(request, course_id):
                 final = final + average
             finals = final/assignments.count()
             course = Courses.objects.get(id = course_id)
-            return render(request, "portal/grades.html", {"grades":gradeArray, "course":course, "final":finals})
+            if "mobile" in user_agent:
+                return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+            else:
+                return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals})
     else:
         course = Courses.objects.get(id = course_id)
-        return render(request, "portal/grades.html", {"grades":[], "course":course, "final":0})
+        if "mobile" in user_agent:
+            return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+        else:
+            return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals})
 
 @approved_required
-def announcements(request):
+def announcements(request: HttpRequest):
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     if request.user.usertype == "Teacher" and request.user.is_superuser:
         announcements = Announcement.objects.all()
     elif request.user.usertype == "Student" and not request.user.is_superuser:
@@ -428,14 +456,16 @@ def announcements(request):
         announcements = Announcement.objects.filter(recipients__in=courses)
     else:
         announcements = Announcement.objects.none()  # Handle other user types if necessary
-
-    return render(request, "portal/announcements.html", {"announcements": announcements})
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_announcements.html", {"announcements": announcements})
+    else:
+        return render(request, "portal/desktop_announcements.html", {"announcements": announcements})
 
 @approved_required
 @teacher_required
 @superuser_required
 @login_required
-def mark_attendance(request, course_id, day, month, year):
+def mark_attendance(request: HttpRequest, course_id, day, month, year):
     if request.method == 'POST':
         selected_day = request.POST.get('day')
         selected_month = request.POST.get('month')
@@ -480,11 +510,16 @@ def mark_attendance(request, course_id, day, month, year):
             'year': year,
             'attendance_dict': attendanceArray
         }
-        return render(request, 'portal/attendanceAdd.html', context)
+        user_agent = request.META['HTTP_USER_AGENT'].lower()
+        if "mobile" in user_agent:
+            return render(request, 'portal/mobile_attendanceAdd.html', context)
+        else:
+            return render(request, 'portal/desktop_attendanceAdd.html', context)
 
 @approved_required
 @login_required
-def attendance(request, course_id, year=None, month=None):
+def attendance(request: HttpRequest, course_id, year=None, month=None):
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     course = Courses.objects.get(id = course_id)
     if not year or not month:
         # Default to the current year and month if none are provided
@@ -554,8 +589,11 @@ def attendance(request, course_id, year=None, month=None):
         'next_month': next_month,
         'weeks': weeks,
         'course':course,
-    }        
-    return render(request, 'portal/attendance.html', context)
+    }
+    if "mobile" in user_agent:        
+        return render(request, 'portal/mobile_attendance.html', context)
+    else:
+        return render(request, 'portal/desktop_attendance.html', context)
 
 
 @login_required
@@ -622,14 +660,18 @@ def signout(request):
     logout(request) 
     return redirect('login')
 
-def profile(request, course_id=None):
+def profile(request: HttpRequest, course_id=None):
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     if course_id:
         course = Courses.objects.get(id=course_id)
     else:
         course = None
     user = request.user
     form = ProfilePhotoForm()
-    return render(request, 'portal/profile.html', {'course': course, 'user': user, 'form': form})
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_profile.html", {'course': course, 'user': user, 'form': form})
+    else:
+        return render(request, "portal/desktop_profile.html", {'course': course, 'user': user, 'form': form})
 
 def send_announcement_emails(announcement):
     recipients = set()
@@ -655,7 +697,8 @@ def send_announcement_emails(announcement):
 @teacher_required
 @superuser_required
 @login_required
-def create_announcement(request):
+def create_announcement(request: HttpRequest):
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     if request.method == 'POST':
         print("Form submitted")
         form = AnnouncementForm(request.POST)
@@ -672,13 +715,17 @@ def create_announcement(request):
             print(form.errors)
     else:
         form = AnnouncementForm()
-    return render(request, 'portal/announcementCreate.html', {'form': form})
+    if "mobile" in user_agent:
+        return render(request, 'portal/mobile_announcementsCreate.html', {'form': form})
+    else:
+        return render(request, 'portal/desktop_announcementCreate.html', {'form': form})
 
 @approved_required
 @teacher_required
 @superuser_required
 @login_required
-def gradesforAssignment(request, folder_id, assignment_id):
+def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     gradeArray = []
     course_id = Folder.objects.get(id = folder_id).Course_id
     Course = Courses.objects.get(id = course_id)
@@ -699,8 +746,11 @@ def gradesforAssignment(request, folder_id, assignment_id):
                     grade.save()
                 except Grade.DoesNotExist:
                     savegrade = Grade.objects.create(assignment_id = assignment_id, course_id= course_id, user_id = people['id'], grade = grade_new)
-        return redirect("gradesforAssignment", folder_id, assignment_id)    
-    return render(request, "portal/gradeStudents.html", {"grades":gradeArray, "course":Course})
+        return redirect("gradesforAssignment", folder_id, assignment_id)
+    if "mobile" in user_agent:    
+        return render(request, "portal/mobile_gradeStudents.html", {"grades":gradeArray, "course":Course})
+    else:
+        return render(request, "portal/desktop_gradeStudents.html", {"grades":gradeArray, "course":Course})
 
 @approved_required
 @teacher_required
@@ -755,6 +805,8 @@ def upload_syllabus(request, course_id):
     course = Courses.objects.get(id=course_id)
     form = SyllabusUploadForm(request.POST, request.FILES, instance=course)
     if form.is_valid():
+        if course.Syllabus.path and os.path.exists(course.Syllabus.path):
+            os.remove(course.Syllabus.path)
         form.save()
         return redirect('courses')  
 
@@ -852,7 +904,7 @@ def sectionAdd(request, course_id):
 @teacher_required
 @superuser_required
 @login_required
-def addStudents(request, course_id):
+def addStudents(request: HttpRequest, course_id):
     course = Courses.objects.get(id=course_id)
     enrolled_students = course.People.all()
     all_students = CustomUser.objects.filter(usertype="Student").exclude(id__in=enrolled_students)
@@ -867,7 +919,11 @@ def addStudents(request, course_id):
             'course': course,
             'all_students': all_students
         }
-        return render(request, "portal/studentAdd.html", context)
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_studentAdd.html", context)
+    else:
+        return render(request, "portal/desktop_studentAdd.html", context)
 
 @login_required
 def stuMode(request):
