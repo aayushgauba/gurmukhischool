@@ -24,8 +24,6 @@ import threading
 import calendar
 from datetime import datetime
 
-
-
 @approved_required
 @login_required
 def course(request, course_id):
@@ -142,6 +140,8 @@ def delete_carousel_image(request):
     if request.method == 'POST':
         image_id = request.POST.get('image_id')
         image =  CarouselImage.objects.get(id=image_id)
+        if image.image.path and os.path.exists(image.image.path):
+            os.remove(image.image.path)
         image.delete()
         return redirect('carousel_management')
 
@@ -607,6 +607,8 @@ def adminContactView(request):
 def upload_profile_photo(request, course_id=None):
     form = ProfilePhotoForm(request.POST, request.FILES, instance=request.user)
     if form.is_valid():
+        if request.user.profile_photo.path and os.path.exists(request.user.profile_photo.path):
+            os.remove(request.user.profile_photo.path)
         form.save()
         if course_id:
             return redirect('profile', course_id=course_id)
