@@ -445,9 +445,9 @@ def grades(request: HttpRequest, course_id):
     else:
         course = Courses.objects.get(id = course_id)
         if "mobile" in user_agent:
-            return render(request, "portal/mobile_grades.html", {"course":course, "final":finals})
+            return render(request, "portal/mobile_grades.html", {"course":course})
         else:
-            return render(request, "portal/desktop_grades.html", {"course":course, "final":finals})
+            return render(request, "portal/desktop_grades.html", {"course":course})
 
 @approved_required
 def announcements(request: HttpRequest):
