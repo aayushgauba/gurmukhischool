@@ -445,9 +445,9 @@ def grades(request: HttpRequest, course_id):
     else:
         course = Courses.objects.get(id = course_id)
         if "mobile" in user_agent:
-            return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+            return render(request, "portal/mobile_grades.html", {"course":course, "final":finals})
         else:
-            return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+            return render(request, "portal/desktop_grades.html", {"course":course, "final":finals})
 
 @approved_required
 def announcements(request: HttpRequest):
@@ -892,7 +892,6 @@ def registration(request):
         except ValidationError as e:
             # Handle validation error by rendering the form again with an error message
             return render(request, "registration.html", {"error": str(e)})
-        
         if firstname and lastname and email and password and phone:
             CustomUser.objects.create(first_name=firstname, last_name=lastname, phone_number = phone, username = email, email=email, password= make_password(password))
             user = CustomUser.objects.get(first_name=firstname, last_name=lastname, username = email, phone_number = phone, email=email)
