@@ -149,17 +149,20 @@
                         {% if user.is_superuser and user.usertype == 'Teacher' %}
                         <div class="btn-group ms-2">
                             {% if section.Status %}
-                                <a href="{% url 'changeVisibility' section.id %}" class="btn btn-secondary-custom hide-form-btn"><i class="bi bi-eye-slash"></i> Hide</a>
+                                <a href="{% url 'changeVisibility' section.id %}" class="btn btn-secondary-custom hide-form-btn"><i class="bi bi-eye-slash"></i></a>
                             {% else %}
-                                <a href="{% url 'changeVisibility' section.id %}" class="btn btn-secondary-custom show-form-btn"><i class="bi bi-eye"></i> Show</a>
+                                <a href="{% url 'changeVisibility' section.id %}" class="btn btn-secondary-custom show-form-btn"><i class="bi bi-eye"></i></a>
                             {% endif %}
                             <button type="button" class="btn btn-primary create-folder-btn" data-bs-toggle="modal" data-bs-target="#createFolderModal" data-section-id="{{ section.id }}">
-                                <i class="bi bi-folder-plus"></i> Create Folder
+                                <i class="bi bi-folder-plus"></i>
                             </button>
                         </div>
                         <div class="section-buttons d-flex">
                             <a href="{% url 'moveSectionUp' section.id %}" class="btn btn-sm btn-outline-secondary me-1 up-btn"><i class="bi bi-arrow-up"></i></a>
                             <a href="{% url 'moveSectionDown' section.id %}" class="btn btn-sm btn-outline-secondary down-btn"><i class="bi bi-arrow-down"></i></a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteSyllabusModal{{ section.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
                         {% endif %}
                     </div>
@@ -214,6 +217,26 @@
                             </table>
                         </div>
                         {% endif %}
+                    </div>
+                </div>
+                <div class="modal fade" id="deleteSyllabusModal{{section.id}}" tabindex="-1" aria-labelledby="deleteSyllabusModal{{section.id}}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteSyllabusModal{{section.id}}">Delete Section</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete {{section.Title}}?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <form id="deleteCourseModal" action="{% url 'deleteSection' section.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}

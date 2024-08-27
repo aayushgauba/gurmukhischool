@@ -291,7 +291,9 @@
                         <div class="section-buttons">
                             <a href = "{% url 'moveSectionUp' section.id%}" class="btn btn-sm btn-outline-secondary up-btn"><i class="bi bi-arrow-up"></i></a>
                             <a href = "{% url 'moveSectionDown' section.id%}" class="btn btn-sm btn-outline-secondary down-btn"><i class="bi bi-arrow-down"></i></a>
-                        </div>
+                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteSyllabusModal{{ section.id }}">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>                        </div>
                         {%endif%}
                     </div>
                     <div class="card-body section-card-body">
@@ -348,7 +350,26 @@
                         {%endif%}
                     </div>
                 </div>
-
+                <div class="modal fade" id="deleteSyllabusModal{{section.id}}" tabindex="-1" aria-labelledby="deleteSyllabusModal{{section.id}}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteSyllabusModal{{section.id}}">Delete Section</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete {{section.Title}}?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <form id="deleteCourseModal" action="{% url 'deleteSection' section.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
             {% endif %}
         </div>

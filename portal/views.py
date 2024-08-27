@@ -646,6 +646,39 @@ def admit_user(request):
         user.save()
         return redirect('adminViewHome')
 
+
+@require_POST
+@teacher_required
+@login_required
+@approved_required
+def deleteCourse(request, course_id):
+    if request.method == 'POST':
+        course = Courses.objects.get(id = course_id)
+        sections = Section.objects.filter(Course_id = course_id)
+        for section in sections:
+            section.delete()
+        grades = Grade.objects.filter(course_id = course_id)
+        for grade in grades:
+            grade.delete()    
+        course.delete()
+        return redirect("courses")
+
+@require_POST
+@teacher_required
+@login_required
+@approved_required
+def deleteSection(request, section_id):
+    section = Section.objects.get(id=section_id)
+    course_id = section.Course_id
+    section_order_num = section.ONum
+    section.delete()
+    remaining_sections = Section.objects.filter(Course_id=course_id).order_by('ONum')
+    for idx, sec in enumerate(remaining_sections):
+        if sec.ONum > section_order_num:
+            sec.ONum = sec.ONum - 1
+            sec.save()
+    return redirect("course", course_id)
+
 @login_required
 @admin_required
 @approved_required
