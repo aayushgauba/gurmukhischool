@@ -613,6 +613,16 @@ def adminViewHome(request):
             user.is_superuser = True
         user.approved = True
         user.save()
+        current_site = get_current_site(request)
+        subject = 'Account approved'
+        message = render_to_string('email/accountApproved.html', {
+            'user': user,
+            'domain': current_site.domain,
+            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+            'token': default_token_generator.make_token(user),
+            'protocol': 'https' if request.is_secure() else 'http',
+        })
+        send_mail(subject, '', 'gurmukhischoolstl@outlook.com', [user.email],  html_message=message)
         return redirect("adminViewHome")
     users = CustomUser.objects.filter(approved = False)
     return render(request, "portal/adminHome.html", {"users":users})
