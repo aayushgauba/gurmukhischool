@@ -615,6 +615,8 @@ def adminViewHome(request):
         user.usertype = user_type
         if user.usertype == "Teacher" or "Admin":
             user.is_superuser = True
+        elif user.usertype == "Student":
+            user.is_superuser = False
         user.approved = True
         user.save()
         current_site = get_current_site(request)
