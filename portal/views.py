@@ -889,6 +889,10 @@ def registration(request):
         try:
             # Validate and format the phone number
             phone = validate_phone_number(phone)
+
+            if CustomUser.objects.filter(email=email).exists():
+                return redirect('login')
+            
         except ValidationError as e:
             # Handle validation error by rendering the form again with an error message
             return render(request, "registration.html", {"error": str(e)})
