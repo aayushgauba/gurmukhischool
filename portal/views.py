@@ -372,7 +372,7 @@ def courses(request: HttpRequest):
     if user.usertype == "Teacher":
         courses = Courses.objects.all().order_by("id")
     elif user.usertype == "Student":
-        courses = Courses.objects.all().order_by("id")
+        courses = Courses.objects.filter(People = request.user).order_by("id")
     elif user.usertype == "Admin" and user.is_superuser:
         return redirect("adminViewHome")
     else:
