@@ -368,17 +368,21 @@ def view_syllabus(request, course_id):
 def courses(request: HttpRequest):
     user = request.user
     form = SyllabusUploadForm()
-    if request.user.usertype == "Teacher" and request.user.is_superuser:
+    courses = None
+    if user.usertype == "Teacher":
         courses = Courses.objects.all().order_by("id")
-    elif request.user.usertype == "Student" and not request.user.is_superuser:
+    elif user.usertype == "Student":
         courses = Courses.objects.all().order_by("id")
-    elif request.user.usertype == "Admin" and request.user.is_superuser:
+    elif user.usertype == "Admin" and user.is_superuser:
         return redirect("adminViewHome")
-    user_agent = request.META['HTTP_USER_AGENT'].lower()
-    if "mobile" in user_agent:
-        return render(request, 'portal/mobile_courses.html', {"user":user, "courses":courses, "form":form})
     else:
-        return render(request, "portal/desktop_courses.html", {"user":user, "courses":courses, "form":form})
+        return render(request, "portal/unknown_usertype.html", {"user": user})
+    user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+    if "mobile" in user_agent:
+        return render(request, 'portal/mobile_courses.html', {"user": user, "courses": courses, "form": form})
+    else:
+        return render(request, "portal/desktop_courses.html", {"user": user, "courses": courses, "form": form})
+
 
 @approved_required
 @teacher_required
