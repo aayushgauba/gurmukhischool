@@ -11,7 +11,7 @@ def superuser_required(view_func):
         if not request.user.is_authenticated:
             return redirect('login')  # Redirect to login page
         if not request.user.is_superuser:
-            return HttpResponse('Not allowed', status=403)  # Return a 403 Forbidden response with custom message
+            return render("portal/notauthorized.html")  # Return a 403 Forbidden response with custom message
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
