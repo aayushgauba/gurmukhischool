@@ -22,9 +22,9 @@ def teacher_required(view_func):
     """
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect('login')  # Redirect to login page
+            return redirect('login')
         if not request.user.usertype == 'Teacher':
-            return HttpResponse('Not allowed', status=403)  # Return a 403 Forbidden response with custom message
+            return HttpResponse('Not allowed', status=403)
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
@@ -35,9 +35,9 @@ def admin_required(view_func):
     """
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return redirect('login')  # Redirect to login page
+            return redirect('login')
         if not request.user.usertype == 'Admin':
-            return HttpResponse('Not allowed', status=403)  # Return a 403 Forbidden response with custom message
+            return render("portal/notauthorized.html")
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
