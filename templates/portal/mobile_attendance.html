@@ -244,7 +244,7 @@
                 {% endfor %}
             </tbody>
             {% endif %}
-            {% if not request.user.is_superuser and request.user.usertype == "Student" %}
+            {% if request.user.usertype == "Student" %}
             <tbody>
                 {% for week in weeks %}
                     <tr>
