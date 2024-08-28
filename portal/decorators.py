@@ -46,6 +46,6 @@ def approved_required(view_func):
         if not request.user.is_authenticated:
             return redirect('login')
         if not request.user.approved:
-            return render("portal/notauthorized.html")
+            return render(request, "portal/notauthorized.html")
         return view_func(request, *args, **kwargs)
     return _wrapped_view
