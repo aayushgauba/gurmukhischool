@@ -61,5 +61,6 @@ urlpatterns = [
     path('carousel/photo/up/<int:image_id>', views.moveCarouselImageUp, name = "moveCarouselImageUp"),
     path('carousel/photo/down/<int:image_id>', views.moveCarouselImageDown, name = "moveCarouselImageDown"),
     path('delete_carousel_image/', views.delete_carousel_image, name='delete_carousel_image'),
+    path('admin/user/delete', views.delete_user, name='delete_user'),
     path('logout/', views.signout, name='logout'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

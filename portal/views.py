@@ -617,6 +617,7 @@ def adminViewHome(request):
             user.is_superuser = True
         elif user.usertype == "Student":
             user.is_superuser = False
+        user.is_active = True
         user.approved = True
         user.save()
         current_site = get_current_site(request)
@@ -639,6 +640,17 @@ def adminViewHome(request):
 def adminUsers(request):
     users = CustomUser.objects.filter(approved = True)
     return render(request, "portal/adminUsers.html", {"users":users})
+
+@require_POST
+@login_required
+@admin_required
+@approved_required
+def delete_user(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('user_id')
+        user = CustomUser.objects.get(id=user_id)
+        user.delete()
+        return redirect('adminUsers')
 
 @require_POST
 @login_required
