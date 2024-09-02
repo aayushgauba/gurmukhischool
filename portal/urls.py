@@ -12,6 +12,7 @@ urlpatterns = [
     path('admit/user/waitlist', views.admit_user, name='admit_user'),
     path('admin/carousel', views.carousel_management, name = 'carousel_management'),
     path('admin/users', views.adminUsers, name = 'adminUsers'),
+    path('admin/users/edit', views.changeUserInfo, name = 'changeUserInfo'),
     path('admin/contact', views.adminContactView, name = 'adminContactView'),
     path('courses/syllabus/add/<int:course_id>', views.upload_syllabus, name = 'upload_syllabus'),
     path('courses/syllabus/view/<int:course_id>', views.view_syllabus, name = 'view_syllabus'),

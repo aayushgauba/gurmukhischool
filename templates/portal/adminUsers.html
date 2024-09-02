@@ -289,7 +289,7 @@ Edit
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="editForm" method="post" action="">
+                    <form id="editForm" method="post" action="{% url 'changeUserInfo' %}">
                         {% csrf_token %}
                         <input type="hidden" name="user_id" id="userIdToEdit">
                         <div class="mb-3">
