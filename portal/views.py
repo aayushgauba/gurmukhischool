@@ -1003,14 +1003,6 @@ def addStudents(request: HttpRequest, course_id):
     else:
         return render(request, "portal/desktop_studentAdd.html", context)
 
-@login_required
-def stuMode(request):
-    user = request.user
-    change = CustomUser.objects.get(username = user.username)
-    change.usertype = "Teacher"
-    change.is_superuser = True
-    change.save()
-
 def account_activation_sent(request):
     return render(request, 'portal/invalidAccountActivation.html')
 
