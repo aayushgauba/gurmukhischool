@@ -343,6 +343,32 @@
         document.querySelector('.navbar-toggler').addEventListener('click', function () {
             document.querySelector('#sidebarMenu').classList.toggle('show');
         });
+        document.querySelectorAll('.create-folder-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        const sectionId = button.getAttribute('data-section-id');
+        const sectionIdInput = document.querySelector('#sectionIdInput');
+        sectionIdInput.value = sectionId;
+    });
+});
+
+        function toggleFolder(folderElement) {
+            const folderRow = folderElement.parentElement.parentElement;
+            let nextRow = folderRow.nextElementSibling;
+
+            while (nextRow && !nextRow.classList.contains('folder-row')) {
+                nextRow.classList.toggle('hidden');
+                nextRow = nextRow.nextElementSibling;
+            }
+        }
+
+
+        document.querySelectorAll('.create-folder-btn').forEach(button => {
+    button.addEventListener('click', () => {
+        const sectionId = button.getAttribute('data-section-id');
+        const sectionIdInput = document.querySelector('#sectionIdInput');
+        sectionIdInput.value = sectionId;
+    });
+});
     </script>
 </body>
 </html>
