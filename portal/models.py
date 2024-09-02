@@ -79,7 +79,7 @@ class Folder(models.Model):
     Assignments = models.ManyToManyField(Assignment, blank=True)
 
 class Section(models.Model):
-    Title = models.CharField(max_length=200, unique=True)
+    Title = models.CharField(max_length=200)
     Course_id = models.IntegerField()
     ONum = models.IntegerField()
     Status = models.BooleanField(default=True)
