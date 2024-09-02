@@ -48,7 +48,6 @@ urlpatterns = [
     path('students/add/<int:course_id>', views.addStudents, name='addStudents'),
     path('registration', views.registration, name='registration'),
     path('reset/<uidb64>/<token>/', views.reset, name='resetEmail'),
-    path('student', views.stuMode, name = 'student'),
     path('announcements', views.announcements, name = 'announcements'),
     path('announcement/create', views.create_announcement, name='create_announcement'),
     path('attendance/<int:course_id>', views.attendance, name='attendance'),
