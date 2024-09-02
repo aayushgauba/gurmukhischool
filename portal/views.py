@@ -366,7 +366,7 @@ def view_syllabus(request, course_id):
 def viewMobileContentUpload(request, file_id):
     file = UploadedFile.objects.get(id = file_id)
     response = HttpResponse(file.file, content_type='application/pdf')
-    response['Content-Disposition'] = 'inline; filename=' + course.Syllabus.name
+    response['Content-Disposition'] = 'inline; filename=' + file.file
     return response
 
 @approved_required
