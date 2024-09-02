@@ -162,7 +162,7 @@ body {
                         <tr class="file-row">
                             <td class="folder-level-1"><a href="#" class="file"><i class="bi bi-file-earmark"></i> {{file.file}}</a></td>
                             <td>
-                                <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewFileModal" data-file-url="{{ file.file.url }}">View</a>
+                                <a href="{% url 'viewMobileContentUpload' file.id %}" class="btn btn-primary">View</a>
                                 {% if user.is_superuser and user.usertype == 'Teacher' %}
                                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteFileModal{{file.id}}">Delete</button>
                                 {%endif%}

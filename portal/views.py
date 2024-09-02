@@ -362,6 +362,12 @@ def view_syllabus(request, course_id):
         return response
     else:
         return HttpResponse("No syllabus available.", content_type='text/plain')
+    
+def viewMobileContentUpload(request, file_id):
+    file = UploadedFile.objects.get(id = file_id)
+    response = HttpResponse(file.file, content_type='application/pdf')
+    response['Content-Disposition'] = 'inline; filename=' + course.Syllabus.name
+    return response
 
 @approved_required
 @login_required

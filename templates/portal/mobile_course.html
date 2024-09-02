@@ -192,7 +192,7 @@
                                     {% for file in folder.Files.all %}
                                     <tr class="file-row hidden">
                                         <td class="folder-level-1">
-                                            <a href="#" class="file">
+                                            <a href="{% url 'viewMobileContentUpload' file.id %}" class="file">
                                                 <i class="bi bi-file-earmark"></i> {{ file.file }}
                                             </a>
                                         </td>
