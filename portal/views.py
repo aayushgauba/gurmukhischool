@@ -1006,6 +1006,9 @@ def addStudents(request: HttpRequest, course_id):
 def account_activation_sent(request):
     return render(request, 'portal/invalidAccountActivation.html')
 
+@login_required
+@admin_required
+@approved_required
 def changeUserInfo(request):
     user_id = request.POST.get("user_id")
     user = CustomUser.objects.get(id = user_id)
