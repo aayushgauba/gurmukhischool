@@ -635,7 +635,7 @@ def adminViewHome(request):
             'token': default_token_generator.make_token(user),
             'protocol': 'https' if request.is_secure() else 'http',
         })
-        send_mail(subject, '', 'gurmukhischoolstl@outlook.com', [user.email],  html_message=message)
+        send_mail(subject, '', 'support@sscgurmukhischoolstl.org', [user.email],  html_message=message)
         return redirect("adminViewHome")
     users = CustomUser.objects.filter(approved = False)
     return render(request, "portal/adminHome.html", {"users":users})
@@ -756,7 +756,7 @@ def send_announcement_emails(announcement):
                     send_mail(
                         subject=f'New Announcement: {announcement.title}',
                         message=announcement.content,
-                        from_email='gurmukhischoolstl@outlook.com',
+                        from_email='support@sscgurmukhischoolstl.org',
                         recipient_list=[student.email],
                         fail_silently=False,
                     )
@@ -867,7 +867,7 @@ def PasswordResetView(request):
                 'token': default_token_generator.make_token(user),
                 'protocol': 'https' if request.is_secure() else 'http',
             })
-            send_mail(subject, '', 'gurmukhischoolstl@outlook.com', [user.email],  html_message=message)
+            send_mail(subject, '', 'support@sscgurmukhischoolstl.org', [user.email],  html_message=message)
             return redirect('login')
     return render(request, 'portal/passwordResetInitial.html')
 
@@ -932,7 +932,7 @@ def registration(request):
                 'token': default_token_generator.make_token(user),
                 'protocol': 'https' if request.is_secure() else 'http',
             })
-            send_mail(subject, '', 'gurmukhischoolstl@outlook.com', [user.email],  html_message=message)
+            send_mail(subject, '', 'support@sscgurmukhischoolstl.org', [user.email],  html_message=message)
             return redirect('login')
     return render(request,"registration.html")
 
