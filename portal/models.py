@@ -4,7 +4,6 @@ from django.db import models
 from tinymce.models import HTMLField
 
 class CustomUser(AbstractUser):
-
     WEB_MANAGER = 'webmanager'
     ADMIN = 'admin'
     TEACHER = 'teacher'
@@ -21,7 +20,7 @@ class CustomUser(AbstractUser):
 
     profile_photo = models.FileField(upload_to='profile_photos/', blank=True, null=True)
     usertype = models.CharField(max_length=20, choices=USER_TYPES, blank = True)
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True, unique = False)
     birth_date = models.DateField(blank=True, null=True)
     approved = models.BooleanField(blank=False, default=False)
 
