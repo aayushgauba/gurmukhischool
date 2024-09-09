@@ -627,6 +627,7 @@ def adminViewHome(request):
         user.approved = True
         user.save()
         current_site = get_current_site(request)
+        plain_text_message = f"Hello {user.username}, your account has been approved."
         subject = 'Account approved'
         message = render_to_string('email/accountApproved.html', {
             'user': user,
@@ -635,7 +636,7 @@ def adminViewHome(request):
             'token': default_token_generator.make_token(user),
             'protocol': 'https' if request.is_secure() else 'http',
         })
-        send_mail(subject, '', 'support@sscgurmukhischoolstl.org', [user.email],  html_message=message)
+        send_mail(subject, plain_text_message, 'support@sscgurmukhischoolstl.org', [user.email],  html_message=message)
         return redirect("adminViewHome")
     users = CustomUser.objects.filter(approved = False)
     return render(request, "portal/adminHome.html", {"users":users})
