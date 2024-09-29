@@ -6,65 +6,92 @@
   <title>Contact | Sikh Study Circle Gurmukhi School</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">  <style>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
     body {
       font-family: 'Mukta', sans-serif;
-      background-color: #f8f9fa;
+      background-color: #f4f4f4;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
     .content {
       flex: 1;
+      padding-top: 80px;
     }
     .navbar-custom {
-      background-color: #FFC107; /* Yellow color */
+      background-color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
     .navbar-custom .navbar-brand,
     .navbar-custom .nav-link {
-      color: #000; /* Black color for text */
+      color: #333;
       font-weight: 600;
+      transition: color 0.3s ease;
     }
     .navbar-custom .nav-link:hover {
-      color: #333; /* Darker color on hover */
+      color: #FFC107;
     }
     .navbar-custom .logo {
-      font-size: 1.5rem; /* Adjust size as needed */
+      font-size: 1.5rem;
       font-weight: 600;
-      color: #000; /* Black color for logo */
-      margin-right: 10px; /* Space between logo and text */
+      color: #FFC107;
+      margin-right: 10px;
     }
     .footer-custom {
-      background-color: #343a40; /* Dark color for footer */
-      color: #fff; /* White text */
+      background-color: #333;
+      color: #fff;
       padding: 20px 0;
-      margin-top: auto; /* Push footer to bottom */
     }
     .footer-custom a {
-      color: #FFC107; /* Yellow color for links */
+      color: #FFC107;
+      transition: color 0.3s ease;
     }
     .footer-custom a:hover {
-      color: #e0a800; /* Darker yellow on hover */
+      color: #e0a800;
+      text-decoration: none;
     }
     .btn-primary {
-      background-color: #FFC107; /* Yellow color */
-      border-color: #FFC107; /* Yellow color for border */
+      background-color: #FFC107;
+      border-color: #FFC107;
+      color: #333;
+      transition: all 0.3s ease;
     }
     .btn-primary:hover {
-      background-color: #e0a800; /* Darker yellow on hover */
-      border-color: #e0a800; /* Darker yellow for border on hover */
+      background-color: #e0a800;
+      border-color: #e0a800;
+      color: #fff;
     }
     .card-title {
-      font-size: 1.5rem; /* Increased size for card titles */
+      font-size: 1.5rem;
+      color: #333;
     }
     .form-container {
       background-color: #fff;
-      padding: 20px;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    .form-control {
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e0e0e0;
+      padding: 12px;
+      transition: all 0.3s ease;
+    }
+    .form-control:focus {
+      border-color: #FFC107;
+      box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
     }
     #messageSent {
       display: none;
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
   </style>
 </head>
@@ -75,8 +102,8 @@
   </div>
 
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-custom">
-    <div class="container-fluid">
+  <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+    <div class="container">
       <a class="navbar-brand" href="#">
         <span class="logo">ੴ</span> Sikh Study Circle Gurmukhi School
       </a>
@@ -86,7 +113,7 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="{% url 'index' %}">Home</a>
+            <a class="nav-link" href="{% url 'index' %}">Home</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'about' %}">About Us</a>
@@ -95,7 +122,7 @@
             <a class="nav-link" href="{% url 'registration' %}">Registration</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'contact' %}">Contact</a>
+            <a class="nav-link active" aria-current="page" href="{% url 'contact' %}">Contact</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
@@ -106,33 +133,36 @@
   </nav>
 
   <!-- Main Content -->
-  <div class="container mt-4 flex-grow-1">
-    <div class="row justify-content-center">
-      <div class="col-md-8">
-        <div class="form-container">
-          <h5 class="card-title">Contact Us</h5>
-          <form id="contactForm" method="post">
-            {%csrf_token%}
-            <div class="mb-3">
-              <label for="name" class="form-label">Name</label>
-              <input type="text" class="form-control" id="name" name = "name" required>
-            </div>
-            <div class="mb-3">
-              <label for="email" class="form-label">Email</label>
-              <input type="email" class="form-control" id="email" name = "email" required>
-            </div>
-            <div class="mb-3">
-              <label for="message" class="form-label">Message</label>
-              <textarea class="form-control" id="message" name = "message" rows="5" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary">Send Message</button>
-          </form>
+  <div class="content">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <div class="form-container">
+            <h2 class="card-title text-center mb-4">Contact Us</h2>
+            <form id="contactForm" method="post">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+              </div>
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+              </div>
+              <div class="mb-3">
+                <label for="message" class="form-label">Message</label>
+                <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+              </div>
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-<!-- Footer -->
   <!-- Footer -->
   <footer class="footer-custom mt-auto">
     <div class="container">
@@ -177,9 +207,8 @@
       setTimeout(() => {
         messageSent.style.display = 'none'; // Hide the success message after 3 seconds
       }, 3000);
-      document.getElementById("contactForm").submit()
+      this.submit(); // Submit the form
     });
-    
   </script>
 </body>
 </html>

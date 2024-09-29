@@ -13,7 +13,7 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      background-color: #f8f9fa;
+      background-color: #f4f4f4;
     }
     .content {
       flex: 1;
@@ -23,40 +23,45 @@
       padding: 20px;
     }
     .navbar-custom {
-      background-color: #FFC107;
+      background-color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
     .navbar-custom .navbar-brand,
     .navbar-custom .nav-link {
-      color: #000;
+      color: #333;
       font-weight: 600;
+      transition: color 0.3s ease;
     }
     .navbar-custom .nav-link:hover {
-      color: #333;
+      color: #FFC107;
     }
     .navbar-custom .logo {
       font-size: 1.5rem;
       font-weight: 600;
-      color: #000;
+      color: #FFC107;
       margin-right: 10px;
     }
     .footer-custom {
-      background-color: #343a40;
+      background-color: #333;
       color: #fff;
       padding: 20px 0;
     }
     .footer-custom a {
       color: #FFC107;
+      transition: color 0.3s ease;
     }
     .footer-custom a:hover {
       color: #e0a800;
+      text-decoration: none;
     }
     .login-container {
       max-width: 400px;
       width: 100%;
       background-color: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
     }
     .form-group label {
       font-weight: bold;
@@ -64,10 +69,13 @@
     .btn-primary {
       background-color: #FFC107;
       border-color: #FFC107;
+      color: #333;
+      transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     .btn-primary:hover {
       background-color: #e0a800;
       border-color: #e0a800;
+      color: #333;
     }
     .form-control:focus {
       border-color: #FFC107;
@@ -82,8 +90,8 @@
 </head>
 <body>
   <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-custom">
-    <div class="container-fluid">
+  <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+    <div class="container">
       <a class="navbar-brand" href="#">
         <span class="logo">ੴ</span> Sikh Study Circle Gurmukhi School
       </a>
@@ -93,7 +101,7 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
           <li class="nav-item">
-            <a class="nav-link" aria-current="page" href="{% url 'index' %}">Home</a>
+            <a class="nav-link" href="{% url 'index' %}">Home</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{% url 'about' %}">About Us</a>
@@ -102,9 +110,10 @@
             <a class="nav-link" href="{% url 'registration' %}">Registration</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'contact' %}">Contact</a></li>
+            <a class="nav-link" href="{% url 'contact' %}">Contact</a>
+          </li>
           <li class="nav-item">
-            <a class="nav-link active" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <a class="nav-link active" aria-current="page" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
           </li>
         </ul>
       </div>
@@ -112,9 +121,9 @@
   </nav>
 
   <!-- Content -->
-  <div class="content">
+  <div class="content" style="margin-top: 80px;">
     <div class="login-container">
-      <h2 class="text-center">Login</h2>
+      <h2 class="text-center mb-4">Login</h2>
       <form method="post" action="{% url 'login' %}">
         {% csrf_token %}
         <div class="mb-3">
@@ -127,7 +136,7 @@
         </div>
         <button type="submit" class="btn btn-primary w-100">Login</button>
       </form>
-      <div class="additional-options">
+      <div class="additional-options mt-3">
         <a href="{% url 'reset' %}">Forgot Password?</a>
         <a href="{% url 'registration' %}">Register</a>
       </div>
@@ -148,7 +157,7 @@
           </p>
         </div>
         <div class="col-md-4">
-          <!-- Removed "Follow Us" section -->
+          <!-- Placeholder for potential future content -->
         </div>
         <div class="col-md-4">
           <h5>Useful Links</h5>
@@ -171,4 +180,3 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
