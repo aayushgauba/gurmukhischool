@@ -814,6 +814,8 @@ def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
             if grade_new is not None:
                 try:
                     grade = Grade.objects.get(assignment_id = assignment_id, course_id= course_id, user_id = people['id'])
+                    if grade is None:
+                        continue
                     grade.grade = grade_new
                     grade.save()
                 except Grade.DoesNotExist:
