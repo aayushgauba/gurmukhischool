@@ -458,7 +458,7 @@ def grades(request: HttpRequest, course_id):
             return render(request, "portal/mobile_grades.html", {"course":course})
         else:
             return render(request, "portal/desktop_grades.html", {"course":course})
-    return HttpResponse(request.user.usertype)
+    return HttpResponse(grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id))
 
 @approved_required
 def announcements(request: HttpRequest):
