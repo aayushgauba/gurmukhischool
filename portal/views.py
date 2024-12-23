@@ -414,7 +414,7 @@ def grades(request: HttpRequest, course_id):
     user_agent = request.META['HTTP_USER_AGENT'].lower()
     grades = Grade.objects.filter(course_id = course_id)
     if grades:
-        if request.user.usertype == "Student" and not request.user.is_superuser:
+        if request.user.usertype == "Student":
             grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id)
             gradeArray = []
             final = 0
