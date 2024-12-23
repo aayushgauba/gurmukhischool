@@ -176,7 +176,7 @@
     </header>
 
     <div class="content content-expanded">
-        {% if not request.user.is_superuser and request.user.usertype == "Student" %}
+        {% if request.user.usertype == "Student" %}
             {% if grades %}
                 <div class="table-header">Grades</div>
                 <div class="table-responsive">
