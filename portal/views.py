@@ -810,11 +810,13 @@ def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
         gradeArray.append(dict)
     if request.method == "POST":
         for people in gradeArray:
-            grade_new = float(request.POST.get(str("grade_"+str(people['id']))))
+            grade_new = request.POST.get(str("grade_"+str(people['id'])))
+            if grade_new == 'None':
+                grade_new = ""
             if grade_new:
                 try:
                     grade = Grade.objects.get(assignment_id = assignment_id, course_id= course_id, user_id = people['id'])
-                    grade.grade = grade_new
+                    grade.grade = float(grade_new)
                     grade.save()
                 except Grade.DoesNotExist:
                     savegrade = Grade.objects.create(assignment_id = assignment_id, course_id= course_id, user_id = people['id'], grade = grade_new)
