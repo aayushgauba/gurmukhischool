@@ -414,7 +414,7 @@ def grades(request: HttpRequest, course_id):
     user_agent = request.META['HTTP_USER_AGENT'].lower()
     grades = Grade.objects.filter(course_id = course_id)
     if grades:
-        if not request.user.is_superuser and request.user.usertype == "Student":
+        if request.user.usertype == "Student":
             grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id)
             gradeArray = []
             final = 0
@@ -458,6 +458,7 @@ def grades(request: HttpRequest, course_id):
             return render(request, "portal/mobile_grades.html", {"course":course})
         else:
             return render(request, "portal/desktop_grades.html", {"course":course})
+    return HttpResponse(request.user.usertype)
 
 @approved_required
 def announcements(request: HttpRequest):
