@@ -480,55 +480,75 @@ def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_i
 
 @approved_required
 @login_required
-def grades(request: HttpRequest, course_id):
+def grades(request: HttpRequest, course_id = None):
     user_agent = request.META['HTTP_USER_AGENT'].lower()
-    grades = Grade.objects.filter(course_id = course_id)
-    if grades:
-        if request.user.usertype == "Student":
-            grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id)
-            gradeArray = []
-            final = 0
-            print(grades.count())
-            for grade in grades:
-                dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":grade.grade}
-                gradeArray.append(dict)
-                final = final + grade.grade
-            finals = final/grades.count()
-            course = Courses.objects.get(id = course_id)
-            if "mobile" in user_agent:
-                return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
-            else:
-                return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals})
-        elif request.user.is_superuser and request.user.usertype == "Teacher":
-            grades = Grade.objects.filter(course_id = course_id)
-            sections = Section.objects.filter(Course_id=course_id)
-            folders = Folder.objects.filter(section__in=sections.values_list('id', flat=True))
-            assignments = Assignment.objects.filter(folder__in=folders.values_list('id', flat=True)).distinct()        
-            gradeArray = []
-            final = 0
-            print(grades.count())
-            for assignment in assignments:
-                grades = Grade.objects.filter(assignment_id = assignment.id)
-                average = 0
+    if course_id is not None:
+        grades = Grade.objects.filter(course_id = course_id)
+        if grades:
+            if request.user.usertype == "Student":
+                grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id)
+                gradeArray = []
+                final = 0
+                print(grades.count())
                 for grade in grades:
-                    average = average + grade.grade
-                average = average / grades.count()
-                dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":average}
-                gradeArray.append(dict)
-                final = final + average
-            finals = final/assignments.count()
+                    dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":grade.grade}
+                    gradeArray.append(dict)
+                    final = final + grade.grade
+                finals = final/grades.count()
+                course = Courses.objects.get(id = course_id)
+                if "mobile" in user_agent:
+                    return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+                else:
+                    return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+            elif request.user.is_superuser and request.user.usertype == "Teacher":
+                grades = Grade.objects.filter(course_id = course_id)
+                sections = Section.objects.filter(Course_id=course_id)
+                folders = Folder.objects.filter(section__in=sections.values_list('id', flat=True))
+                assignments = Assignment.objects.filter(folder__in=folders.values_list('id', flat=True)).distinct()        
+                gradeArray = []
+                final = 0
+                print(grades.count())
+                for assignment in assignments:
+                    grades = Grade.objects.filter(assignment_id = assignment.id)
+                    average = 0
+                    for grade in grades:
+                        average = average + grade.grade
+                    average = average / grades.count()
+                    dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":average}
+                    gradeArray.append(dict)
+                    final = final + average
+                finals = final/assignments.count()
+                course = Courses.objects.get(id = course_id)
+                if "mobile" in user_agent:
+                    return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+                else:
+                    return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+        else:
             course = Courses.objects.get(id = course_id)
             if "mobile" in user_agent:
-                return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+                return render(request, "portal/mobile_grades.html", {"course":course})
             else:
-                return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals})
+                return render(request, "portal/desktop_grades.html", {"course":course})
+        return HttpResponse(grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id))
     else:
-        course = Courses.objects.get(id = course_id)
-        if "mobile" in user_agent:
-            return render(request, "portal/mobile_grades.html", {"course":course})
-        else:
-            return render(request, "portal/desktop_grades.html", {"course":course})
-    return HttpResponse(grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id))
+        if request.user.is_superuser and request.user.usertype == "Teacher":
+            courses = Courses.objects.all()
+            averageArray = []
+            for course in courses:
+                grades = Grade.objects.filter(course_id = course.id)
+                if grades:
+                    averageGrade = float(0)
+                    for grade in grades:
+                        averageGrade += grade
+                    averageGrade = float(averageGrade / float(len(grades)))
+                    dict = {'id':course_id, 'grade':averageGrade}
+                else:
+                    dict = {'id':course_id, 'grade':None}
+                averageArray.append(dict)
+                if "mobile" in user_agent:
+                    return render(request, "portal/mobile_grades.html", {'grades':averageArray})
+                else:
+                    return render(request, "portal/desktop_grades.html", {'grades':averageArray})
 
 @approved_required
 def announcements(request: HttpRequest):

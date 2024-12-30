@@ -286,6 +286,7 @@
                         <i class="bi bi-book"></i> Courses
                     </a>
                 </li>
+                {% if course %}
                 {% if course.Syllabus %}
                 <li class="nav-item">
                     <a href="{% url 'view_syllabus' course.id %}" class="nav-link" target="_blank">
@@ -310,6 +311,26 @@
                         <i class="bi bi-people"></i> Students
                     </a>
                 </li>
+                {%endif%}
+                {%else%}
+                <li>
+                    <a href="{% url 'attendance' %}" class="nav-link">
+                        <i class="bi bi-check2-square"></i> Attendance
+                    </a>
+                </li>
+                <li>
+                    <a href="{%url 'grades' %}" class="nav-link active" aria-current="page">
+                        <i class="bi bi-bar-chart"></i> Grades
+                    </a>
+                </li>
+
+                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+                <li>
+                    <a href="{% url 'students' %}" class="nav-link">
+                        <i class="bi bi-people"></i> Students
+                    </a>
+                </li>
+                {%endif%}
                 {%endif%}
             </ul>
             <hr>

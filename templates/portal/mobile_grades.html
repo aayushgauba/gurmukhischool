@@ -238,14 +238,22 @@
         <!-- Bottom Navigation Bar -->
         <nav class="bottom-nav">
             <a href="{% url 'courses' %}" class="nav-link"><i class="bi bi-book"></i><br>Courses</a>
-            {% if course.Syllabus %}
-            <a href="{% url 'view_syllabus' course.id %}" class="nav-link"><i class="bi bi-journal-text"></i><br>Syllabus</a>
-            {%endif%}
-            <a href="{% url 'attendance' course.id %}" class="nav-link"><i class="bi bi-calendar-check"></i><br>Attendance</a>
-            <a href="{%url 'grades' course.id %}" class="nav-link active"><i class="bi bi-bar-chart-line"></i><br>Grades</a>
-            {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
-            <a href="{% url 'students' course.id %}" class="nav-link"><i class="bi bi-people"></i><br>Students</a>
-            {%endif%}
+            {%if course%}
+                {% if course.Syllabus %}
+                <a href="{% url 'view_syllabus' course.id %}" class="nav-link"><i class="bi bi-journal-text"></i><br>Syllabus</a>
+                {%endif%}
+                <a href="{% url 'attendance' course.id %}" class="nav-link"><i class="bi bi-calendar-check"></i><br>Attendance</a>
+                <a href="{%url 'grades' course.id %}" class="nav-link active"><i class="bi bi-bar-chart-line"></i><br>Grades</a>
+                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+                <a href="{% url 'students' course.id %}" class="nav-link"><i class="bi bi-people"></i><br>Students</a>
+                {%endif%}
+            {%else%}
+                <a href="{% url 'attendance' course.id %}" class="nav-link"><i class="bi bi-calendar-check"></i><br>Attendance</a>
+                <a href="{%url 'grades' %}" class="nav-link active"><i class="bi bi-bar-chart-line"></i><br>Grades</a>
+                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+                <a href="{% url 'students' course.id %}" class="nav-link"><i class="bi bi-people"></i><br>Students</a>
+                {%endif%}
+            {%endif%}    
         </nav>
     
 

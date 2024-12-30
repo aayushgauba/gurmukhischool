@@ -48,6 +48,7 @@ urlpatterns = [
     path('file/delete/<int:pk>/<int:section_id>/<int:folder_id>', views.delete_file, name='delete_file'),
     path('login', views.login, name='login'),
     path('grades/<int:course_id>', views.grades, name='grades'),
+    path('grades', views.grades, name='grades'),
     path('students/add/<int:course_id>', views.addStudents, name='addStudents'),
     path('registration', views.registration, name='registration'),
     path('reset/<uidb64>/<token>/', views.reset, name='resetEmail'),
