@@ -189,7 +189,7 @@
     <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <span class="fs-4 logo">ੴ</span> Carousel Manager
+                <span class="fs-4 logo">ੴ</span> <b>Carousel Manager</b>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
@@ -243,7 +243,8 @@
         </div>
 
         <div class="content">
-            <h2 class="mb-4">Carousel Manager</h2>
+            <h1 class="mb-4">Carousel Manager</h1>
+            <h2 class="mb-4">Gurmukhi School</h2>
             <!-- Add Button to trigger modal -->
             <button class="btn btn-add mb-3" data-bs-toggle="modal" data-bs-target="#addContentModal">
                 <i class="bi bi-plus-lg"></i> Add New Content
@@ -276,6 +277,40 @@
                     </tbody>
                 </table>
             </div>
+            <br>
+            <h2 class="mb-4">Gurmukhi Website</h2>
+            <!-- Add Button to trigger modal -->
+            <button class="btn btn-add mb-3" data-bs-toggle="modal" data-bs-target="#addMainContentModal">
+                <i class="bi bi-plus-lg"></i> Add New Content
+            </button>
+            <div class="table-responsive">
+                <table class="table-carousel">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="carouselTableBody">
+                        {%for image in mainImages%}
+                        <tr>
+                            <td><img src="{{image.image.url}}" alt="Image 1" style="width: 100px; height: auto;"></td>
+                            <td>{{image.title}}</td>
+                            <td>{{image.description}}</td>
+                            <td>
+                                {%if image.order > 0 %}
+                                <a class="btn btn-action" href = "{% url 'moveMainCarouselImageUp' image.id %}"><i class="bi bi-arrow-up"></i></a>
+                                {%endif%}
+                                <a class="btn btn-action"href = "{% url 'moveMainCarouselImageDown' image.id %}" ><i class="bi bi-arrow-down"></i></a>
+                                <button class="btn btn-action" data-bs-toggle="modal" data-bs-target="#deleteMainModal" data-main-image-id="{{ image.id }}" data-main-image-title="{{ image.title }}"><i class="bi bi-trash"></i></button>
+                            </td>
+                        </tr>
+                        {%endfor%}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -288,9 +323,26 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="addContentForm" method="post" action="{% url 'carousel_management' %}" enctype="multipart/form-data">
+                    <form id="addContentForm" method="post" action="{% url 'gurmukhiSchoolImageUpload' %}" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ form|crispy }}
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="addMainContentModal" tabindex="-1" aria-labelledby="addMainContentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addMainContentModalLabel">Add New Carousel Content</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addMainContentForm" method="post" action="{% url 'mainCarouselImageUpload' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ mainform|crispy }}
                         <button type="submit" class="btn btn-primary">Submit</button>
                     </form>
                 </div>
@@ -318,6 +370,27 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="deleteMainModal" tabindex="-1" aria-labelledby="deleteMainModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteMainModalLabel">Delete Carousel Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="deleteMainImageTitle"></strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <form id="deleteForm" method="post" action="{% url 'delete_main_carousel_image' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="main_image_id" id="deleteMainImageId">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <!-- Bootstrap JS and dependencies -->
@@ -325,6 +398,8 @@
     <script>
         // Script to set image ID and title in delete modal
         const deleteModal = document.getElementById('deleteModal');
+        const deleteMainModal = document.getElementById('deleteMainModal');
+
         deleteModal.addEventListener('show.bs.modal', function (event) {
             const button = event.relatedTarget;
             const imageId = button.getAttribute('data-image-id');
@@ -336,6 +411,16 @@
             modalTitle.textContent = imageTitle;
             deleteImageIdInput.value = imageId;
         });
+        deleteMainModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const mainImageId = button.getAttribute('data-main-image-id');
+    const mainImageTitle = button.getAttribute('data-main-image-title');
+
+    const mainModalTitle = deleteMainModal.querySelector('#deleteMainImageTitle');
+    const deleteMainImageIdInput = deleteMainModal.querySelector('#deleteMainImageId');
+    mainModalTitle.textContent = mainImageTitle;
+    deleteMainImageIdInput.value = mainImageId;
+});
     </script>
 </body>
 </html>

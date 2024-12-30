@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About Us - Sikh Study Circle of St. Louis (Gurdwara Sahib)</title>
+  <title>Sikh Study Circle of St. Louis (Gurdwara Sahib)</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
@@ -15,7 +15,6 @@
       flex-direction: column;
       min-height: 100vh;
       background-color: #f4f4f4;
-      padding-top: 76px;
     }
     .content {
       flex: 1;
@@ -44,7 +43,6 @@
       background-color: #333;
       color: #fff;
       padding: 20px 0;
-      margin-top: 40px;
     }
     .footer-custom a {
       color: #FFC107;
@@ -54,75 +52,86 @@
       color: #e0a800;
       text-decoration: none;
     }
+    .ios-slider {
+      position: relative;
+      overflow: hidden;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      margin: 20px auto;
+      max-width: 90%;
+    }
+    .ios-slider-inner {
+      display: flex;
+      transition: transform 0.5s ease;
+    }
+    .ios-slide {
+      flex: 0 0 100%;
+      position: relative;
+    }
+    .ios-slide img {
+      width: 100%;
+      height: 500px;
+      object-fit: cover;
+    }
+    .ios-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 20px;
+      transform: translateY(100%);
+      transition: transform 0.5s ease;
+    }
     .navbar-logo {
       height: 50px;
       width: auto;
       margin-right: 10px;
     }
+    
     .navbar-custom .navbar-brand {
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    .form-container {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      height: 100%;
+    .ios-slide:hover .ios-caption {
+      transform: translateY(0);
     }
-    .form-container .form-label {
+    .ios-caption h5 {
+      margin: 0;
+      font-size: 1.2rem;
       font-weight: 600;
-      margin-bottom: 8px;
+      color: #333;
     }
-    .form-container .form-control {
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #ddd;
+    .ios-caption p {
+      margin: 10px 0 0;
+      font-size: 1rem;
+      color: #666;
     }
-    .form-container .btn-primary {
-      padding: 12px 30px;
-      font-weight: 600;
+    .ios-slider-nav {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
     }
-    .hours-section {
-      background-color: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      height: 100%;
+    .ios-slider-nav-item {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: background 0.3s ease;
     }
-    .hours-table {
-      width: 100%;
-      margin-bottom: 0;
-    }
-    .hours-table td {
-      padding: 12px;
-      border-bottom: 1px solid #ddd;
-    }
-    .hours-table tr:last-child td {
-      border-bottom: none;
-    }
-    .hours-table .current-day {
-      background-color: #FFF3CD;
-      font-weight: 600;
-    }
-    /* Added responsive margins */
-    .content-section {
-      margin-top: 40px;
-      margin-bottom: 40px;
-    }
-    /* Media query for mobile responsiveness */
-    @media (max-width: 768px) {
-      .content-section > div {
-        margin-bottom: 20px;
-      }
-      .content-section > div:last-child {
-        margin-bottom: 0;
-      }
+    .ios-slider-nav-item.active {
+      background: #fff;
     }
   </style>
 </head>
 <body>
+  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
     <div class="container">
       <a class="navbar-brand" href="#">
@@ -151,75 +160,36 @@
     </div>
   </nav>
 
-  <div class="content">
-    <div class="container">
-      <div class="row content-section">
-        <!-- Hours Section -->
-        <div class="col-md-6">
-          <div class="hours-section">
-            <h4 class="text-center mb-4">Hours of Operation</h4>
-            <table class="hours-table">
-              <tr id="monday">
-                <td><strong>Monday</strong></td>
-                <td>6:00 AM - 7:00 PM</td>
-              </tr>
-              <tr id="tuesday">
-                <td><strong>Tuesday</strong></td>
-                <td>6:00 AM - 7:00 PM</td>
-              </tr>
-              <tr id="wednesday">
-                <td><strong>Wednesday</strong></td>
-                <td>6:00 AM - 7:00 PM</td>
-              </tr>
-              <tr id="thursday">
-                <td><strong>Thursday</strong></td>
-                <td>6:00 AM - 7:00 PM</td>
-              </tr>
-              <tr id="friday">
-                <td><strong>Friday</strong></td>
-                <td>6:00 AM - 7:00 PM</td>
-              </tr>
-              <tr id="saturday">
-                <td><strong>Saturday</strong></td>
-                <td>6:00 AM - 7:00 PM</td>
-              </tr>
-              <tr id="sunday">
-                <td><strong>Sunday</strong></td>
-                <td>6:00 AM - 7:00 PM</td>
-              </tr>
-            </table>
+  <!-- Content -->
+  <div class="content" style="margin-top: 80px;">
+    <!-- Welcome Message -->
+
+
+    <!-- Slider -->
+    {% if images %}
+    <div class="ios-slider">
+      <div class="ios-slider-inner">
+        {% for image in images %}
+        <div class="ios-slide">
+          <img src="{{ image.image.url }}" alt="Slide {{ forloop.counter }}">
+          <div class="ios-caption">
+            <h5>{{ image.title }}</h5>
+            <p>{{ image.description }}</p>
           </div>
         </div>
-        
-        <!-- Contact Form -->
-        <div class="col-md-6">
-          <div class="form-container">
-            <h2 class="text-center mb-4">Contact Us</h2>
-            <form id="contactForm" method="post">
-              {% csrf_token %}
-              <div class="mb-4">
-                <label for="name" class="form-label">Name</label>
-                <input type="text" class="form-control" id="name" name="name" required>
-              </div>
-              <div class="mb-4">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" required>
-              </div>
-              <div class="mb-4">
-                <label for="message" class="form-label">Message</label>
-                <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
-              </div>
-              <div class="text-center">
-                <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        {% endfor %}
+      </div>
+      <div class="ios-slider-nav">
+        {% for image in images %}
+        <div class="ios-slider-nav-item {% if forloop.first %}active{% endif %}"></div>
+        {% endfor %}
       </div>
     </div>
+    {% endif %}
   </div>
 
-  <footer class="footer-custom">
+  <!-- Footer -->
+  <footer class="footer-custom mt-auto">
     <div class="container">
       <div class="row">
         <div class="col-md-4">
@@ -257,11 +227,28 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Highlight current day
     document.addEventListener('DOMContentLoaded', function() {
-      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const currentDay = days[new Date().getDay()];
-      document.getElementById(currentDay).classList.add('current-day');
+      const slider = document.querySelector('.ios-slider-inner');
+      const slides = document.querySelectorAll('.ios-slide');
+      const navItems = document.querySelectorAll('.ios-slider-nav-item');
+      let currentIndex = 0;
+
+      function goToSlide(index) {
+        slider.style.transform = `translateX(-${index * 100}%)`;
+        navItems.forEach((item, i) => {
+          item.classList.toggle('active', i === index);
+        });
+        currentIndex = index;
+      }
+
+      navItems.forEach((item, index) => {
+        item.addEventListener('click', () => goToSlide(index));
+      });
+
+      setInterval(() => {
+        currentIndex = (currentIndex + 1) % slides.length;
+        goToSlide(currentIndex);
+      }, 5000);
     });
   </script>
 </body>

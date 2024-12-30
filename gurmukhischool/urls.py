@@ -21,8 +21,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('', include('pages.urls')),
+    path('school/', include('pages.urls')),
+    path('', include('main.urls')),
     path('portal/', include('portal.urls')),
     path('activate/<uidb64>/<token>/', activate, name='activate'),
     path('account_activation_sent/', account_activation_sent, name='account_activation_sent'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

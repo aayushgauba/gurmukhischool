@@ -12,6 +12,8 @@ from django.http import HttpResponse
 from django.contrib.auth.tokens import default_token_generator
 from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm, ProfilePhotoForm, CarouselImageForm, SyllabusUploadForm
 from .models import UploadedFile, Assignment, filestoAssignment
+from main.models import CarouselImage as Carousel
+from main.forms import CarouselImageForm as MainCarouselImageForm
 from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required, admin_required, approved_required
 from django.views.decorators.http import require_POST
@@ -95,21 +97,75 @@ def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
 @admin_required
 def carousel_management(request):
     images = CarouselImage.objects.all()
+    mainImages = Carousel.objects.all()
     images = images.order_by("order")
+    mainImages = mainImages.order_by("order")
+    form = CarouselImageForm()
+    mainform = MainCarouselImageForm()
+    return render(request, 'portal/adminCarousel.html', {'images': images,'mainImages':mainImages, 'form': form, 'mainform':mainform})
+
+@login_required
+@approved_required
+@admin_required
+@require_POST
+def mainCarouselImageUpload(request):
+    images = Carousel.objects.all()
     if images:
         count = images.count()
     else:
         count = 0
-    if request.method == 'POST':
-        form = CarouselImageForm(request.POST, request.FILES)
-        if form.is_valid():
-            image = form.save()
-            image.order = count
-            image.save() 
-            return redirect('carousel_management')
+    form = MainCarouselImageForm(request.POST, request.FILES)
+    if form.is_valid():
+        image = form.save()
+        image.order = count
+        image.save() 
+        return redirect('carousel_management')
+
+@login_required
+@approved_required
+@admin_required
+@require_POST
+def gurmukhiSchoolImageUpload(request):
+    images = CarouselImage.objects.all()
+    if images:
+        count = images.count()
     else:
-        form = CarouselImageForm()
-    return render(request, 'portal/adminCarousel.html', {'images': images, 'form': form})
+        count = 0
+    form = CarouselImageForm(request.POST, request.FILES)
+    if form.is_valid():
+        image = form.save()
+        image.order = count
+        image.save() 
+        return redirect('carousel_management')
+
+@login_required
+@approved_required
+@admin_required
+def moveMainCarouselImageUp(request, image_id):
+    image = Carousel.objects.get(id = image_id)
+    order = image.order
+    if order >0:
+        newImage = Carousel.objects.get(order = (order-1))
+        image.order = order -1
+        newImage.order = order
+        image.save()
+        newImage.save()
+    return redirect("carousel_management")
+
+@login_required
+@approved_required
+@admin_required
+def moveMainCarouselImageDown(request, image_id):
+    image = Carousel.objects.get(id = image_id)
+    order = image.order
+    print(Carousel.objects.get(order = (order +1)))
+    if order < Carousel.objects.all().count():
+        newImage = Carousel.objects.get(order = (order+1))
+        image.order = order +1
+        newImage.order = order
+        image.save()
+        newImage.save()
+    return redirect("carousel_management")
 
 @login_required
 @approved_required
@@ -149,6 +205,19 @@ def delete_carousel_image(request):
     if request.method == 'POST':
         image_id = request.POST.get('image_id')
         image =  CarouselImage.objects.get(id=image_id)
+        if image.image.path and os.path.exists(image.image.path):
+            os.remove(image.image.path)
+        image.delete()
+        return redirect('carousel_management')
+    
+@require_POST
+@login_required
+@approved_required
+@admin_required
+def delete_main_carousel_image(request):
+    if request.method == 'POST':
+        image_id = request.POST.get('main_image_id')
+        image =  Carousel.objects.get(id=image_id)
         if image.image.path and os.path.exists(image.image.path):
             os.remove(image.image.path)
         image.delete()
@@ -388,6 +457,7 @@ def courses(request: HttpRequest):
         return render(request, 'portal/mobile_courses.html', {"user": user, "courses": courses, "form": form})
     else:
         return render(request, "portal/desktop_courses.html", {"user": user, "courses": courses, "form": form})
+
 
 
 @approved_required
