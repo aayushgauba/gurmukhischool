@@ -63,6 +63,7 @@ class Announcement(models.Model):
     recipients = models.ManyToManyField(Courses, blank=False)
     content = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    sent = models.BooleanField(default=False)
 
 class Attendance(models.Model):
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
