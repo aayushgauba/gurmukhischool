@@ -276,6 +276,7 @@ def viewAssignment(request: HttpRequest, section_id, folder_id, assignment_id):
     form = UploadedFileForm()
     folder = Folder.objects.get(id = folder_id)
     course = Courses.objects.get(id = folder.Course_id)
+    context = {}
     studentform = FileUploadForm(user_id = request.user.id, assignment_id = assignment_id)
     if not request.user.is_superuser and request.user.usertype == "Student":
         submissions = filestoAssignment.objects.filter(user_id = request.user.id, assignment_id = assignment_id)
