@@ -44,6 +44,11 @@ def scanAttendance():
         attendance_data = read_attendance_csv(attendance.file.path)
         for date, status in attendance_data.items():
             status = "Present" if status == 'P' else "Absent"
+            try:
+                attendance_temp = Attendance.objects.get(student=user, day=date.day, month=date.month, year=date.year)
+                attendance_temp.delete()
+            except Exception as e:
+                attendance_temp = None
             Attendance.objects.create(student=user, day=date.day, month=date.month, year=date.year, status=status)
         file_path = attendance.file.path
         attendance.delete()
