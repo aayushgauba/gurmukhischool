@@ -12,7 +12,21 @@ django.setup()
 # Add the directory containing the 'pages' module to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from portal.models import Announcement, Courses, UploadedAttendance, Attendance
+from portal.models import Announcement, Courses, UploadedAttendance, Attendance, CustomUser
+
+def userFix():
+    users = CustomUser.objects.all()
+    for user in users:
+        if user.usertype == 'Student':
+            user.is_superuser = False
+            user.save()
+        elif user.usertype == 'Teacher':
+            user.is_superuser = True
+            user.save()
+        elif user.usertype = 'Admin':
+            user.is_superuser = True
+            user.save()
+
 
 def read_attendance_csv(file_path):
     with open(file_path, 'r', encoding='utf-8-sig') as csvfile:
