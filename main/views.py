@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,HttpResponse
 from .models import CarouselImage
 from pages.models import Contact
 
@@ -9,6 +9,9 @@ def indexMain(request):
 
 def aboutMain(request):
     return render(request,"main/about.html")
+
+def sitemap(request):
+    return HttpResponse(open('templates/sitemap.xml').read(), content_type='text/xml')
 
 def contact(request):
     if request.method == 'POST':

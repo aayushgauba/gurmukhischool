@@ -7,4 +7,5 @@ urlpatterns = [
     # path('events', views.eventsMain, name='eventsMain'),
     path('about', views.aboutMain, name='aboutMain'),
     path('contact', views.contact, name='contact'),
+    path('sitemap', views.sitemap, name='sitemap'),
 ]
