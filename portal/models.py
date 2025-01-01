@@ -23,6 +23,8 @@ class CustomUser(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True, null=True, unique = False)
     birth_date = models.DateField(blank=True, null=True)
     approved = models.BooleanField(blank=False, default=False)
+    def __str__(self):
+        return self.first_name +" "+ self.last_name
 
 class CarouselImage(models.Model):
     title = models.CharField(max_length=100)
@@ -49,6 +51,10 @@ class Courses(models.Model):
     
 class UploadedFile(models.Model):
     file = models.FileField(upload_to='uploads/', unique = True)
+
+class UploadedAttendance(models.Model):
+    file = models.FileField(upload_to='attendance/')
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
 class Assignment(models.Model):
     title = models.CharField(max_length=200)
@@ -90,3 +96,9 @@ class Grade(models.Model):
     course_id = models.IntegerField()
     user_id = models.IntegerField()
     grade = models.FloatField()
+
+class Schedule(models.Model):
+    startDate = models.CharField(max_length=7)
+    endDate = models.CharField(max_length=7)
+    days = models.TextField()
+    course = models.ForeignKey(Courses, on_delete=models.CASCADE)

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from portal.models import CustomUser, Courses, Section, Folder, Grade, Announcement, Attendance, CarouselImage
+from portal.models import CustomUser, Schedule, Courses, Section, Folder, Grade, Announcement, Attendance, CarouselImage
 from django.contrib.auth.hashers import make_password, check_password
 from django.http import HttpRequest
 from django.contrib.auth import authenticate, login as auth_login, logout
@@ -10,7 +10,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.contrib.auth.tokens import default_token_generator
-from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm, ProfilePhotoForm, CarouselImageForm, SyllabusUploadForm
+from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm,UploadedAttendanceForm, ProfilePhotoForm, CarouselImageForm, SyllabusUploadForm
 from .models import UploadedFile, Assignment, filestoAssignment
 from main.models import CarouselImage as Carousel
 from main.forms import CarouselImageForm as MainCarouselImageForm
@@ -26,6 +26,7 @@ import asyncio
 import threading
 import calendar
 from datetime import datetime
+import json
 
 @approved_required
 @login_required
@@ -628,20 +629,15 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
     user_agent = request.META['HTTP_USER_AGENT'].lower()
     course = Courses.objects.get(id = course_id)
     if not year or not month:
-        # Default to the current year and month if none are provided
         year = datetime.now().year
         month = datetime.now().month
-
     cal = calendar.Calendar()
     month_days = list(cal.itermonthdays2(year, month))
     today = datetime.now().day if year == datetime.now().year and month == datetime.now().month else None
-
     prev_month = month - 1
     next_month = month + 1
-
     prev_year = year
     next_year = year
-
     if prev_month == 0:
         prev_month = 12
         prev_year -= 1
@@ -668,7 +664,6 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
         attendance_days = list(attendance)
         absent = Attendance.objects.filter(year = year, month = month, student = request.user, status = "Absent").values_list('day', flat=True)
         absent_days = list(absent)
-        print(absent_days)
         context = {
         'year': year,
         'month': month,
@@ -684,7 +679,22 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
         'absent':absent_days,
     }
     else:
+        schedule = Schedule.objects.get(course = Courses.objects.get(id = course_id))
+        attendanceForm = UploadedAttendanceForm()
+        if schedule:
+            startDate = datetime.strptime(schedule.startDate, "%Y-%m") 
+            endDate = datetime.strptime(schedule.endDate, "%Y-%m") 
+            currDate = datetime(year, month, 1)
+            if startDate <= currDate and currDate <= endDate:
+                allowed_days = json.loads(schedule.days)
+                allowed_days = list(map(int, allowed_days))
+            else:
+                allowed_days = []
+        else:
+            allowed_days = []
         context = {
+        'attendanceform':attendanceForm,
+        'allowed_days': allowed_days,
         'year': year,
         'month': month,
         'month_days': month_days,
@@ -701,6 +711,37 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
     else:
         return render(request, 'portal/desktop_attendance.html', context)
 
+@approved_required
+@teacher_required
+@superuser_required
+@require_POST
+@login_required
+def uploadAttendanceData(request, course_id):
+    next_url = request.META.get('HTTP_REFERER', '/')
+    form = UploadedAttendanceForm(request.POST, request.FILES)
+    print("Submitted data:", form)
+    if form.is_valid():
+        form.save()
+    return redirect(next_url)
+
+@approved_required    
+@teacher_required
+@require_POST
+def scheduleDefine(request, course_id):
+    next_url = request.META.get('HTTP_REFERER', '/')
+    choices = request.POST.getlist('week')
+    startDate = request.POST.get('startDate')
+    endDate= request.POST.get('endDate')
+    choices = json.dumps(choices)
+    course = Courses.objects.get(id = course_id)
+    print(choices)
+    try:
+        schedule = Schedule.objects.get(course = course)
+        schedule.delete()
+        Schedule.objects.create(startDate = startDate, endDate = endDate, days=choices, course = course)
+    except Exception as e:
+        Schedule.objects.create(startDate = startDate, endDate = endDate, days=choices, course = course)
+    return redirect(next_url)
 
 @login_required
 @admin_required

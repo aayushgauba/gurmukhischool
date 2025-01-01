@@ -1,15 +1,25 @@
 from django import forms
-from .models import UploadedFile, filestoAssignment
+from .models import UploadedFile,UploadedAttendance, filestoAssignment
 from tinymce.widgets import TinyMCE
 from .models import Announcement, Courses, CustomUser, CarouselImage
 from django_select2.forms import Select2MultipleWidget
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
+people = CustomUser.objects.filter(usertype="Student")
 class UploadedFileForm(forms.ModelForm):
     class Meta:
         model = UploadedFile
-        fields = ('file',)
+        fields = ['file']
+
+class UploadedAttendanceForm(forms.ModelForm):
+    student = forms.ModelChoiceField(
+        queryset=people,
+    )
+    class Meta:
+        model = UploadedAttendance
+        fields = ['file','student']
+    
 
 class CarouselImageForm(forms.ModelForm):
     class Meta:
