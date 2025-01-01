@@ -79,7 +79,6 @@ def main():
         send_email_task()
         scanAttendance()
         userFix()
-        time.sleep(60)  # Sleep for 60 seconds before checking for new tasks
 
 if __name__ == "__main__":
     main()
