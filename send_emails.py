@@ -23,7 +23,7 @@ def userFix():
         elif user.usertype == 'Teacher':
             user.is_superuser = True
             user.save()
-        elif user.usertype = 'Admin':
+        elif user.usertype == 'Admin':
             user.is_superuser = True
             user.save()
 
@@ -73,6 +73,7 @@ def main():
     while True:
         send_email_task()
         scanAttendance()
+        userFix()
         time.sleep(60)  # Sleep for 60 seconds before checking for new tasks
 
 if __name__ == "__main__":
