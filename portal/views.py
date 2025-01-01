@@ -679,7 +679,10 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
         'absent':absent_days,
     }
     else:
-        schedule = Schedule.objects.get(course = Courses.objects.get(id = course_id))
+        try:
+            schedule = Schedule.objects.get(course = Courses.objects.get(id = course_id))
+        except Exception as e:
+            schedule = None
         attendanceForm = UploadedAttendanceForm()
         if schedule:
             startDate = datetime.strptime(schedule.startDate, "%Y-%m") 
