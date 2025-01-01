@@ -275,12 +275,15 @@
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center">
                 <a class="btn btn-primary" href="{% url 'attendance' course.id prev_year prev_month %}">Previous Month</a>
+                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+
                 <button type="button" class="btn btn-success schedule-btn" data-bs-toggle="modal" data-bs-target="#scheduleModal">
                     <i class="bi bi-calendar-plus"></i> Schedule
                 </button>
                 <button type="button" class="btn btn-info upload-btn text-white" data-bs-toggle="modal" data-bs-target="#uploadModal">
                     <i class="bi bi-upload"></i> Upload
                 </button>
+                {%endif%}
             </div>
             <h2 class="m-0">{{ year }} - {{ month }}</h2>
             <a class="btn btn-primary" href="{% url 'attendance' course.id next_year next_month %}">Next Month</a>
