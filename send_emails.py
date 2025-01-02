@@ -117,10 +117,13 @@ def scan_group_photos():
     # Process each group photo
     for group_photo in group_photos:
         attendance_list = compare_with_group_photo(group_photo.file.path, stored_embeddings)
-
-        # Mark attendance for each user found
         for user, status in attendance_list:
-            if user.profile_photo:  # Only mark attendance for users with profile photos
+            if user.profile_photo:
+                try:
+                    attendance_temp = Attendance.objects.get(student=user, day=datetime.datetime.today().day, month=datetime.datetime.today().month, year=datetime.datetime.today().year)
+                    attendance_temp.delete()
+                except Exception as e:
+                    attendance_temp = None
                 Attendance.objects.create(
                     student=user,
                     day=datetime.datetime.today().day,
@@ -128,7 +131,6 @@ def scan_group_photos():
                     year=datetime.datetime.today().year,
                     status=status
                 )
-
         file_path = group_photo.file.path
         group_photo.delete()
         os.remove(file_path)
@@ -140,7 +142,6 @@ def main():
         scanAttendance()
         userFix()
         scan_group_photos()  # Added group photo scanning
-        time.sleep(60)  # Sleep for 1 minute to avoid excessive CPU usage
 
 if __name__ == "__main__":
     main()
