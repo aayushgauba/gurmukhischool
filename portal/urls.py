@@ -57,6 +57,7 @@ urlpatterns = [
     path('attendance/<int:course_id>', views.attendance, name='attendance'),
     path('attendance/schedule/define/<int:course_id>', views.scheduleDefine, name='scheduleDefine'),
     path('attendance/upload/<int:course_id>', views.uploadAttendanceData, name='uploadAttendanceData'),
+    path('attendance/photo/upload', views.uploadGroupPhoto, name='uploadGroupPhoto'),
     path('attendance/<int:course_id>/<int:year>/<int:month>/', views.attendance, name='attendance'),
     path('attendance/mark/<int:course_id>/<int:day>/<int:month>/<int:year>/', views.mark_attendance, name='mark_attendance'),
     path('profile/<int:course_id>', views.profile, name='profile'),

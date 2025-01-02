@@ -1,7 +1,7 @@
 from django import forms
 from .models import UploadedFile,UploadedAttendance, filestoAssignment
 from tinymce.widgets import TinyMCE
-from .models import Announcement, Courses, CustomUser, CarouselImage
+from .models import Announcement, Courses, CustomUser, CarouselImage, GroupPhotoAttendance
 from django_select2.forms import Select2MultipleWidget
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
@@ -47,6 +47,11 @@ class FileUploadForm(forms.ModelForm):
         super(FileUploadForm, self).__init__(*args, **kwargs)
         self.instance.user_id = user_id
         self.instance.assignment_id = assignment_id
+
+class GroupPhotoUploadForm(forms.ModelForm):
+    class Meta:
+        model = GroupPhotoAttendance
+        fields = ['file']
 
 class AnnouncementForm(forms.ModelForm):
     recipients = forms.ModelMultipleChoiceField(

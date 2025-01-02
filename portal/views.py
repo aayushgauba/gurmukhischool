@@ -10,7 +10,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.contrib.auth.tokens import default_token_generator
-from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm,UploadedAttendanceForm, ProfilePhotoForm, CarouselImageForm, SyllabusUploadForm
+from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm,UploadedAttendanceForm,GroupPhotoUploadForm, ProfilePhotoForm, CarouselImageForm, SyllabusUploadForm
 from .models import UploadedFile, Assignment, filestoAssignment
 from main.models import CarouselImage as Carousel
 from main.forms import CarouselImageForm as MainCarouselImageForm
@@ -679,6 +679,7 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
         'absent':absent_days,
     }
     else:
+        photoform = GroupPhotoUploadForm()
         try:
             schedule = Schedule.objects.get(course = Courses.objects.get(id = course_id))
         except Exception as e:
@@ -698,6 +699,7 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
         context = {
         'attendanceform':attendanceForm,
         'allowed_days': allowed_days,
+        'photoform':photoform,
         'year': year,
         'month': month,
         'month_days': month_days,
@@ -722,6 +724,19 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
 def uploadAttendanceData(request, course_id):
     next_url = request.META.get('HTTP_REFERER', '/')
     form = UploadedAttendanceForm(request.POST, request.FILES)
+    print("Submitted data:", form)
+    if form.is_valid():
+        form.save()
+    return redirect(next_url)
+
+@approved_required
+@teacher_required
+@superuser_required
+@require_POST
+@login_required
+def uploadGroupPhoto(request):
+    next_url = request.META.get('HTTP_REFERER', '/')
+    form = GroupPhotoUploadForm(request.POST, request.FILES)
     print("Submitted data:", form)
     if form.is_valid():
         form.save()

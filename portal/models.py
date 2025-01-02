@@ -102,3 +102,6 @@ class Schedule(models.Model):
     endDate = models.CharField(max_length=7)
     days = models.TextField()
     course = models.ForeignKey(Courses, on_delete=models.CASCADE)
+
+class GroupPhotoAttendance(models.Model):
+    file = models.FileField(upload_to='group_photo/', unique = True)
