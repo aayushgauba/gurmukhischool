@@ -98,8 +98,13 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': 'aayush',
         'HOST': 'localhost',
-    }
+    'OPTIONS': {
+        'init_command': "SET SESSION wait_timeout = 28800; SET SESSION interactive_timeout = 28800",
+    },
+    'CONN_MAX_AGE': 3600  # The maximum age of a database connection in seconds (e.g., 1 hour)
 }
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
