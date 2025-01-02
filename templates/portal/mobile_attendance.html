@@ -203,7 +203,54 @@
 .modal-footer .btn {
     margin-left: 10px; /* Space between buttons */
 }
-
+@media (max-width: 768px) {
+            .content {
+                padding: 80px 10px 80px 10px; /* Adjusted padding for header and bottom nav */
+            }
+            
+            .month-navigation {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .month-navigation .btn-group {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+            }
+            
+            .month-navigation h2 {
+                text-align: center;
+                font-size: 1.5rem;
+                order: -1;
+                margin-bottom: 10px;
+            }
+            
+            .calendar {
+                margin-top: 15px;
+                font-size: 0.9rem;
+            }
+            
+            .calendar th,
+            .calendar td {
+                padding: 8px 4px;
+                font-size: 0.9rem;
+            }
+            
+            .action-buttons {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 15px;
+            }
+            
+            .action-buttons button {
+                flex: 1;
+                white-space: nowrap;
+                padding: 8px;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -216,29 +263,127 @@
             <i class="bi bi-list"></i>
         </button>
     </header>
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">Upload Attendance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="uploadForm" method="post" action="{% url 'uploadAttendanceData' course.id %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{attendanceform|crispy}}
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" form="uploadForm" class="btn btn-primary">Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scheduleModalLabel">Set Schedule</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="scheduleForm" method="post" action="{%url 'scheduleDefine' course.id %}">
+                        {%csrf_token%}
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Start Month</label>
+                            <input type="month" class="form-control" id="startDate" name = "startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">End Month</label>
+                            <input type="month" class="form-control" id="endDate" name = "endDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Select Days</label>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="monday" name = "week" value ="0">
+                                <label class="custom-control-label" for="monday">Monday</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="tuesday" name = "week" value ="1">
+                                <label class="custom-control-label" for="tuesday">Tuesday</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="wednesday" name = "week" value ="2">
+                                <label class="custom-control-label" for="wednesday">Wednesday</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="thursday" name = "week" value ="3">
+                                <label class="custom-control-label" for="thursday">Thursday</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="friday" name = "week" value ="4">
+                                <label class="custom-control-label" for="friday">Friday</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="saturday" name = "week" value ="5">
+                                <label class="custom-control-label" for="saturday">Saturday</label>
+                            </div>
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="sunday" name = "week" value ="6">
+                                <label class="custom-control-label" for="sunday">Sunday</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" form="scheduleForm" class="btn btn-primary">Save Schedule</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="content flex-grow-1">
-        <h1 class="mb-4">Attendance</h1>
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <a class="btn btn-primary mb-2 mb-sm-0" href="{% url 'attendance' course.id prev_year prev_month %}">Previous Month</a>
-            <h2 class="m-0">{{ year }} - {{ month }}</h2>
-            <a class="btn btn-primary mb-2 mb-sm-0" href="{% url 'attendance' course.id next_year next_month %}">Next Month</a>
-        </div>            
-        <table class="calendar table">
-            <thead>
-                <tr>
-                    <th>Mon</th>
-                    <th>Tue</th>
-                    <th>Wed</th>
-                    <th>Thu</th>
-                    <th>Fri</th>
-                    <th>Sat</th>
-                    <th>Sun</th>
-                </tr>
-            </thead>
-            {% if request.user.is_superuser and request.user.usertype == "Teacher" %}
-            <tbody>
-                {% for week in weeks %}
+        <h1 class="mb-3">Attendance</h1>
+        
+        {% if request.user.is_superuser and request.user.usertype == "Teacher" %}
+        <div class="action-buttons">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                <i class="bi bi-calendar-plus"></i> Schedule
+            </button>
+            <button type="button" class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="bi bi-upload"></i> Upload
+            </button>
+        </div>
+        {% endif %}
+        
+        <div class="month-navigation">
+            <h2 class="mb-3">{{ year }} - {{ month }}</h2>
+            <div class="btn-group w-100">
+                <a class="btn btn-primary" href="{% url 'attendance' course.id prev_year prev_month %}">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </a>
+                <a class="btn btn-primary" href="{% url 'attendance' course.id next_year next_month %}">
+                    Next <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="calendar table">
+                <thead>
+                    <tr>
+                        <th>M</th>
+                        <th>T</th>
+                        <th>W</th>
+                        <th>T</th>
+                        <th>F</th>
+                        <th>S</th>
+                        <th>S</th>
+                    </tr>
+                </thead>
+                {% if request.user.is_superuser and request.user.usertype == "Teacher" %}
+                <tbody>
+                    {% for week in weeks %}
                     <tr>
                         {% for day in week %}
                             {% if day %}
@@ -252,12 +397,13 @@
                             {% endif %}
                         {% endfor %}
                     </tr>
-                {% endfor %}
-            </tbody>
-            {% endif %}
-            {% if request.user.usertype == "Student" %}
-            <tbody>
-                {% for week in weeks %}
+                    {% endfor %}
+                </tbody>
+                {% endif %}
+                
+                {% if request.user.usertype == "Student" %}
+                <tbody>
+                    {% for week in weeks %}
                     <tr>
                         {% for day in week %}
                             {% if day %}
@@ -275,10 +421,11 @@
                             {% endif %}
                         {% endfor %}
                     </tr>
-                {% endfor %}
-            </tbody>
-            {% endif %}
-        </table>            
+                    {% endfor %}
+                </tbody>
+                {% endif %}
+            </table>
+        </div>
     </div>
     
     
