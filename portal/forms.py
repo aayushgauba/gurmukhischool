@@ -1,6 +1,5 @@
 from django import forms
 from .models import UploadedFile,UploadedAttendance, filestoAssignment
-from tinymce.widgets import TinyMCE
 from .models import Announcement, Courses, CustomUser, CarouselImage, GroupPhotoAttendance
 from django_select2.forms import Select2MultipleWidget
 from crispy_forms.helper import FormHelper
