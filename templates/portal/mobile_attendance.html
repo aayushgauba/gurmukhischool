@@ -1,3 +1,4 @@
+{% load custom_filters %}
 {% load crispy_forms_tags %}
 <!DOCTYPE html>
 <html lang="en">
@@ -381,17 +382,19 @@
                         <th>S</th>
                     </tr>
                 </thead>
-                {% if request.user.is_superuser and request.user.usertype == "Teacher" %}
+                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
                 <tbody>
                     {% for week in weeks %}
                     <tr>
                         {% for day in week %}
-                            {% if day %}
-                                {% if day == today %}
-                                    <td class="today"><a href="{% url 'mark_attendance' course.id day month year %}">{{ day }}</a></td>
+                            {% if forloop.counter0|is_allowed_day:allowed_days %}
+                                {% if day is not None %}
+                                        <td {% if day == today %} class="today" {%endif%} ><a href="{% url 'mark_attendance' course.id day month year %}">{{ day }}</a></td>
                                 {% else %}
-                                    <td><a href="{% url 'mark_attendance' course.id day month year %}">{{ day }}</a></td>
+                                    <td></td>
                                 {% endif %}
+                            {% elif day %}
+                                <td {% if day == today %} class="today" {%endif%}>{{ day }}</td>
                             {% else %}
                                 <td></td>
                             {% endif %}
@@ -399,7 +402,8 @@
                     </tr>
                     {% endfor %}
                 </tbody>
-                {% endif %}
+                
+                {%endif%}
                 
                 {% if request.user.usertype == "Student" %}
                 <tbody>
