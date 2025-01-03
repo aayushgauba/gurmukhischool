@@ -6,11 +6,11 @@ import os
 import sys
 import csv
 import datetime
-import face_recognition
-import numpy as np
 from PIL import Image
 import logging
-
+from deepface import DeepFace  # Import DeepFace for face recognition
+import cv2
+import numpy as np
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -21,6 +21,9 @@ from portal.models import Announcement, Courses, UploadedAttendance, Attendance,
 
 # Add the directory containing the 'pages' module to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Use DeepFace's built-in face recognition functions
+
 def userFix():
     logging.info("Fixing user permissions...")
     users = CustomUser.objects.all()
@@ -81,53 +84,50 @@ def send_email_task():
         announcement.save()
     logging.info("Emails sent successfully.")
 
-def resize_image(image_path):
-    with Image.open(image_path) as img:
-        width, height = img.size
-        img = img.resize((width // 2, height // 2))  # Reduce image size by half
-        img.save(image_path)
-        logging.info(f"Resized image to {img.size}.")
-
 def generate_embeddings_for_profiles():
-    logging.info("Generating embeddings for profile photos...")
+    logging.info("Generating embeddings for profiles...")
     users = CustomUser.objects.filter(usertype="Student")
     embeddings = []
+
     for user in users:
         if user.profile_photo:
-            image_path = user.profile_photo.path
-            if not os.path.exists(image_path):
-                logging.warning(f"Profile photo not found for user {user.email}.")
-                continue
-            resize_image(image_path)
-            image = face_recognition.load_image_file(image_path)
-            encoding = face_recognition.face_encodings(image)
-            if encoding:
-                embeddings.append((user, encoding[0]))
-            else:
-                logging.warning(f"No encoding generated for user {user.email}.")
-    logging.info("Embeddings generation completed.")
+            try:
+                image = cv2.imread(user.profile_photo.path)
+                if image is not None:
+                    # Use DeepFace to extract embeddings
+                    embedding = DeepFace.represent(img_path=user.profile_photo.path, model_name="VGG-Face", enforce_detection=False)
+                    embeddings.append((user, embedding[0]['embedding']))  # Assuming 'embedding' is the key from DeepFace
+            except Exception as e:
+                logging.error(f"Error generating embedding for user {user}: {e}")
+
+    logging.info("Embeddings generated for profiles.")
     return embeddings
 
 def compare_with_group_photo(group_photo_path, stored_embeddings):
-    logging.info(f"Processing group photo: {group_photo_path}")
-    resize_image(group_photo_path)
-    group_image = face_recognition.load_image_file(group_photo_path)
-    group_face_encodings = face_recognition.face_encodings(group_image)
-    attendance = []
+    logging.info(f"Comparing group photo: {group_photo_path}")
+    try:
+        # Use DeepFace for face comparison
+        group_embedding = DeepFace.represent(img_path=group_photo_path, model_name="VGG-Face", enforce_detection=False)
 
-    for group_encoding in group_face_encodings:
-        matched = False
-        for user, stored_encoding in stored_embeddings:
-            distance = np.linalg.norm(group_encoding - stored_encoding)
-            if distance < 0.6:
-                attendance.append((user, 'Present'))
-                matched = True
-                break
-        if not matched:
-            logging.warning("No match found for a face in the group photo.")
+        attendance = []
+        for embedding_data in group_embedding:
+            group_face_embedding = embedding_data['embedding']
+            matched_user = None
+            min_distance = float("inf")
+            for user, stored_embedding in stored_embeddings:
+                distance = np.linalg.norm(np.array(group_face_embedding) - np.array(stored_embedding))
+                if distance < min_distance and distance < 0.8:  # Adjust threshold as needed
+                    min_distance = distance
+                    matched_user = user
 
-    logging.info(f"Completed processing for group photo: {group_photo_path}")
-    return attendance
+            if matched_user:
+                attendance.append((matched_user, "Present"))
+
+        logging.info(f"Group photo comparison completed with {len(attendance)} matches.")
+        return attendance
+    except Exception as e:
+        logging.error(f"Error comparing group photo: {e}")
+        return []
 
 def scan_group_photos():
     logging.info("Scanning group photos...")
@@ -137,14 +137,13 @@ def scan_group_photos():
     for group_photo in group_photos:
         attendance_list = compare_with_group_photo(group_photo.file.path, stored_embeddings)
         for user, status in attendance_list:
-            if user.profile_photo:
-                Attendance.objects.update_or_create(
-                    student=user,
-                    day=datetime.datetime.today().day,
-                    month=datetime.datetime.today().month,
-                    year=datetime.datetime.today().year,
-                    defaults={'status': status},
-                )
+            Attendance.objects.update_or_create(
+                student=user,
+                day=datetime.datetime.today().day,
+                month=datetime.datetime.today().month,
+                year=datetime.datetime.today().year,
+                defaults={'status': status},
+            )
         file_path = group_photo.file.path
         group_photo.delete()
         if os.path.exists(file_path):
