@@ -1,15 +1,8 @@
-import time
 import os
 import sys
 import csv
 import datetime
 import logging
-import numpy as np
-import cv2
-from PIL import Image
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from photoattendance import DeepFace  # Import DeepFace for face recognition
 import django
 
 # Configure logging
