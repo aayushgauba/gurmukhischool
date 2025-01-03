@@ -1,16 +1,17 @@
 import time
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-import django
 import os
 import sys
 import csv
 import datetime
-from PIL import Image
 import logging
-from deepface import DeepFace  # Import DeepFace for face recognition
-import cv2
 import numpy as np
+import cv2
+from PIL import Image
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from deepface import DeepFace  # Import DeepFace for face recognition
+import django
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -22,8 +23,7 @@ from portal.models import Announcement, Courses, UploadedAttendance, Attendance,
 # Add the directory containing the 'pages' module to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Use DeepFace's built-in face recognition functions
-
+# Utility: Fix user permissions
 def userFix():
     logging.info("Fixing user permissions...")
     users = CustomUser.objects.all()
@@ -34,6 +34,7 @@ def userFix():
             user.save()
     logging.info("User permissions updated.")
 
+# Utility: Read attendance CSV
 def read_attendance_csv(file_path):
     with open(file_path, 'r', encoding='utf-8-sig') as csvfile:
         csvreader = csv.reader(csvfile)
@@ -43,6 +44,7 @@ def read_attendance_csv(file_path):
         attendance_data = dict(zip(dates, attendance))
         return attendance_data
 
+# Task: Scan uploaded attendance
 def scanAttendance():
     logging.info("Scanning uploaded attendance...")
     attendances = UploadedAttendance.objects.all()
@@ -58,21 +60,18 @@ def scanAttendance():
                 year=date.year,
                 defaults={'status': status},
             )
-        file_path = attendance.file.path
+        os.remove(attendance.file.path)
         attendance.delete()
-        if os.path.exists(file_path):
-            os.remove(file_path)
     logging.info("Attendance scan completed.")
 
+# Task: Send announcement emails
 def send_email_task():
     logging.info("Sending announcement emails...")
     announcements = Announcement.objects.filter(sent=False)
     for announcement in announcements:
         html_content = render_to_string('email/announcementNotification.html', {"announcement": announcement})
-        courses = announcement.recipients.all()
-        for course in courses:
-            people = course.People.all()
-            for person in people:
+        for course in announcement.recipients.all():
+            for person in course.People.all():
                 email = EmailMultiAlternatives(
                     subject="A new announcement has been made",
                     body=announcement.content,
@@ -84,57 +83,90 @@ def send_email_task():
         announcement.save()
     logging.info("Emails sent successfully.")
 
-def generate_embeddings_for_profiles():
+# Task: Generate embeddings for student profiles
+def generate_embeddings_for_profiles(detector_backend="retinaface", align=True):
     logging.info("Generating embeddings for profiles...")
     users = CustomUser.objects.filter(usertype="Student")
     embeddings = []
-
     for user in users:
         if user.profile_photo:
             try:
-                image = cv2.imread(user.profile_photo.path)
-                if image is not None:
-                    # Use DeepFace to extract embeddings
-                    embedding = DeepFace.represent(img_path=user.profile_photo.path, model_name="VGG-Face", enforce_detection=False)
-                    embeddings.append((user, embedding[0]['embedding']))  # Assuming 'embedding' is the key from DeepFace
+                image_path = user.profile_photo.path
+                embeddings_list = DeepFace.represent(
+                    img_path=image_path, model_name="Facenet512", enforce_detection=True, 
+                    detector_backend=detector_backend, align=align
+                )
+                if embeddings_list:
+                    embedding = embeddings_list[0]['embedding']
+                    embeddings.append((user, embedding))
+                else:
+                    logging.warning(f"No face detected for user {user}")
             except Exception as e:
                 logging.error(f"Error generating embedding for user {user}: {e}")
-
     logging.info("Embeddings generated for profiles.")
     return embeddings
 
-def compare_with_group_photo(group_photo_path, stored_embeddings):
-    logging.info(f"Comparing group photo: {group_photo_path}")
+# Task: Compare group photo with stored embeddings using DeepFace.verify
+def compare_with_group_photo(group_photo_path, stored_embeddings, metric="cosine", detector_backend="retinaface", align=True, distance_threshold=0.5):
+    """
+    Compare group photo embeddings with stored user embeddings using DeepFace and a single metric.
+
+    Parameters:
+        group_photo_path (str): Path to the group photo.
+        stored_embeddings (list): List of tuples (user, embedding) for stored profiles.
+        metric (str): Distance metric to use ('cosine', 'euclidean', 'euclidean_l2').
+        detector_backend (str): Face detector backend for better accuracy.
+        align (bool): Whether to align faces before embedding generation.
+        distance_threshold (float): Distance threshold for a match.
+
+    Returns:
+        list: Attendance list with tuples of (user, status).
+    """
+    logging.info(f"Comparing group photo: {group_photo_path} using metric: {metric}")
     try:
-        # Use DeepFace for face comparison
-        group_embedding = DeepFace.represent(img_path=group_photo_path, model_name="VGG-Face", enforce_detection=False)
-
+        # Generate embeddings for all faces in the group photo
+        group_embeddings_list = DeepFace.represent(
+            img_path=group_photo_path, model_name="Facenet512", enforce_detection=True,
+            detector_backend=detector_backend, align=align
+        )
+        
+        if not group_embeddings_list:
+            logging.warning("No faces detected in the group photo.")
+            return []
+        
         attendance = []
-        for embedding_data in group_embedding:
-            group_face_embedding = embedding_data['embedding']
-            matched_user = None
-            min_distance = float("inf")
+        
+        # Compare each detected face in the group photo against stored embeddings
+        for group_face in group_embeddings_list:
+            group_embedding = np.array(group_face['embedding'])
+            
             for user, stored_embedding in stored_embeddings:
-                distance = np.linalg.norm(np.array(group_face_embedding) - np.array(stored_embedding))
-                if distance < min_distance and distance < 0.8:  # Adjust threshold as needed
-                    min_distance = distance
-                    matched_user = user
-
-            if matched_user:
-                attendance.append((matched_user, "Present"))
-
+                result = DeepFace.verify(
+                    img1_path=group_photo_path,
+                    img2_path=user.profile_photo.path,  # Ensure profile photo path is accessible
+                    distance_metric=metric,
+                    model_name="Facenet512",
+                    enforce_detection=False,
+                    detector_backend=detector_backend,
+                    align=align
+                )
+                
+                if result["verified"]:
+                    attendance.append((user, "Present"))
+                    logging.debug(f"User {user.username} matched with distance {result['distance']} using {metric}")
+                    break  # If verified, no need to compare further for this user
+        
         logging.info(f"Group photo comparison completed with {len(attendance)} matches.")
         return attendance
     except Exception as e:
         logging.error(f"Error comparing group photo: {e}")
         return []
 
+# Task: Scan group photos
 def scan_group_photos():
     logging.info("Scanning group photos...")
     stored_embeddings = generate_embeddings_for_profiles()
-    group_photos = GroupPhotoAttendance.objects.all()
-
-    for group_photo in group_photos:
+    for group_photo in GroupPhotoAttendance.objects.all():
         attendance_list = compare_with_group_photo(group_photo.file.path, stored_embeddings)
         for user, status in attendance_list:
             Attendance.objects.update_or_create(
@@ -144,12 +176,11 @@ def scan_group_photos():
                 year=datetime.datetime.today().year,
                 defaults={'status': status},
             )
-        file_path = group_photo.file.path
+        os.remove(group_photo.file.path)
         group_photo.delete()
-        if os.path.exists(file_path):
-            os.remove(file_path)
     logging.info("Group photo scanning completed.")
 
+# Main process
 def main():
     while True:
         logging.info("Starting main process...")
@@ -158,7 +189,7 @@ def main():
         userFix()
         scan_group_photos()
         logging.info("Main process iteration completed.")
-        time.sleep(60)  # Wait 60 seconds before the next iteration
+        time.sleep(60)
 
 if __name__ == "__main__":
     main()
