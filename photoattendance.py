@@ -3,9 +3,9 @@ import sys
 import datetime
 import logging
 import numpy as np
-from PIL import Image
 from deepface import DeepFace  # Import DeepFace for face recognition
 import django
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -18,6 +18,8 @@ from portal.models import Announcement, Courses, UploadedAttendance, Attendance,
 # Add the directory containing the 'pages' module to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+def check_for_group_photos():
+    return GroupPhotoAttendance.objects.exists()
 # Task: Generate embeddings for student profiles
 def generate_embeddings_for_profiles(detector_backend="retinaface", align=True):
     logging.info("Generating embeddings for profiles...")
@@ -118,8 +120,12 @@ def scan_group_photos():
 # Main process
 def main():
     while True:
-        logging.info("Starting main process...")
-        scan_group_photos()
-        logging.info("Main process iteration completed.")
+        if check_for_group_photos():  # Only proceed if there are group photos
+            logging.info("Group photos detected. Starting processing...")
+            scan_group_photos()
+        else:
+            logging.info("No group photos detected. Sleeping for 5 minutes.")
+            time.sleep(300)  # Wait for 5 minutes before checking again
+
 if __name__ == "__main__":
     main()

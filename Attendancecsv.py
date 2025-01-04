@@ -3,21 +3,30 @@ import sys
 import csv
 import datetime
 import logging
-import django
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Set up Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gurmukhischool.settings')
-django.setup()
-from portal.models import Announcement, Courses, UploadedAttendance, Attendance, CustomUser, GroupPhotoAttendance
-
 # Add the directory containing the 'pages' module to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+def setup_django_environment():
+    """Set up Django environment only when needed."""
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gurmukhischool.settings')
+    import django
+    django.setup()
+    global UploadedAttendance, Attendance
+    from portal.models import UploadedAttendance, Attendance
+
+def check_for_uploaded_attendance():
+    """Check if there are any uploaded attendance files."""
+    setup_django_environment()
+    from portal.models import UploadedAttendance
+    return UploadedAttendance.objects.exists()
 
 def read_attendance_csv(file_path):
+    """Read attendance data from a CSV file."""
     with open(file_path, 'r', encoding='utf-8-sig') as csvfile:
         csvreader = csv.reader(csvfile)
         date_strings = next(csvreader)
@@ -26,8 +35,10 @@ def read_attendance_csv(file_path):
         attendance_data = dict(zip(dates, attendance))
         return attendance_data
 
-# Task: Scan uploaded attendance
-def scanAttendance():
+def scan_attendance():
+    """Scan and process uploaded attendance files."""
+    setup_django_environment()
+    from portal.models import UploadedAttendance, Attendance
     logging.info("Scanning uploaded attendance...")
     attendances = UploadedAttendance.objects.all()
     for attendance in attendances:
@@ -46,11 +57,15 @@ def scanAttendance():
         attendance.delete()
     logging.info("Attendance scan completed.")
 
-
-# Main process
 def main():
+    """Main loop to process attendance files."""
     while True:
-        logging.info("Starting main process...")
-        scanAttendance()
+        if check_for_uploaded_attendance():
+            logging.info("New attendance files detected. Starting processing...")
+            scan_attendance()
+        else:
+            logging.info("No new attendance files detected. Sleeping for 5 minutes.")
+            time.sleep(300)  # Sleep for 5 minutes before checking again
+
 if __name__ == "__main__":
     main()
