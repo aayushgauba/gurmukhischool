@@ -58,14 +58,7 @@ def scan_attendance():
     logging.info("Attendance scan completed.")
 
 def main():
-    """Main loop to process attendance files."""
-    while True:
-        if check_for_uploaded_attendance():
-            logging.info("New attendance files detected. Starting processing...")
-            scan_attendance()
-        else:
-            logging.info("No new attendance files detected. Sleeping for 5 minutes.")
-            time.sleep(300)  # Sleep for 5 minutes before checking again
+    scan_attendance()
 
 if __name__ == "__main__":
     main()
