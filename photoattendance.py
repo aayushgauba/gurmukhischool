@@ -6,6 +6,7 @@ import numpy as np
 from deepface import DeepFace  # Import DeepFace for face recognition
 import django
 import time
+from scipy.spatial.distance import cosine, euclidean
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -25,76 +26,104 @@ def generate_embeddings_for_profiles(detector_backend="retinaface", align=True):
     logging.info("Generating embeddings for profiles...")
     users = CustomUser.objects.filter(usertype="Student")
     embeddings = []
+
     for user in users:
-        if user.profile_photo:
-            try:
-                image_path = user.profile_photo.path
-                embeddings_list = DeepFace.represent(
-                    img_path=image_path, model_name="Facenet512", enforce_detection=True, 
-                    detector_backend=detector_backend, align=align
-                )
-                if embeddings_list:
-                    embedding = embeddings_list[0]['embedding']
-                    embeddings.append((user, embedding))
-                else:
-                    logging.warning(f"No face detected for user {user}")
-            except Exception as e:
-                logging.error(f"Error generating embedding for user {user}: {e}")
+        # Collect embeddings for all of the user's photos
+        user_embeddings = []
+        photos = user.profile_photos.all()  # Access multiple profile photos
+
+        if photos.exists():
+            for photo in photos:
+                try:
+                    image_path = photo.file.path
+                    print(image_path)
+                    embeddings_list = DeepFace.represent(
+                        img_path=image_path,
+                        model_name="Facenet512",
+                        enforce_detection=True,
+                        detector_backend=detector_backend,
+                        align=align
+                    )
+                    if embeddings_list:
+                        # Store the embedding from this photo
+                        user_embeddings.append(np.array(embeddings_list[0]['embedding']))
+                    else:
+                        logging.warning(f"No face detected in photo {photo} for user {user}")
+                except Exception as e:
+                    logging.error(f"Error generating embedding for photo {photo} of user {user}: {e}")
+
+            if user_embeddings:
+                # Compute a composite embedding (average) from all photos
+                composite_embedding = np.mean(user_embeddings, axis=0)
+                embeddings.append((user, composite_embedding))
+            else:
+                logging.warning(f"No valid embeddings found for user {user} despite having photos.")
+        else:
+            logging.warning(f"No profile photos for user {user}")
+    
     logging.info("Embeddings generated for profiles.")
     return embeddings
 
 # Task: Compare group photo with stored embeddings using DeepFace.verify
-def compare_with_group_photo(group_photo_path, stored_embeddings, metric="cosine", detector_backend="retinaface", align=True, distance_threshold=0.5):
+def compare_with_group_photo(group_photo_path, stored_embeddings, metric="cosine", 
+                             detector_backend="retinaface", align=True, distance_threshold=0.5):
     """
-    Compare group photo embeddings with stored user embeddings using DeepFace and a single metric.
+    Compare faces in a group photo against stored composite embeddings of users.
 
     Parameters:
         group_photo_path (str): Path to the group photo.
-        stored_embeddings (list): List of tuples (user, embedding) for stored profiles.
-        metric (str): Distance metric to use ('cosine', 'euclidean', 'euclidean_l2').
-        detector_backend (str): Face detector backend for better accuracy.
+        stored_embeddings (list): List of tuples (user, composite_embedding).
+        metric (str): Distance metric ('cosine', 'euclidean', 'euclidean_l2').
+        detector_backend (str): Face detector backend.
         align (bool): Whether to align faces before embedding generation.
-        distance_threshold (float): Distance threshold for a match.
+        distance_threshold (float): Threshold for considering a match.
 
     Returns:
-        list: Attendance list with tuples of (user, status).
+        list: List of tuples (user, status) for matches found.
     """
     logging.info(f"Comparing group photo: {group_photo_path} using metric: {metric}")
     try:
         # Generate embeddings for all faces in the group photo
         group_embeddings_list = DeepFace.represent(
-            img_path=group_photo_path, model_name="Facenet512", enforce_detection=True,
-            detector_backend=detector_backend, align=align
+            img_path=group_photo_path,
+            model_name="Facenet512",
+            enforce_detection=True,
+            detector_backend=detector_backend,
+            align=align
         )
-        
+
         if not group_embeddings_list:
             logging.warning("No faces detected in the group photo.")
             return []
-        
+
         attendance = []
-        
-        # Compare each detected face in the group photo against stored embeddings
+
+        # Compare each detected face's embedding from the group photo with stored embeddings
         for group_face in group_embeddings_list:
             group_embedding = np.array(group_face['embedding'])
-            
+
             for user, stored_embedding in stored_embeddings:
-                result = DeepFace.verify(
-                    img1_path=group_photo_path,
-                    img2_path=user.profile_photo.path,  # Ensure profile photo path is accessible
-                    distance_metric=metric,
-                    model_name="Facenet512",
-                    enforce_detection=False,
-                    detector_backend=detector_backend,
-                    align=align
-                )
-                
-                if result["verified"]:
+                # Compute distance based on selected metric
+                if metric == "cosine":
+                    distance = cosine(group_embedding, stored_embedding)
+                elif metric == "euclidean":
+                    distance = euclidean(group_embedding, stored_embedding)
+                elif metric == "euclidean_l2":
+                    distance = np.linalg.norm(group_embedding - stored_embedding)
+                else:
+                    logging.error(f"Unsupported metric: {metric}")
+                    continue
+
+                # If distance below threshold, mark user as present
+                if distance < distance_threshold:
                     attendance.append((user, "Present"))
-                    logging.debug(f"User {user.username} matched with distance {result['distance']} using {metric}")
-                    break  # If verified, no need to compare further for this user
-        
+                    logging.debug(f"User {user.username} matched with distance {distance} using {metric}")
+                    # Break out of inner loop: move to next face after a match
+                    break
+
         logging.info(f"Group photo comparison completed with {len(attendance)} matches.")
         return attendance
+
     except Exception as e:
         logging.error(f"Error comparing group photo: {e}")
         return []

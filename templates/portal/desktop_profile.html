@@ -182,7 +182,7 @@
             <hr>
             <div class="dropdown">
                 <a href="#" id = "profilePhoto" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img     {% if user.profile_photo %}src="{{ user.profile_photo.url }}"{% endif %} 
+                    <img     {% if profile_photo %}src="{{ profile_photo.file.url }}"{% endif %} 
                     width = "32" height ="32" class="rounded-circle me-2 ">
                     <strong>{{user.last_name}}, {{user.first_name}}</strong>
                 </a>
@@ -202,7 +202,7 @@
         <div class="content flex-grow-1">
             <h1 class="mb-4">Profile</h1>
             <div class="profile-container d-flex">
-                <img {% if user.profile_photo %}src="{{ user.profile_photo.url }}"{% endif %} alt="{{ user.first_name }} {{ user.last_name }}" class="profile-photo">
+                <img {% if profile_photo %}src="{{ profile_photo.file.url }}"{% endif %} alt="{{ user.first_name }} {{ user.last_name }}" class="profile-photo">
                 <div class="profile-info">
                     <h2>{{ user.first_name }} {{ user.last_name }}</h2>
                     <p><strong>Email:</strong> {{ user.email }}</p>

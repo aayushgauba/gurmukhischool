@@ -2,6 +2,13 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+class ProfilePhoto(models.Model):
+    file = models.FileField(upload_to="profile_photos/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Photo uploaded on {self.uploaded_at}"
+
 class CustomUser(AbstractUser):
     WEB_MANAGER = 'webmanager'
     ADMIN = 'admin'
@@ -18,6 +25,11 @@ class CustomUser(AbstractUser):
     ]
 
     profile_photo = models.FileField(upload_to='profile_photos/', blank=True, null=True)
+    profile_photos = models.ManyToManyField(
+        ProfilePhoto,
+        related_name='users',
+        blank=True
+    )
     usertype = models.CharField(max_length=20, choices=USER_TYPES, blank = True)
     phone_number = models.CharField(max_length=15, blank=True, null=True, unique = False)
     birth_date = models.DateField(blank=True, null=True)

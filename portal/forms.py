@@ -1,6 +1,6 @@
 from django import forms
 from .models import UploadedFile,UploadedAttendance, filestoAssignment
-from .models import Announcement, Courses, CustomUser, CarouselImage, GroupPhotoAttendance
+from .models import Announcement, Courses, CustomUser, CarouselImage, GroupPhotoAttendance, ProfilePhoto
 from django_select2.forms import Select2MultipleWidget
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
@@ -32,8 +32,8 @@ class SyllabusUploadForm(forms.ModelForm):
 
 class ProfilePhotoForm(forms.ModelForm):
     class Meta:
-        model = CustomUser
-        fields = ['profile_photo']
+        model = ProfilePhoto
+        fields = ['file']
 
 class FileUploadForm(forms.ModelForm):
     class Meta:
