@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-kzsds23)4hyl5!!c@&o2p@yvopwr=_z7$fe8$ecxq%1)=)zdi&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['stlouisgurudwara.org', '127.0.0.1']
+ALLOWED_HOSTS = ['stlouisgurudwara.org']
 # Application definition
 
 INSTALLED_APPS = [
