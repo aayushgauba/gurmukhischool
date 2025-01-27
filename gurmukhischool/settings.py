@@ -145,12 +145,12 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.office365.com'
+EMAIL_HOST = 'mail.privateemail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'gurmukhischoolstl@outlook.com'
-EMAIL_HOST_PASSWORD = 'TptBHttVsLP_Z7!'
-DEFAULT_FROM_EMAIL = 'gurmukhischoolstl@outlook.com'
+EMAIL_HOST_USER = 'support@sscgurmukhischoolstl.org'  # Replace with your Namecheap Private Email address
+EMAIL_HOST_PASSWORD = 'sykpon-bovtY9-vykbez'      # Replace with your Namecheap Private Email password
+DEFAULT_FROM_EMAIL = 'support@sscgurmukhischoolstl.org'  # Replace with your Namecheap Private Email address
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 MEDIA_URL = '/media/'
