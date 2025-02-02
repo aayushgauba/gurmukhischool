@@ -34,6 +34,8 @@ class CustomUser(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True, null=True, unique = False)
     birth_date = models.DateField(blank=True, null=True)
     approved = models.BooleanField(blank=False, default=False)
+    embedding = models.JSONField(blank=True, null=True)
+    modified_profile_photo = models.BooleanField(default=True)
     def __str__(self):
         return self.first_name +" "+ self.last_name
 

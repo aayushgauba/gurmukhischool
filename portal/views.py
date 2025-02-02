@@ -885,6 +885,9 @@ def upload_profile_photo(request, course_id=None):
     if form.is_valid():
         new_photo = form.save(commit=False)
         new_photo.save()
+        user = request.user
+        user.modified_profile_photo = True
+        user.save()
         request.user.profile_photos.add(new_photo)
         if course_id:
             return redirect('profile', course_id=course_id)
