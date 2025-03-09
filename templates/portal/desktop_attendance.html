@@ -1,15 +1,14 @@
 {% load custom_filters %}
 {% load crispy_forms_tags %}
-
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance | Sikh Study Circle Gurmukhi School</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css" rel="stylesheet">    <style>
+    <link href="{% static 'css/fonts.css' %}" rel="stylesheet">   
+    <style nonce="{{ request.csp_nonce }}">
                  .select2-container--default .select2-selection--multiple {
             background-color: #ffffff;
             border: 1px solid #ffc107;
@@ -372,12 +371,12 @@
         </div>
     </div>
     
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/bootstrap-icons.min.js"></script>
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script>
+        <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+        <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet"> 
+        <link href="{% static 'css/select2.min.css' %}" rel="stylesheet" />
+        <script src="{% static 'jquery-3.6.0.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+        <script src="{% static 'select2.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+<script nonce="{{ request.csp_nonce }}">
      $(document).ready(function() {
         $('.js-example-basic-multiple').select2({
             placeholder: "Select recipients",

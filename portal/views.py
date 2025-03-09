@@ -810,8 +810,9 @@ def adminViewHome(request):
 @admin_required
 @approved_required
 def adminUsers(request):
+    profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     users = CustomUser.objects.filter(approved = True)
-    return render(request, "portal/adminUsers.html", {"users":users})
+    return render(request, "portal/adminUsers.html", {"users":users, "profile_photo":profile_photo})
 
 @require_POST
 @login_required
