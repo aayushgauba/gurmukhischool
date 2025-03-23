@@ -1,6 +1,8 @@
-from django.shortcuts import render,HttpResponse
+from django.shortcuts import render,HttpResponse, redirect
 from .models import CarouselImage
 from pages.models import Contact
+from portal.models import EmailSubscriber
+from django.views.decorators.http import require_POST
 
 def indexMain(request):
     images = CarouselImage.objects.all()
@@ -12,6 +14,19 @@ def aboutMain(request):
 
 def sitemap(request):
     return HttpResponse(open('templates/sitemap.xml').read(), content_type='text/xml')
+
+def subscribe(request):
+    return render(request,"subscribe.html")
+
+@require_POST
+def subscribePOST(request):
+    firstName = request.POST.get("firstName")
+    lastName = request.POST.get("lastName")
+    name = str(firstName + " " + lastName)
+    email = request.POST.get("email")
+    EmailSubscriber.objects.create(name = name, email = email)
+    return redirect("indexMain")
+
 
 def contact(request):
     if request.method == 'POST':

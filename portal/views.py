@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from portal.models import CustomUser, Schedule, Courses, Section, Folder, Grade, Announcement, Attendance, CarouselImage
+from portal.models import CustomUser, Schedule, WeeklyEmail, Courses, Section, Folder, Grade, Announcement, Attendance, CarouselImage
 from django.contrib.auth.hashers import make_password, check_password
 from django.http import HttpRequest
 from django.contrib.auth import authenticate, login as auth_login, logout
@@ -15,7 +15,7 @@ from .models import UploadedFile, Assignment, filestoAssignment
 from main.models import CarouselImage as Carousel
 from main.forms import CarouselImageForm as MainCarouselImageForm
 from django.contrib.auth.decorators import login_required
-from .decorators import superuser_required, teacher_required, admin_required, approved_required
+from .decorators import superuser_required, teacher_required, admin_required, approved_required, emailSender_required
 from django.views.decorators.http import require_POST
 from asgiref.sync import sync_to_async
 from pages.models import Contact
@@ -458,6 +458,8 @@ def courses(request: HttpRequest):
         courses = Courses.objects.filter(People = request.user).order_by("id")
     elif user.usertype == "Admin" and user.is_superuser:
         return redirect("adminViewHome")
+    elif user.usertype == "EmailSender" and user.is_superuser:
+        return redirect("calenderNotification")
     else:
         return render(request, "portal/unknown_usertype.html", {"user": user})
     user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
@@ -773,6 +775,8 @@ def scheduleDefine(request, course_id):
     except Exception as e:
         Schedule.objects.create(startDate = startDate, endDate = endDate, days=choices, course = course)
     return redirect(next_url)
+
+
 
 @login_required
 @admin_required
@@ -1184,6 +1188,13 @@ def addStudents(request: HttpRequest, course_id):
 def account_activation_sent(request):
     return render(request, 'portal/invalidAccountActivation.html')
 
+@require_POST
+def addKirtan(request):
+    date = datetime.strptime(request.POST.get("kirtanDate"), "%Y-%m-%d")
+    hostingFamily = request.POST.get("hostingFamily")
+    WeeklyEmail.objects.create(email_type = "weekly", organizer = hostingFamily, date_created = datetime.today(), date_scheduled= date,  sent=False, subject ="Weekly Kirtan")
+    return redirect("calenderNotification")
+
 @login_required
 @admin_required
 @approved_required
@@ -1225,3 +1236,95 @@ def login(request):
             else:
                 return redirect("login")
     return render(request, "login.html")
+
+@approved_required
+@emailSender_required
+@login_required
+def calenderNotification(request: HttpRequest, year=None, month=None):
+    profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
+    
+    # Default to current year and month if not provided
+    if not year or not month:
+        now = datetime.now()
+        year = now.year
+        month = now.month
+    
+    # Fetch WeeklyEmail events for the given month/year
+    weekly_emails = WeeklyEmail.objects.filter(
+        date_scheduled__year=year,
+        date_scheduled__month=month
+    )
+    
+    # Group events by day (using the day of the month)
+    events_by_day = {}
+    for event in weekly_emails:
+        day = event.date_scheduled.day
+        events_by_day.setdefault(day, []).append(event)
+    
+    # Create a Calendar instance and get (day, weekday) tuples
+    cal = calendar.Calendar()
+    month_days = list(cal.itermonthdays2(year, month))
+    today = datetime.now().day if year == datetime.now().year and month == datetime.now().month else None
+    print(today)
+    # Calculate previous and next month/year for navigation
+    prev_month = month - 1
+    next_month = month + 1
+    prev_year = year
+    next_year = year
+    if prev_month == 0:
+        prev_month = 12
+        prev_year -= 1
+    if next_month == 13:
+        next_month = 1
+        next_year += 1
+
+    # Build the weeks structure:
+    # Each week is a list of 7 cells. Each cell is either:
+    #   - None (if no day in that cell)
+    #   - A dictionary: {'day': <day>, 'events': <list of events>}
+    weeks = []
+    week = [None] * 7
+    for day, weekday in month_days:
+        if day != 0:
+            # Create a dictionary for the day with its events (if any)
+            week[weekday] = {'day': day, 'events': events_by_day.get(day, [])}
+        # When weekday is Saturday (6), we have a complete week
+        if weekday == 6:
+            weeks.append(week)
+            week = [None] * 7
+    # Append any leftover week (if it contains at least one non-None cell)
+    if any(cell is not None for cell in week):
+        weeks.append(week)
+    
+    context = {
+        'year': year,
+        'month': month,
+        'month_days': month_days,  # raw (day, weekday) tuples, if needed
+        'today': today,
+        'prev_year': prev_year,
+        'prev_month': prev_month,
+        'next_year': next_year,
+        'next_month': next_month,
+        'weeks': weeks,  # List of weeks, each week is a list of 7 cells (None or dict with day and events)
+        'profile_photo': profile_photo,
+    }
+    
+    # Use the same template for mobile and desktop (adjust if needed)
+    template_name = 'portal/desktop_adminCalender.html'
+    return render(request, template_name, context)
+
+def delete_email(request, email_id):
+    email = WeeklyEmail.objects.get(id=email_id)
+    email.delete()
+    return redirect('calenderNotification')
+
+def calendarEventView(request, email_id):
+    email = WeeklyEmail.objects.get(id = email_id)
+    date = email.date_scheduled
+    day = date.strftime("%A")
+    date = date.strftime("%B %d, %Y")
+    if email.email_type == "weekly":
+        return render(request, "portal/desktop_adminCalenderView.html", {"email":email, "day":day})
+    else:
+        redirect("calenderNotification")

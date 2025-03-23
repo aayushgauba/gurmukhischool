@@ -1,0 +1,380 @@
+{% load custom_filters %}
+{% load crispy_forms_tags %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar | Sikh Study Circle Gurmukhi School</title>
+    <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/select2.min.css' %}" rel="stylesheet">
+    <style nonce="{{ request.csp_nonce }}">
+        /* Reset styles for email clients */
+        body, table, td, div, p, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        table, td {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+        /* Base Styles */
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f2f3f4;
+            color: #000;
+            padding-top: 60px;
+        }
+        /* Sidebar */
+        .sidebar-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            background-color: #343a40;
+            color: #fff;
+            height: 100vh;
+            padding-top: 1rem;
+        }
+        .sidebar-custom a {
+            color: #fff;
+        }
+        .sidebar-custom a:hover {
+            color: #ffcc00;
+        }
+        .sidebar-custom .nav-link.active {
+            background-color: #ffcc00 !important;
+            color: #000 !important;
+        }
+        .sidebar-custom .nav-link.active:hover {
+            background-color: #ffcc00;
+            color: #000;
+        }
+        .sidebar-custom .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffcc00;
+        }
+        /* Content area offset from sidebar */
+        .content {
+            margin-left: 280px;
+            padding: 20px;
+        }
+        /* Email container styles */
+        table.email-container {
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        /* Header styles */
+        .email-header {
+            background-color: #333;
+            padding: 20px;
+            text-align: center;
+        }
+        .email-header h1 {
+            color: #ffffff;
+            font-size: 24px;
+            margin: 0;
+        }
+        .email-header .logo {
+            font-size: 36px;
+            color: orange;
+            margin-bottom: 10px;
+        }
+        /* Body styles */
+        .email-body {
+            padding: 40px 30px;
+        }
+        .email-body h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .email-body p {
+            color: #666;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        /* Delete Button */
+        .delete-button {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        /* Kirtan Details Box */
+        .kirtan-details {
+            background-color: #FFF3CD;
+            border-left: 4px solid #FFC107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .kirtan-details h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .kirtan-details p {
+            color: #666;
+            line-height: 1.6;
+        }
+        /* Footer styles */
+        .email-footer {
+            background-color: #333;
+            padding: 20px;
+            text-align: center;
+            color: #fff;
+            font-size: 14px;
+        }
+        .email-footer a {
+            color: #FFC107;
+            text-decoration: none;
+        }
+        .email-footer p {
+            margin: 0;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .content {
+                margin-left: 0;
+            }
+            table.email-container {
+                width: 100%;
+            }
+        }
+        /* Select2 Styles */
+        .select2-container--default .select2-selection--multiple {
+            background-color: #fff;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 5px;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar for small screens -->
+    <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <span class="fs-4 logo">ੴ</span> <b>Carousel Manager</b>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" 
+                    aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
+            </button>
+        </div>
+    </nav>
+    
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
+            <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                <span class="fs-4 logo">ੴ</span> Admin Portal
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                {% if request.user.usertype == "Admin" %}
+                <li class="nav-item">
+                    <a href="{% url 'adminViewHome' %}" class="nav-link">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'carousel_management' %}" class="nav-link">
+                        <i class="bi bi-images"></i> Carousel
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'adminUsers' %}" class="nav-link">
+                        <i class="bi bi-people"></i> Users
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'adminContactView' %}" class="nav-link">
+                        <i class="bi bi-telephone"></i> Contact
+                    </a>
+                </li>
+                {% endif %}
+                <li class="nav-item">
+                    <a href="{% url 'calenderNotification' %}" class="nav-link active">
+                        <i class="bi bi-calendar2"></i> Calendar
+                    </a>
+                </li>
+            </ul>
+            <hr>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" 
+                   id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img {% if profile_photo %}src="{{ profile_photo.file.url }}"{% endif %} 
+                         width="32" height="32" class="rounded-circle me-2">
+                    <strong>{{ request.user.last_name }}, {{ request.user.first_name }}</strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'logout' %}">Sign out</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="600" class="email-container">
+                <!-- Email Header -->
+                <tr>
+                    <td class="email-header">
+                        <h1 class="logo">ੴ</h1>
+                        <h1>Sikh Study Circle of Saint Louis</h1>
+                    </td>
+                </tr>
+                <!-- Delete Button Row -->
+                <tr>
+                    <td style="padding: 10px 30px; text-align: right;">
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal">
+                            Delete Email
+                        </button>
+                    </td>
+                </tr>
+                <!-- Email Body -->
+                <tr>
+                    <td class="email-body">
+                        <h2>WEEKLY KIRTAN</h2>
+                        <p>
+                            Waheguru Ji Ka Khalsa,<br>
+                            Waheguru Ji Ki Fateh
+                        </p>
+                        <p>
+                            The members of Sikh Study Circle of Saint Louis invite you and your family/friends to our weekly kirtan.
+                        </p>
+                        
+                        <!-- Kirtan Details Box -->
+                        <div class="kirtan-details">
+                            <h3>{{ day }} {{ email.date_scheduled }}</h3>
+                            <p>
+                                <strong>Sukhmani Sahib Path:</strong> 10am to 11am<br>
+                                <strong>Bhog Kirtan:</strong> 11:00am to 12:45pm<br>
+                                <strong>Langar Sewa:</strong> 8:30am to 2:30pm<br>
+                                <strong>Hosting Family:</strong> {{ email.organizer }} and Family
+                            </p>
+                        </div>
+                        
+                        <!-- Membership Section -->
+                        <div style="margin: 30px 0;">
+                            <h3>Membership & Commitment</h3>
+                            <p>
+                                Show your support to our local Sikh community by becoming a member of the Sikh Study Circle of Saint Louis 
+                                (membership is not required but is greatly appreciated as <strong>all funds are redirected back into building our Sikh community of St. Louis</strong>).
+                            </p>
+                            <ul style="padding-left: 20px;">
+                                <li><strong>Annual Membership:</strong> $101.00</li>
+                                <li><strong>Lifetime Membership:</strong> Family $301.00</li>
+                                <li><strong>Lifetime Membership for Single:</strong> $201.00</li>
+                            </ul>
+                            <p style="font-style: italic;">
+                                Membership and commitments are due on the first month of every year. Please make a check payable to Sikh Study Circle of Saint Louis.
+                            </p>
+                            <p style="font-weight: bold;">
+                                Donations made to the Sikh Study Circle of Saint Louis are tax deductible.
+                            </p>
+                        </div>
+                        
+                        <!-- Sponsors Section -->
+                        <div style="margin: 30px 0;">
+                            <h3>Sponsors Needed</h3>
+                            <p>
+                                Sponsors are invited to help coordinate the 2025 calendar year. We look to our community to help us host our weekly kirtan.
+                            </p>
+                            <p>
+                                Paper products and steel ware will be provided by Sikh Study Circle of Saint Louis. Other assistance for langar sewa 
+                                (cooking, serving, etc.) can be arranged upon request. Please let us know how we can be of any assistance beforehand so we can help ease the preparation process.
+                            </p>
+                        </div>
+                        
+                        <!-- Volunteers Section -->
+                        <div style="margin: 30px 0;">
+                            <h3>Volunteers</h3>
+                            <p>
+                                The Sikh Study Circle is always looking for volunteers that are kind enough to donate their time and help coordinate events. 
+                                Contact us at <a href="tel:6369263731">636-926-3731</a> or 
+                                <a href="mailto:sikhstudycircleofst.louis@gmail.com">sikhstudycircleofst.louis@gmail.com</a> if you are able to help in any capacity.
+                            </p>
+                        </div>
+                        
+                        <!-- Feedback Section -->
+                        <div style="margin: 30px 0 0;">
+                            <h3>Feedback & Suggestions</h3>
+                            <p>
+                                Your comments and concerns are very important to us. Please send any feedback or suggestions to 
+                                <a href="mailto:sikhstudycircleofst.louis@gmail.com">sikhstudycircleofst.louis@gmail.com</a> as we continually strive to improve our community.
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+                <!-- Email Footer -->
+                <tr>
+                    <td class="email-footer">
+                        <p>
+                            Sikh Study Circle of St. Louis<br>
+                            116 Willis Dr<br>
+                            Saint Peters, MO, 63376
+                        </p>
+                        <p>
+                            <a href="tel:6369263731">(636) 926-3731</a>
+                        </p>
+                        <div style="margin-top: 15px;">
+                            <a href="https://www.facebook.com/STLGurdwara">Follow us on Facebook</a>
+                        </div>
+                        <p style="margin-top: 15px; font-size: 12px; color: #999;">
+                            You received this email because you are registered with the Sikh Study Circle of Saint Louis.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmationModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this email?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{% url 'delete_email' email.id %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static 'js/select2.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+</body>
+</html>

@@ -19,7 +19,7 @@ def userFix():
     logging.info("Fixing user permissions...")
     users = CustomUser.objects.all()
     for user in users:
-        is_superuser = user.usertype in ('Teacher', 'Admin')
+        is_superuser = user.usertype in ('Teacher', 'Admin', 'EmailSender')
         if user.is_superuser != is_superuser:
             user.is_superuser = is_superuser
             user.save()

@@ -41,6 +41,16 @@ def admin_required(view_func):
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
+def emailSender_required(view_func):
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        # Allow if usertype is either "Admin" or "EmailSender"
+        if request.user.usertype not in ('Admin', 'EmailSender'):
+            raise PermissionDenied("You do not have permission to access this page.")
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
 def approved_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:

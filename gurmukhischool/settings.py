@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-kzsds23)4hyl5!!c@&o2p@yvopwr=_z7$fe8$ecxq%1)=)zdi&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['stlouisgurudwara.org']
+ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'django_select2',
+    'csp',
 ]
 
 TINYMCE_DEFAULT_CONFIG = {
@@ -62,12 +63,19 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'csp.middleware.CSPMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 ROOT_URLCONF = 'gurmukhischool.urls'
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_FONT_SRC = ["'self'"]
+CSP_IMG_SRC = ["'self'", "data:"]
+CSP_CONNECT_SRC = ["'self'"]
+CSP_FRAME_SRC = ["'self'"]
+
 
 TEMPLATES = [
     {
@@ -148,9 +156,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'mail.privateemail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'support@sscgurmukhischoolstl.org'  # Replace with your Namecheap Private Email address
+EMAIL_HOST_USER = 'noreply@stlouisgurudwara.org'  # Replace with your Namecheap Private Email address
 EMAIL_HOST_PASSWORD = 'sykpon-bovtY9-vykbez'      # Replace with your Namecheap Private Email password
-DEFAULT_FROM_EMAIL = 'support@sscgurmukhischoolstl.org'  # Replace with your Namecheap Private Email address
+DEFAULT_FROM_EMAIL = 'noreply@stlouisgurudwara.org'  # Replace with your Namecheap Private Email address
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 MEDIA_URL = '/media/'

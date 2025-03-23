@@ -69,6 +69,29 @@ class UploadedAttendance(models.Model):
     file = models.FileField(upload_to='attendance/')
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
+class EmailSubscriber(models.Model):
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=255, blank=True)
+    def __str__(self):
+        return self.name
+
+class WeeklyEmail(models.Model):
+    email_type = models.CharField(max_length=50)
+    organizer = models.CharField(
+        max_length=500,
+        null=True,
+        blank=True,
+        help_text="Organizer information (max 500 characters)"
+    )
+    date_created = models.DateField(auto_now_add=True)
+    date_scheduled = models.DateField(null=True, blank=True)
+    date_sent = models.DateField(null=True, blank=True)
+    sent = models.BooleanField(default=False)
+    subject = models.CharField(max_length=255, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.email_type.capitalize()} Weekly Email (ID: {self.pk})"
+
 class Assignment(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()

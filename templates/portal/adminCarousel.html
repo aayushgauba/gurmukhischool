@@ -206,7 +206,7 @@
         <!-- Sidebar -->
         <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
+                <span class="fs-4 logo">ੴ</span> Admin Portal
 
             </a>
             <hr>
@@ -229,6 +229,11 @@
                 <li>
                     <a href="{% url 'adminContactView' %}" class="nav-link">
                         <i class="bi bi-telephone"></i> Contact
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{% url 'calenderNotification' %}" class="nav-link">
+                        <i class="bi bi-calendar2"></i> Calandar
                     </a>
                 </li>
             </ul>

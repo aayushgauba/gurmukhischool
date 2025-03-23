@@ -1,0 +1,240 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newsletter | Sikh Study Circle Gurudwara</title>
+  <meta name="description" content="Subscribe to the Sikh Study Circle Gurudwara newsletter to stay updated with upcoming programs, religious events, and important community announcements." />
+  <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
+  <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
+  <style nonce="{{ request.csp_nonce }}">
+    body {
+      font-family: 'Mukta', sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: #f4f4f4;
+    }
+    .content {
+      flex: 1;
+    }
+    .navbar-custom {
+      background-color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .navbar-custom .navbar-brand,
+    .navbar-custom .nav-link {
+      color: #333;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+    .navbar-custom .nav-link:hover {
+      color: #FFC107;
+    }
+    .navbar-custom .logo {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #FFC107;
+      margin-right: 10px;
+    }
+    .footer-custom {
+      background-color: #333;
+      color: #fff;
+      padding: 20px 0;
+    }
+    .footer-custom a {
+      color: #FFC107;
+      transition: color 0.3s ease;
+    }
+    .footer-custom a:hover {
+      color: #e0a800;
+      text-decoration: none;
+    }
+    .newsletter-section {
+      background-color: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      margin: 20px auto;
+      max-width: 90%;
+    }
+    .newsletter-section h2 {
+      color: #333;
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .newsletter-section p {
+      color: #666;
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+    .btn-subscribe {
+      background-color: #FFC107;
+      color: #333;
+      font-weight: 600;
+      padding: 10px 25px;
+      border: none;
+      transition: background-color 0.3s ease;
+    }
+    .btn-subscribe:hover {
+      background-color: #e0a800;
+      color: #333;
+    }
+    .form-control:focus {
+      border-color: #FFC107;
+      box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+    .benefits-list {
+      margin: 25px 0;
+    }
+    .benefits-list li {
+      margin-bottom: 10px;
+      color: #666;
+    }
+    .benefits-list i {
+      color: #FFC107;
+      margin-right: 10px;
+    }
+    .content {
+        margin-top: 80px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">
+        <span class="logo">ੴ</span> Sikh Study Circle Gurudwara
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="{% url 'indexMain' %}">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'aboutMain' %}">About Us</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'contact' %}">Contact</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'index' %}">Gurmukhi School</a>
+              </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-7">
+            <h2>Stay Connected with Our Sangat</h2>
+            <p>Subscribe to our newsletter to receive updates about upcoming Gurdwara programs, religious celebrations, community events, and important announcements. Join our community and stay connected with the teachings of Gurbani and Sikh traditions.</p>
+            
+            <ul class="benefits-list list-unstyled">
+              <li><i class="bi bi-check-circle-fill"></i> Weekly program schedules and special events</li>
+              <li><i class="bi bi-check-circle-fill"></i> Upcoming religious and cultural celebrations</li>
+              <li><i class="bi bi-check-circle-fill"></i> Community service (seva) opportunities</li>
+              <li><i class="bi bi-check-circle-fill"></i> Langar announcements and volunteer needs</li>
+              <li><i class="bi bi-check-circle-fill"></i> Educational resources and Gurbani insights</li>
+            </ul>
+            
+            <form action="{% url 'subscribePOST' %}" method="post" class="mt-4">
+              {% csrf_token %}
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <input type="text" class="form-control" id="firstName" name="firstName" placeholder="First Name" required>
+                </div>
+                <div class="col-md-6">
+                  <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Last Name" required>
+                </div>
+                <div class="col-12">
+                  <input type="email" class="form-control" id="email" name="email" placeholder="Email Address" required>
+                </div>
+                <div class="col-12">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="agreeTerms" name="agreeTerms" required>
+                    <label class="form-check-label" for="agreeTerms">
+                      I agree to receive emails from Sikh Study Circle Gurudwara
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <button type="submit" class="btn btn-subscribe">Subscribe Now</button>
+                </div>
+              </div>
+            </form>
+            
+            <p class="mt-3 small text-muted">You can unsubscribe at any time by clicking the link in the footer of our emails.</p>
+          </div>
+          <div class="col-lg-5 d-flex align-items-center justify-content-center">
+            <div class="text-center">
+              <div class="mb-4">
+                <span class="display-1 logo">ੴ</span>
+              </div>
+              <div class="p-4 bg-light rounded">
+                <h4>Join Our Sangat</h4>
+                <p class="mb-0">Connect with our community and stay informed about Gurudwara activities, religious programs, and upcoming celebrations throughout the year.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer-custom mt-auto">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <h5>Contact Us</h5>
+          <p>
+            Sikh Study Circle<br>
+            116 Willis Dr<br>
+            Saint Peters, MO, 63376<br>
+            Phone: (636) 926-3731<br>
+          </p>
+        </div>
+        <div class="col-md-4">
+          <h5>Weekly Program</h5>
+          <p>
+            Sunday: 10:00 AM - 1:00 PM<br>
+            Friday: 6:30 PM - 8:30 PM<br>
+            Langar served after all programs
+          </p>
+        </div>
+        <div class="col-md-4">
+          <h5>Useful Links</h5>
+          <ul class="list-unstyled">
+            <li><a href="{% url 'indexMain' %}">Home</a></li>
+            <li><a href="{% url 'aboutMain' %}">About Us</a></li>
+            <li><a href="{% url 'contact' %}">Contact</a></li>
+            <li><a href="{% url 'index' %}">Gurmukhi School</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12 text-center">
+          <p class="mt-3 mb-0">&copy; 2024 Sikh Study Circle Gurudwara. All Rights Reserved.</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+</body>
+</html>

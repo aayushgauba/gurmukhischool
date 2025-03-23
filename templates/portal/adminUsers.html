@@ -192,10 +192,11 @@
         <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
                 <span class="fs-4 logo">ੴ</span>
-                <span class="ms-2">{{user.usertype}} Portal</span>
+                <span class="ms-2">Admin Portal</span>
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
+                {% if request.user.usertype == "Admin" %}
                 <li class="nav-item">
                     <a href="{% url 'adminViewHome' %}" class="nav-link">
                         <i class="bi bi-speedometer2"></i> Dashboard
@@ -207,13 +208,19 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'adminUsers' %}" class="nav-link active" aria-current="page">
+                    <a href="{% url 'adminUsers' %}" class="nav-link">
                         <i class="bi bi-people"></i> Users
                     </a>
                 </li>
                 <li>
                     <a href="{% url 'adminContactView' %}" class="nav-link">
                         <i class="bi bi-telephone"></i> Contact
+                    </a>
+                </li>
+                {%endif%}
+                <li class="nav-item">
+                    <a href="{% url 'calenderNotification' %}" class="nav-link">
+                        <i class="bi bi-calendar2"></i> Calandar
                     </a>
                 </li>
             </ul>
