@@ -1310,9 +1310,10 @@ def calenderNotification(request: HttpRequest, year=None, month=None):
         'profile_photo': profile_photo,
     }
     
-    # Use the same template for mobile and desktop (adjust if needed)
-    template_name = 'portal/desktop_adminCalender.html'
-    return render(request, template_name, context)
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_adminCalender.html", context)
+    else:   
+        return render(request, "portal/desktop_adminCalender.html", context)
 
 def delete_email(request, email_id):
     email = WeeklyEmail.objects.get(id=email_id)
