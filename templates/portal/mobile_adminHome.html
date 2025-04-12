@@ -1,0 +1,431 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waitlist | Sikh Study Circle Gurmukhi School</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">
+    <style nonce="{{ request.csp_nonce }}">
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f2f3f4;
+            color: #000000;
+            padding-bottom: 60px;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Mobile header */
+        .header-custom {
+            background-color: #FFC107;
+            color: #000;
+            font-weight: 600;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-custom .navbar-toggler {
+            border: none;
+            color: #000;
+        }
+
+        .header-custom .navbar-brand {
+            font-size: 1.5rem;
+            color: #000;
+        }
+        
+        /* Sidebar for desktop */
+        .sidebar-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            background-color: #343a40;
+            color: #ffffff;
+            height: 100vh;
+            padding-top: 1rem;
+            z-index: 1100;
+            transition: transform 0.3s ease;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-custom {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar-custom.show {
+                transform: translateX(0);
+            }
+        }
+        
+        .sidebar-custom a {
+            color: #ffffff;
+        }
+        
+        .sidebar-custom a:hover {
+            color: #ffcc00;
+        }
+        
+        .sidebar-custom .nav-link.active {
+            background-color: #ffcc00 !important;
+            color: #000000 !important;
+        }
+        
+        .sidebar-custom .nav-link.active:hover {
+            background-color: #ffcc00;
+            color: #000000;
+        }
+        
+        .sidebar-custom .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffcc00;
+        }
+
+        /* Content area */
+        .content {
+            padding: 70px 15px 20px;
+            transition: margin-left 0.3s ease;
+        }
+        
+        @media (min-width: 992px) {
+            .content {
+                margin-left: 280px;
+            }
+        }
+
+        /* Bottom navigation bar */
+        .bottom-nav {
+            background-color: #343a40;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            height: 60px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .bottom-nav a {
+            color: #ffffff;
+            text-align: center;
+            font-size: 0.9rem;
+            padding: 5px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .bottom-nav a.active {
+            color: #FFC107;
+        }
+        
+        .bottom-nav i {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+
+        /* Button styling */
+        .btn-primary {
+            background-color: #FFC107 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #e0a800 !important;
+        }
+
+        .file-system-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            color: #000000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-system-table th,
+        .file-system-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #dddddd;
+        }
+
+        .file-system-table th {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .file-system-table tbody tr {
+            background-color: #ffffff;
+            transition: background-color 0.3s;
+        }
+
+        .file-system-table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .file-system-table tbody td {
+            position: relative;
+        }
+
+        .file-system-table tbody td:last-child {
+            text-align: center;
+        }
+
+        .file-system-table tbody td::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background-color: #ffc107;
+            transform: scaleY(0);
+            transition: transform 0.3s;
+        }
+
+        .file-system-table tbody tr:hover td::before {
+            transform: scaleY(1);
+        }
+
+        .btn-admit {
+            background-color: #ffc107;
+            color: #000;
+            border: 1px solid #ffc107;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-weight: 600;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .btn-admit:hover {
+            background-color: #000;
+            color: #ffc107;
+        }
+        
+        @media (max-width: 576px) {
+            .file-system-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .file-system-table th, 
+            .file-system-table td {
+                padding: 10px;
+            }
+            
+            .content h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <header class="header-custom d-lg-none">
+        <a class="navbar-brand" href="#">
+            <span class="fs-4 logo">ੴ</span> Admin Portal
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-list"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar (hidden on mobile by default) -->
+    <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
+        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none ps-3">
+            <span class="fs-4 logo">ੴ</span>
+            <span class="ms-2">{{user.usertype}} Portal</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            {% if request.user.usertype == "Admin" %}
+            <li class="nav-item">
+                <a href="{% url 'adminViewHome' %}" class="nav-link active">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'carousel_management' %}" class="nav-link">
+                    <i class="bi bi-images"></i> Carousel
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'adminUsers' %}" class="nav-link">
+                    <i class="bi bi-people"></i> Users
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'adminContactView' %}" class="nav-link">
+                    <i class="bi bi-telephone"></i> Contact
+                </a>
+            </li>
+            {%endif%}
+            <li class="nav-item">
+                <a href="{% url 'calenderNotification' %}" class="nav-link">
+                    <i class="bi bi-calendar2"></i> Calendar
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown ps-3 pb-3">
+            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <img {% if profile_photo %}src="{{ profile_photo.file.url }}"{% endif %} 
+                width="32" height="32" class="rounded-circle me-2">
+                <strong>{{request.user.last_name}}, {{request.user.first_name}}</strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'logout' %}">Sign out</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <h2 class="mb-4">Waitlist</h2>
+        <div class="table-responsive">
+            {% if users %}
+            <table class="file-system-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {%for user in users%}
+                    <tr>
+                        <td>{{user.first_name}} {{user.last_name}}</td>
+                        <td>{{user.email}}</td>
+                        <td>
+                            <button type="button" class="btn btn-admit" data-bs-toggle="modal" data-bs-target="#admitModal" 
+                                    data-user-id="{{ user.id }}">
+                                Admit
+                            </button>
+                        </td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+            {%else%}
+            <center>No users in the waitlist</center>
+            {%endif%}
+        </div>
+    </div>
+    
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav d-lg-none">
+        {% if request.user.usertype == "Admin" %}
+        <a href="{% url 'adminViewHome' %}" class="nav-link active">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'carousel_management' %}" class="nav-link">
+            <i class="bi bi-images"></i>
+            <span>Carousel</span>
+        </a>
+        <a href="{% url 'adminUsers' %}" class="nav-link">
+            <i class="bi bi-people"></i>
+            <span>Users</span>
+        </a>
+        <a href="{% url 'adminContactView' %}" class="nav-link">
+            <i class="bi bi-telephone"></i>
+            <span>Contact</span>
+        </a>
+        {% endif %}
+        <a href="{% url 'calenderNotification' %}" class="nav-link">
+            <i class="bi bi-calendar2"></i>
+            <span>Calendar</span>
+        </a>
+        <a href="{% url 'profile' %}" class="nav-link">
+            <i class="bi bi-person"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- Modal Structure -->
+    <div class="modal fade" id="admitModal" tabindex="-1" aria-labelledby="admitModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="admitModalLabel">Admit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="admitForm" method="POST" action="{% url 'adminViewHome' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="userType" class="form-label">Select User Type</label>
+                            <select class="form-select" id="userType" name="user_type">
+                                <option value="Student">Student</option>
+                                <option value="Teacher">Teacher</option>
+                                <option value="Admin">Admin</option>
+                                <option value="EmailSender">Email Sender</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="user_id" id="userId">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" form="admitForm" class="btn btn-primary">Admit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        $(document).ready(function() {
+            // Toggle sidebar on mobile
+            $('.navbar-toggler').on('click', function() {
+                $('#sidebarMenu').toggleClass('show');
+            });
+            
+            // Close sidebar when clicking outside on mobile
+            $(document).on('click', function(e) {
+                if (window.innerWidth < 992) {
+                    if (!$(e.target).closest('#sidebarMenu').length && 
+                        !$(e.target).closest('.navbar-toggler').length && 
+                        $('#sidebarMenu').hasClass('show')) {
+                        $('#sidebarMenu').removeClass('show');
+                    }
+                }
+            });
+
+            var admitModal = document.getElementById('admitModal');
+            admitModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var userId = button.getAttribute('data-user-id');
+                
+                // Update the modal's content
+                var userIdInput = admitModal.querySelector('#userId');
+                userIdInput.value = userId;
+            });
+        });
+    </script>
+</body>
+</html>

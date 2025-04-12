@@ -100,15 +100,19 @@ def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
 @login_required
 @approved_required
 @admin_required
-def carousel_management(request):
+def carousel_management(request: HttpRequest):
     images = CarouselImage.objects.all()
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     mainImages = Carousel.objects.all()
     images = images.order_by("order")
     mainImages = mainImages.order_by("order")
     form = CarouselImageForm()
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     mainform = MainCarouselImageForm()
-    return render(request, 'portal/adminCarousel.html', {'profile_photo':profile_photo, 'images': images,'mainImages':mainImages, 'form': form, 'mainform':mainform})
+    if "mobile" in user_agent:
+        return render(request, "portal/mobile_adminCarousel.html", {'profile_photo':profile_photo, 'images': images,'mainImages':mainImages, 'form': form, 'mainform':mainform})
+    else:   
+        return render(request, "portal/desktop_adminCarousel.html", {'profile_photo':profile_photo, 'images': images,'mainImages':mainImages, 'form': form, 'mainform':mainform})
 
 @login_required
 @approved_required
@@ -781,7 +785,8 @@ def scheduleDefine(request, course_id):
 @login_required
 @admin_required
 @approved_required
-def adminViewHome(request):
+def adminViewHome(request:HttpRequest):
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
         user_type = request.POST.get('user_type')
@@ -808,15 +813,23 @@ def adminViewHome(request):
         return redirect("adminViewHome")
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     users = CustomUser.objects.filter(approved = False)
-    return render(request, "portal/adminHome.html", {"users":users, 'profile_photo':profile_photo})
+    if "mobile" in user_agent:
+        return render(request, 'portal/mobile_adminHome.html', {"users":users, 'profile_photo':profile_photo})
+    else:   
+        return render(request, "portal/desktop_adminHome.html", {"users":users, 'profile_photo':profile_photo})
 
 @login_required
 @admin_required
 @approved_required
-def adminUsers(request):
+def adminUsers(request:HttpRequest):
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     users = CustomUser.objects.filter(approved = True)
-    return render(request, "portal/adminUsers.html", {"users":users, "profile_photo":profile_photo})
+    if "mobile" in user_agent:
+        return render(request, 'portal/mobile_adminUsers.html', {"users":users, "profile_photo":profile_photo})
+    else:   
+        return render(request, "portal/desktop_adminUsers.html", {"users":users, "profile_photo":profile_photo})
+
 
 @require_POST
 @login_required
@@ -877,10 +890,14 @@ def deleteSection(request, section_id):
 @login_required
 @admin_required
 @approved_required
-def adminContactView(request):
+def adminContactView(request:HttpRequest):
     contacts = Contact.objects.all()
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    return render(request, 'portal/adminContact.html', {"contacts":contacts, "profile_photo":profile_photo})
+    if "mobile" in user_agent:
+        return render(request, 'portal/mobile_adminContact.html', {"contacts":contacts, "profile_photo":profile_photo})
+    else:   
+        return render(request, "portal/desktop_adminContact.html", {"contacts":contacts, "profile_photo":profile_photo})
 
 @login_required
 @approved_required
@@ -1320,12 +1337,17 @@ def delete_email(request, email_id):
     email.delete()
     return redirect('calenderNotification')
 
-def calendarEventView(request, email_id):
+def calendarEventView(request: HttpRequest, email_id):
+    profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
+    user_agent = request.META['HTTP_USER_AGENT'].lower()
     email = WeeklyEmail.objects.get(id = email_id)
     date = email.date_scheduled
     day = date.strftime("%A")
     date = date.strftime("%B %d, %Y")
     if email.email_type == "weekly":
-        return render(request, "portal/desktop_adminCalenderView.html", {"email":email, "day":day})
+        if "mobile" in user_agent:
+            return render(request, "portal/mobile_adminCalenderView.html", {"email":email, "day":day, 'profile_photo':profile_photo})
+        else:   
+            return render(request, "portal/desktop_adminCalenderView.html", {"email":email, "day":day, 'profile_photo':profile_photo})
     else:
         redirect("calenderNotification")

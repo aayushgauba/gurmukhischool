@@ -1,0 +1,652 @@
+{% load crispy_forms_tags %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carousel | Sikh Study Circle Gurmukhi School</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
+    <style nonce="{{ request.csp_nonce }}">
+        /* Base styles */
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f2f3f4;
+            color: #000000;
+            padding-top: 60px;
+            padding-bottom: 60px;
+            overflow-x: hidden;
+        }
+
+        /* Mobile header */
+        .header-custom {
+            background-color: #FFC107;
+            color: #000;
+            font-weight: 600;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-custom .navbar-toggler {
+            border: none;
+            color: #000;
+        }
+
+        .header-custom .navbar-brand {
+            font-size: 1.5rem;
+            color: #000;
+        }
+
+        /* Sidebar for desktop */
+        .sidebar-custom {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 280px;
+            background-color: #343a40;
+            color: #ffffff;
+            height: 100vh;
+            padding-top: 1rem;
+            z-index: 1100;
+            transition: transform 0.3s ease;
+        }
+        
+        @media (max-width: 992px) {
+            .sidebar-custom {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar-custom.show {
+                transform: translateX(0);
+            }
+        }
+        
+        .sidebar-custom a {
+            color: #ffffff;
+        }
+        
+        .sidebar-custom a:hover {
+            color: #ffcc00;
+        }
+        
+        .sidebar-custom .nav-link.active {
+            background-color: #ffcc00 !important;
+            color: #000000 !important;
+        }
+        
+        .sidebar-custom .nav-link.active:hover {
+            background-color: #ffcc00;
+            color: #000000;
+        }
+        
+        .sidebar-custom .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffcc00;
+        }
+
+        /* Content area */
+        .content {
+            padding: 70px 15px 20px;
+            transition: margin-left 0.3s ease;
+        }
+        
+        @media (min-width: 992px) {
+            .content {
+                margin-left: 280px;
+            }
+        }
+
+        /* Section cards */
+        .section-card {
+            margin-bottom: 30px;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            padding: 15px;
+            font-size: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Table styling */
+        .table-carousel {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            color: #000000;
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: none;
+        }
+
+        .table-carousel th,
+        .table-carousel td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid #dddddd;
+        }
+        
+        @media (min-width: 576px) {
+            .table-carousel th,
+            .table-carousel td {
+                padding: 15px;
+            }
+        }
+
+        .table-carousel th {
+            background-color: #ffc107;
+            color: #000;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+        
+        @media (min-width: 576px) {
+            .table-carousel th {
+                font-size: 1rem;
+            }
+        }
+
+        .table-carousel tbody tr {
+            background-color: #ffffff;
+            transition: background-color 0.3s;
+        }
+
+        .table-carousel tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 20px;
+        }
+
+        /* Image styling */
+        .image-style {
+            width: 60px;
+            height: auto;
+            border-radius: 4px;
+        }
+        
+        @media (min-width: 576px) {
+            .image-style {
+                width: 80px;
+            }
+        }
+
+        /* Button styling */
+        .btn-action {
+            background-color: #ffc107;
+            color: #000;
+            border: 1px solid #ffc107;
+            border-radius: 20px;
+            padding: 4px 8px;
+            font-weight: 600;
+            transition: background-color 0.3s, color 0.3s;
+            margin: 2px;
+            font-size: 0.8rem;
+        }
+        
+        @media (min-width: 576px) {
+            .btn-action {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+                margin: 3px;
+            }
+        }
+
+        .btn-action:hover {
+            background-color: #000;
+            color: #ffc107;
+        }
+
+        .btn-add {
+            background-color: #FFC107;
+            color: #000;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-weight: 600;
+            transition: background-color 0.3s, color 0.3s;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+        
+        @media (min-width: 576px) {
+            .btn-add {
+                padding: 10px 20px;
+            }
+        }
+
+        .btn-add:hover {
+            background-color: #e0a800;
+            color: #000;
+        }
+
+        .btn-primary {
+            background-color: #FFC107 !important;
+            border: none;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #e0a800;
+        }
+
+        .modal-header {
+            background-color: #ffc107;
+            color: #000;
+            border-bottom: none;
+        }
+
+        .modal-footer {
+            border-top: none;
+        }
+
+        /* Bottom navigation */
+        .bottom-nav {
+            background-color: #343a40;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            height: 60px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .bottom-nav a {
+            color: #ffffff;
+            text-align: center;
+            font-size: 0.8rem;
+            padding: 5px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .bottom-nav a.active {
+            color: #FFC107;
+        }
+        
+        .bottom-nav i {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+
+        /* Truncate text */
+        .truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+        }
+        
+        @media (min-width: 576px) {
+            .truncate {
+                max-width: 200px;
+            }
+        }
+        
+        /* Title section */
+        .page-title {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+        
+        .page-title h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .page-title h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+        
+        @media (min-width: 576px) {
+            .page-title h1 {
+                font-size: 1.8rem;
+            }
+            
+            .page-title h2 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <header class="header-custom d-lg-none">
+        <a class="navbar-brand" href="#">
+            <span class="fs-4 logo">ੴ</span> <b>Carousel</b>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-list"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar (hidden on mobile by default) -->
+    <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
+        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none ps-3">
+            <span class="fs-4 logo">ੴ</span> Admin Portal
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="{% url 'adminViewHome' %}" class="nav-link ps-3">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'carousel_management' %}" class="nav-link active ps-3">
+                    <i class="bi bi-images"></i> Carousel
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'adminUsers' %}" class="nav-link ps-3">
+                    <i class="bi bi-people"></i> Users
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'adminContactView' %}" class="nav-link ps-3">
+                    <i class="bi bi-telephone"></i> Contact
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'calenderNotification' %}" class="nav-link ps-3">
+                    <i class="bi bi-calendar2"></i> Calendar
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown ps-3 pb-3">
+            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <img {% if profile_photo %}src="{{ profile_photo.file.url }}"{% endif %} 
+                width="32" height="32" class="rounded-circle me-2">
+                <strong>{{request.user.last_name}}, {{request.user.first_name}}</strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'logout' %}">Sign out</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <div class="page-title">
+            <h1>Carousel Manager</h1>
+            <h2>Gurmukhi School</h2>
+        </div>
+        
+        <!-- First Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <span>School Carousel</span>
+                <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#addContentModal">
+                    <i class="bi bi-plus-lg"></i> Add
+                </button>
+            </div>
+            <div class="section-card-body">
+                <div class="table-responsive">
+                    <table class="table-carousel">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Title</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carouselTableBody">
+                            {%for image in images%}
+                            <tr>
+                                <td><img src="{{image.image.url}}" alt="Image" class="image-style"></td>
+                                <td>
+                                    <div class="truncate">{{image.title}}</div>
+                                    <small class="text-muted d-block truncate">{{image.description}}</small>
+                                </td>
+                                <td>
+                                    {%if image.order > 0 %}
+                                    <a class="btn btn-action" href="{% url 'moveCarouselImageUp' image.id %}"><i class="bi bi-arrow-up"></i></a>
+                                    {%endif%}
+                                    <a class="btn btn-action" href="{% url 'moveCarouselImageDown' image.id %}"><i class="bi bi-arrow-down"></i></a>
+                                    <button class="btn btn-action" data-bs-toggle="modal" data-bs-target="#deleteModal" data-image-id="{{ image.id }}" data-image-title="{{ image.title }}"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            {%endfor%}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Second Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <span>Website Carousel</span>
+                <button class="btn btn-add" data-bs-toggle="modal" data-bs-target="#addMainContentModal">
+                    <i class="bi bi-plus-lg"></i> Add
+                </button>
+            </div>
+            <div class="section-card-body">
+                <div class="table-responsive">
+                    <table class="table-carousel">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Title</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="carouselTableBody">
+                            {%for image in mainImages%}
+                            <tr>
+                                <td><img src="{{image.image.url}}" alt="Image" class="image-style"></td>
+                                <td>
+                                    <div class="truncate">{{image.title}}</div>
+                                    <small class="text-muted d-block truncate">{{image.description}}</small>
+                                </td>
+                                <td>
+                                    {%if image.order > 0 %}
+                                    <a class="btn btn-action" href="{% url 'moveMainCarouselImageUp' image.id %}"><i class="bi bi-arrow-up"></i></a>
+                                    {%endif%}
+                                    <a class="btn btn-action" href="{% url 'moveMainCarouselImageDown' image.id %}"><i class="bi bi-arrow-down"></i></a>
+                                    <button class="btn btn-action" data-bs-toggle="modal" data-bs-target="#deleteMainModal" data-main-image-id="{{ image.id }}" data-main-image-title="{{ image.title }}"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            {%endfor%}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav d-lg-none">
+        {% if request.user.usertype == "Admin" %}
+        <a href="{% url 'adminViewHome' %}" class="nav-link">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="{% url 'carousel_management' %}" class="nav-link active">
+            <i class="bi bi-images"></i>
+            <span>Carousel</span>
+        </a>
+        <a href="{% url 'adminUsers' %}" class="nav-link">
+            <i class="bi bi-people"></i>
+            <span>Users</span>
+        </a>
+        <a href="{% url 'adminContactView' %}" class="nav-link">
+            <i class="bi bi-telephone"></i>
+            <span>Contact</span>
+        </a>
+        {% endif %}
+        <a href="{% url 'calenderNotification' %}" class="nav-link">
+            <i class="bi bi-calendar2"></i>
+            <span>Calendar</span>
+        </a>
+        <a href="{% url 'profile' %}" class="nav-link">
+            <i class="bi bi-person"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- Modal for Adding Content -->
+    <div class="modal fade" id="addContentModal" tabindex="-1" aria-labelledby="addContentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addContentModalLabel">Add School Carousel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addContentForm" method="post" action="{% url 'gurmukhiSchoolImageUpload' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="addMainContentModal" tabindex="-1" aria-labelledby="addMainContentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addMainContentModalLabel">Add Website Carousel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addMainContentForm" method="post" action="{% url 'mainCarouselImageUpload' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ mainform|crispy }}
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="deleteImageTitle"></strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <form id="deleteForm" method="post" action="{% url 'delete_carousel_image' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="image_id" id="deleteImageId">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal fade" id="deleteMainModal" tabindex="-1" aria-labelledby="deleteMainModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteMainModalLabel">Delete Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="deleteMainImageTitle"></strong>?</p>
+                </div>
+                <div class="modal-footer">
+                    <form id="deleteForm" method="post" action="{% url 'delete_main_carousel_image' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="main_image_id" id="deleteMainImageId">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        // Script to set image ID and title in delete modal
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteMainModal = document.getElementById('deleteMainModal');
+
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const imageId = button.getAttribute('data-image-id');
+            const imageTitle = button.getAttribute('data-image-title');
+
+            const modalTitle = deleteModal.querySelector('#deleteImageTitle');
+            const deleteImageIdInput = deleteModal.querySelector('#deleteImageId');
+
+            modalTitle.textContent = imageTitle;
+            deleteImageIdInput.value = imageId;
+        });
+        
+        deleteMainModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const mainImageId = button.getAttribute('data-main-image-id');
+            const mainImageTitle = button.getAttribute('data-main-image-title');
+
+            const mainModalTitle = deleteMainModal.querySelector('#deleteMainImageTitle');
+            const deleteMainImageIdInput = deleteMainModal.querySelector('#deleteMainImageId');
+            
+            mainModalTitle.textContent = mainImageTitle;
+            deleteMainImageIdInput.value = mainImageId;
+        });
+        
+        // Toggle sidebar on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const navbarToggler = document.querySelector('.navbar-toggler');
+            const sidebar = document.getElementById('sidebarMenu');
+            
+            navbarToggler.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+            });
+            
+            // Close sidebar when clicking outside
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth < 992) {
+                    if (!e.target.closest('#sidebarMenu') && 
+                        !e.target.closest('.navbar-toggler') && 
+                        sidebar.classList.contains('show')) {
+                        sidebar.classList.remove('show');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

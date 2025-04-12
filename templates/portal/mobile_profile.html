@@ -251,12 +251,45 @@
     
 
     <nav class="bottom-nav">
+    {% if user.usertype == 'Student' %}
         <a href="{% url 'courses' %}" class="nav-link"><i class="bi bi-book"></i><br>Courses</a>
         <a href="{% url 'announcements' %}" class="nav-link"><i class="bi bi-megaphone"></i><br>Announcements</a>
-        <a href="{% url 'profile' %}" class="nav-link active"><i class="bi bi-person-circle"></i><br>Profile</a>
-        <a href="{% url 'logout' %}" class="nav-link"><i class="bi bi-box-arrow-right"></i><br>Logout</a>
-    </nav>
-
+    {%endif%}
+    {% if user.usertype == 'Teacher' %}
+        <a href="{% url 'courses' %}" class="nav-link"><i class="bi bi-book"></i><br>Courses</a>
+        <a href="{% url 'announcements' %}" class="nav-link"><i class="bi bi-megaphone"></i><br>Announcements</a>
+    {%endif%}
+    {% if request.user.usertype == "Admin" %}
+    <a href="{% url 'adminViewHome' %}" class="nav-link">
+        <i class="bi bi-speedometer2"></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="{% url 'carousel_management' %}" class="nav-link">
+        <i class="bi bi-images"></i>
+        <span>Carousel</span>
+    </a>
+    <a href="{% url 'adminUsers' %}" class="nav-link">
+        <i class="bi bi-people"></i>
+        <span>Users</span>
+    </a>
+    <a href="{% url 'adminContactView' %}" class="nav-link">
+        <i class="bi bi-telephone"></i>
+        <span>Contact</span>
+    </a>
+    <a href="{% url 'calenderNotification' %}" class="nav-link">
+        <i class="bi bi-calendar2"></i>
+        <span>Calendar</span>
+    </a>
+    {% endif %}
+    {% if request.user.usertype == "EmailSender" %}
+    <a href="{% url 'calenderNotification' %}" class="nav-link">
+        <i class="bi bi-calendar2"></i>
+        <span>Calendar</span>
+    </a>
+    {% endif %}
+    <a href="{% url 'profile' %}" class="nav-link active"><i class="bi bi-person-circle"></i><br>Profile</a>
+    <a href="{% url 'logout' %}" class="nav-link"><i class="bi bi-box-arrow-right"></i><br>Logout</a>
+</nav>
 
     <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
     <script nonce="{{ request.csp_nonce }}">
