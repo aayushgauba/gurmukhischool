@@ -42,7 +42,7 @@ def contact(request):
             )
             return JsonResponse({"status": "bot_detected"}, status=403)
         if name and email and message:
-            Contact.objects.create(name=name, email=email, message=message)
+            Contact.objects.create(name=name, email=email, message=message, ip_address=ip)
             return redirect("indexMain")
         return JsonResponse({"status": "invalid_form"}, status=400)
     return render(request, 'contact.html')

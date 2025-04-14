@@ -5,3 +5,4 @@ class Contact(models.Model):
     email = models.EmailField()
     message = models.TextField()
     date = models.DateField(auto_now=True)
+    ip_address=models.GenericIPAddressField(null=True, blank=True)
