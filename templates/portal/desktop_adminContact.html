@@ -25,6 +25,7 @@
             color: #ffffff;
             height: 100vh;
             padding-top: 1rem;
+            z-index: 1000;
         }
 
         .sidebar-custom a {
@@ -86,6 +87,12 @@
         @media (max-width: 992px) {
             .content {
                 margin-left: 0;
+            }
+            
+            .sidebar-custom {
+                width: 100%;
+                height: auto;
+                position: relative;
             }
         }
 
@@ -176,6 +183,8 @@
             margin-bottom: 20px;
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .date-filter label {
@@ -186,11 +195,30 @@
         .date-filter input {
             width: 200px;
         }
+        
+        .date-filter .btn-reset {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+        
+        .message-truncate {
+            max-width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .modal-body {
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 <body>
     <!-- Navbar for smaller screens -->
-    <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top d-lg-none">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
                 <span class="fs-4 logo">ੴ</span> Admin Portal
@@ -232,7 +260,7 @@
                 </li>
                 <li class="nav-item">
                     <a href="{% url 'calenderNotification' %}" class="nav-link">
-                        <i class="bi bi-check2-square"></i> Calandar
+                        <i class="bi bi-check2-square"></i> Calendar
                     </a>
                 </li>
             </ul>
@@ -252,15 +280,16 @@
         </div>
 
         <div class="content">
-            <h2 class="mb-4">Contact</h2>
+            <h2 class="mb-4">Contact Messages</h2>
 
             <div class="date-filter">
                 <label for="filterDate">Filter by Date:</label>
                 <input type="date" id="filterDate" class="form-control">
+                <button id="resetFilter" class="btn btn-reset">Reset Filter</button>
             </div>
 
             <div class="table-responsive">
-                <table class="file-system-table">
+                <table class="file-system-table" id="contactTable">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -272,14 +301,18 @@
                     </thead>
                     <tbody>
                         {% for contact in contacts %}
-                        <tr>
+                        <tr data-date="{{ contact.date|date:'Y-m-d' }}">
                             <td>{{ contact.name }}</td>
                             <td>{{ contact.email }}</td>
-                            <td>{{ contact.date }}</td>
-                            <td>{{ contact.message }}</td>
+                            <td>{{ contact.date|date:"M d, Y" }}</td>
+                            <td><div class="message-truncate">{{ contact.message }}</div></td>
                             <td>
-                                <button type="button" class="btn btn-admit" data-bs-toggle="modal" data-bs-target="#contactModal" 
-                                data-contact-id="{{ contact.id }}" data-contact-name="{{ contact.name }}">
+                                <button type="button" class="btn btn-admit view-contact" 
+                                data-contact-id="{{ contact.id }}" 
+                                data-contact-name="{{ contact.name }}"
+                                data-contact-email="{{ contact.email }}"
+                                data-contact-date="{{ contact.date|date:'M d, Y' }}"
+                                data-contact-message="{{ contact.message }}">
                                     View
                                 </button>
                             </td>
@@ -299,45 +332,85 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Message details will be dynamically loaded here -->
                     <p><strong>Name:</strong> <span id="contactName"></span></p>
                     <p><strong>Email:</strong> <span id="contactEmail"></span></p>
                     <p><strong>Date:</strong> <span id="contactDate"></span></p>
-                    <p><strong>Message:</strong> <span id="contactMessage"></span></p>
+                    <p><strong>Message:</strong></p>
+                    <div id="contactMessage" class="p-3 bg-light rounded"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#" id="replyEmail" class="btn btn-primary">Reply by Email</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
     <script nonce="{{ request.csp_nonce }}">
         document.addEventListener('DOMContentLoaded', function () {
-            var contactModal = document.getElementById('contactModal');
-
-            contactModal.addEventListener('show.bs.modal', function (event) {
-                var button = event.relatedTarget;
-                var contactId = button.getAttribute('data-contact-id');
-                var contactName = button.getAttribute('data-contact-name');
-
-                var modalTitle = contactModal.querySelector('.modal-title');
-                modalTitle.textContent = 'Contact Message from ' + contactName;
-
-                // Fetch contact details using contactId (e.g., via AJAX) and populate the modal
-            });
-
-            var filterDateInput = document.getElementById('filterDate');
-            filterDateInput.addEventListener('change', function () {
-                var filterDate = filterDateInput.value;
-                var rows = document.querySelectorAll('.file-system-table tbody tr');
-
-                rows.forEach(function (row) {
-                    var rowDate = row.querySelector('td:nth-child(3)').textContent;
-                    row.style.display = rowDate === filterDate ? '' : 'none';
+            // Handle contact modal popup
+            const contactModal = document.getElementById('contactModal');
+            const viewButtons = document.querySelectorAll('.view-contact');
+            
+            viewButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const contactName = this.getAttribute('data-contact-name');
+                    const contactEmail = this.getAttribute('data-contact-email');
+                    const contactDate = this.getAttribute('data-contact-date');
+                    const contactMessage = this.getAttribute('data-contact-message');
+                    
+                    // Update modal content
+                    document.getElementById('contactName').textContent = contactName;
+                    document.getElementById('contactEmail').textContent = contactEmail;
+                    document.getElementById('contactDate').textContent = contactDate;
+                    document.getElementById('contactMessage').textContent = contactMessage;
+                    
+                    // Set email reply link
+                    document.getElementById('replyEmail').href = `mailto:${contactEmail}?subject=Re: Your Contact Request&body=Dear ${contactName},%0D%0A%0D%0AThank you for contacting Sikh Study Circle Gurmukhi School.%0D%0A%0D%0A`;
+                    
+                    // Update modal title
+                    const modalTitle = contactModal.querySelector('.modal-title');
+                    modalTitle.textContent = 'Contact Message from ' + contactName;
+                    
+                    // Show modal
+                    const bsModal = new bootstrap.Modal(contactModal);
+                    bsModal.show();
                 });
             });
+
+            // Handle date filtering
+            const filterDateInput = document.getElementById('filterDate');
+            const resetFilterBtn = document.getElementById('resetFilter');
+            const tableRows = document.querySelectorAll('#contactTable tbody tr');
+            
+            filterDateInput.addEventListener('change', function () {
+                const filterDate = this.value;
+                if (!filterDate) {
+                    showAllRows();
+                    return;
+                }
+                
+                tableRows.forEach(function (row) {
+                    const rowDate = row.getAttribute('data-date');
+                    if (rowDate === filterDate) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+            
+            resetFilterBtn.addEventListener('click', function() {
+                filterDateInput.value = '';
+                showAllRows();
+            });
+            
+            function showAllRows() {
+                tableRows.forEach(row => {
+                    row.style.display = '';
+                });
+            }
         });
     </script>
 </body>

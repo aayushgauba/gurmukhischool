@@ -15,7 +15,7 @@ def clean_spam_messages():
     total_spam = 0
 
     for msg in Contact.objects.all():
-        result = spam_classifier(msg.message)[0]
+        result = spam_classifier(msg.message, truncation=True)[0]
         label = result['label'].lower()
         score = result['score']
         total_scanned += 1

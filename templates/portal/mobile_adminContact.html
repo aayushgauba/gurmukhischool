@@ -56,6 +56,7 @@
             padding-top: 1rem;
             z-index: 1100;
             transition: transform 0.3s ease;
+            overflow-y: auto;
         }
         
         @media (max-width: 992px) {
@@ -90,6 +91,23 @@
             font-size: 1.5rem;
             font-weight: 600;
             color: #ffcc00;
+        }
+
+        /* Navigation menu in sidebar */
+        .sidebar-nav {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .sidebar-nav .nav-item {
+            width: 100%;
+        }
+
+        .sidebar-nav .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            gap: 0.5rem;
         }
 
         /* Content area */
@@ -147,6 +165,16 @@
 
         .btn-primary:hover {
             background-color: #e0a800 !important;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
         }
 
         .file-system-table {
@@ -226,6 +254,7 @@
             display: flex;
             align-items: center;
             flex-wrap: wrap;
+            gap: 10px;
         }
 
         .date-filter label {
@@ -237,6 +266,55 @@
         .date-filter input {
             width: 100%;
             max-width: 200px;
+        }
+
+        .date-filter .btn-reset {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+        
+        /* Message display formatting */
+        .message-column {
+            max-width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .modal-body #contactMessage {
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            color: #adb5bd;
+            margin-bottom: 15px;
+        }
+        
+        .empty-state h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            color: #6c757d;
         }
         
         @media (max-width: 576px) {
@@ -268,10 +346,23 @@
         @media (max-width: 767px) {
             .file-system-table .message-column {
                 max-width: 150px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
             }
+        }
+
+        /* Add dark backdrop when sidebar is open on mobile */
+        .sidebar-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1050;
+            display: none;
+        }
+        
+        .sidebar-backdrop.show {
+            display: block;
         }
     </style>
 </head>
@@ -281,19 +372,51 @@
         <a class="navbar-brand" href="#">
             <span class="fs-4 logo">ੴ</span> Admin Portal
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" id="sidebarToggle">
             <i class="bi bi-list"></i>
         </button>
     </header>
 
+    <!-- Dark backdrop for sidebar on mobile -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
     <!-- Sidebar (hidden on mobile by default) -->
     <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
-        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none ps-3">
+        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none ps-3 pt-3">
             <span class="fs-4 logo">ੴ</span>
             <span class="ms-2">{{user.usertype}} Portal</span>
         </a>
         <hr>
-       
+        
+        <!-- Nav menu items -->
+        <ul class="sidebar-nav">
+            <li class="nav-item">
+                <a href="{% url 'adminViewHome' %}" class="nav-link">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'carousel_management' %}" class="nav-link">
+                    <i class="bi bi-images"></i> Carousel
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'adminUsers' %}" class="nav-link">
+                    <i class="bi bi-people"></i> Users
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'adminContactView' %}" class="nav-link active">
+                    <i class="bi bi-telephone"></i> Contact
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'calenderNotification' %}" class="nav-link">
+                    <i class="bi bi-calendar2"></i> Calendar
+                </a>
+            </li>
+        </ul>
+        
         <hr>
         <div class="dropdown ps-3 pb-3">
             <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
@@ -311,15 +434,16 @@
 
     <!-- Main Content -->
     <div class="content">
-        <h2 class="mb-4">Contact</h2>
+        <h2 class="mb-4">Contact Messages</h2>
 
         <div class="date-filter">
             <label for="filterDate">Filter by Date:</label>
             <input type="date" id="filterDate" class="form-control">
+            <button id="resetFilter" class="btn btn-reset">Reset</button>
         </div>
 
         <div class="table-responsive">
-            <table class="file-system-table">
+            <table class="file-system-table" id="contactTable">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -331,16 +455,29 @@
                 </thead>
                 <tbody>
                     {% for contact in contacts %}
-                    <tr>
+                    <tr data-date="{{ contact.date|date:'Y-m-d' }}">
                         <td>{{ contact.name }}</td>
                         <td>{{ contact.email }}</td>
-                        <td>{{ contact.date }}</td>
+                        <td>{{ contact.date|date:"M d, Y" }}</td>
                         <td class="message-column">{{ contact.message }}</td>
                         <td>
-                            <button type="button" class="btn btn-admit" data-bs-toggle="modal" data-bs-target="#contactModal" 
-                            data-contact-id="{{ contact.id }}" data-contact-name="{{ contact.name }}">
+                            <button type="button" class="btn btn-admit view-contact" 
+                            data-contact-name="{{ contact.name }}"
+                            data-contact-email="{{ contact.email }}"
+                            data-contact-date="{{ contact.date|date:'M d, Y' }}"
+                            data-contact-message="{{ contact.message }}">
                                 View
                             </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="bi bi-inbox"></i>
+                                <h4>No Contact Messages</h4>
+                                <p>There are no contact messages to display at this time.</p>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -388,13 +525,14 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Message details will be dynamically loaded here -->
                     <p><strong>Name:</strong> <span id="contactName"></span></p>
                     <p><strong>Email:</strong> <span id="contactEmail"></span></p>
                     <p><strong>Date:</strong> <span id="contactDate"></span></p>
-                    <p><strong>Message:</strong> <span id="contactMessage"></span></p>
+                    <p><strong>Message:</strong></p>
+                    <div id="contactMessage"></div>
                 </div>
                 <div class="modal-footer">
+                    <a href="#" id="replyEmail" class="btn btn-primary">Reply by Email</a>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
@@ -407,43 +545,67 @@
     <script nonce="{{ request.csp_nonce }}">
         $(document).ready(function() {
             // Toggle sidebar on mobile
-            $('.navbar-toggler').on('click', function() {
+            $('#sidebarToggle').on('click', function() {
                 $('#sidebarMenu').toggleClass('show');
+                $('#sidebarBackdrop').toggleClass('show');
             });
             
-            // Close sidebar when clicking outside on mobile
-            $(document).on('click', function(e) {
+            // Close sidebar when clicking on backdrop
+            $('#sidebarBackdrop').on('click', function() {
+                $('#sidebarMenu').removeClass('show');
+                $('#sidebarBackdrop').removeClass('show');
+            });
+            
+            // Close sidebar when clicking menu item on mobile
+            $('.sidebar-custom .nav-link').on('click', function() {
                 if (window.innerWidth < 992) {
-                    if (!$(e.target).closest('#sidebarMenu').length && 
-                        !$(e.target).closest('.navbar-toggler').length && 
-                        $('#sidebarMenu').hasClass('show')) {
-                        $('#sidebarMenu').removeClass('show');
-                    }
+                    $('#sidebarMenu').removeClass('show');
+                    $('#sidebarBackdrop').removeClass('show');
                 }
             });
-
-            var contactModal = document.getElementById('contactModal');
-            contactModal.addEventListener('show.bs.modal', function (event) {
-                var button = event.relatedTarget;
-                var contactId = button.getAttribute('data-contact-id');
-                var contactName = button.getAttribute('data-contact-name');
-
-                var modalTitle = contactModal.querySelector('.modal-title');
-                modalTitle.textContent = 'Contact Message from ' + contactName;
-
-                // Fetch contact details using contactId and populate the modal
-                // This would ideally be replaced with an actual AJAX call
+            
+            // Handle view contact button click
+            $('.view-contact').on('click', function() {
+                const contactName = $(this).data('contact-name');
+                const contactEmail = $(this).data('contact-email');
+                const contactDate = $(this).data('contact-date');
+                const contactMessage = $(this).data('contact-message');
+                
+                // Update modal content
+                $('#contactName').text(contactName);
+                $('#contactEmail').text(contactEmail);
+                $('#contactDate').text(contactDate);
+                $('#contactMessage').text(contactMessage);
+                
+                // Set email reply link
+                $('#replyEmail').attr('href', `mailto:${contactEmail}?subject=Re: Your Contact Request&body=Dear ${contactName},%0D%0A%0D%0AThank you for contacting Sikh Study Circle Gurmukhi School.%0D%0A%0D%0A`);
+                
+                // Update modal title
+                $('#contactModalLabel').text('Contact Message from ' + contactName);
+                
+                // Show modal
+                $('#contactModal').modal('show');
             });
 
-            var filterDateInput = document.getElementById('filterDate');
-            filterDateInput.addEventListener('change', function () {
-                var filterDate = filterDateInput.value;
-                var rows = document.querySelectorAll('.file-system-table tbody tr');
-
-                rows.forEach(function (row) {
-                    var rowDate = row.querySelector('td:nth-child(3)').textContent;
-                    row.style.display = rowDate === filterDate ? '' : 'none';
-                });
+            // Date filtering functionality
+            $('#filterDate').on('change', function() {
+                const filterDate = $(this).val();
+                if (filterDate) {
+                    // Hide all rows first
+                    $('#contactTable tbody tr').hide();
+                    
+                    // Show only matching rows
+                    $(`#contactTable tbody tr[data-date="${filterDate}"]`).show();
+                } else {
+                    // If no date selected, show all rows
+                    $('#contactTable tbody tr').show();
+                }
+            });
+            
+            // Reset filter button
+            $('#resetFilter').on('click', function() {
+                $('#filterDate').val('');
+                $('#contactTable tbody tr').show();
             });
         });
     </script>
