@@ -38,7 +38,10 @@ def course(request: HttpRequest, course_id):
     if request.user.usertype == 'Teacher':
         sections = Section.objects.filter(Course_id = course.id).order_by("ONum")
     elif request.user.usertype == 'Student':
-        sections = Section.objects.filter(Course_id = course.id, Status = True).order_by("ONum")
+        if course.People.filter(id = request.user.id).exists():
+            sections = Section.objects.filter(Course_id = course.id).order_by("ONum")
+        else:
+            return redirect("courses")
     user_agent = request.META['HTTP_USER_AGENT'].lower()
     if "mobile" in user_agent:
         return render(request, "portal/mobile_course.html", {"course":course,"profile_photo":profile_photo, "user":user, "sections":sections})
@@ -1310,22 +1313,14 @@ def calenderNotification(request: HttpRequest, year=None, month=None):
     if next_month == 13:
         next_month = 1
         next_year += 1
-
-    # Build the weeks structure:
-    # Each week is a list of 7 cells. Each cell is either:
-    #   - None (if no day in that cell)
-    #   - A dictionary: {'day': <day>, 'events': <list of events>}
     weeks = []
     week = [None] * 7
     for day, weekday in month_days:
         if day != 0:
-            # Create a dictionary for the day with its events (if any)
             week[weekday] = {'day': day, 'events': events_by_day.get(day, [])}
-        # When weekday is Saturday (6), we have a complete week
         if weekday == 6:
             weeks.append(week)
             week = [None] * 7
-    # Append any leftover week (if it contains at least one non-None cell)
     if any(cell is not None for cell in week):
         weeks.append(week)
     
