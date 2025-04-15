@@ -1,13 +1,14 @@
 from django.shortcuts import render, redirect
 from portal.models import CustomUser, Schedule, WeeklyEmail, Courses, Section, Folder, Grade, Announcement, Attendance, CarouselImage
 from django.contrib.auth.hashers import make_password, check_password
-from django.http import HttpRequest
+from django.http import HttpRequest, JsonResponse
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
+from main.models import BlacklistedIP
 from django.http import HttpResponse
 from django.contrib.auth.tokens import default_token_generator
 from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm,UploadedAttendanceForm,GroupPhotoUploadForm, ProfilePhotoForm, CarouselImageForm, SyllabusUploadForm
@@ -1107,30 +1108,35 @@ def registration(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         phone = request.POST.get('phoneNumber')
+        honeypot = request.POST.get('website', '').strip()
+        ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0] or request.META.get('REMOTE_ADDR')
         try:
-            # Validate and format the phone number
             phone = validate_phone_number(phone)
-
             if CustomUser.objects.filter(email=email).exists():
                 return redirect('login')
-            
         except ValidationError as e:
-            # Handle validation error by rendering the form again with an error message
             return render(request, "registration.html", {"error": str(e)})
-        if firstname and lastname and email and password and phone:
-            CustomUser.objects.create(first_name=firstname, last_name=lastname, phone_number = phone, username = email, email=email, password= make_password(password))
-            user = CustomUser.objects.get(first_name=firstname, last_name=lastname, username = email, phone_number = phone, email=email)
-            current_site = get_current_site(request)
-            subject = 'Activate Your Account'
-            message = render_to_string('email/activation.html', {
-                'user': user,
-                'domain': current_site.domain,
-                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                'token': default_token_generator.make_token(user),
-                'protocol': 'https' if request.is_secure() else 'http',
-            })
-            send_mail(subject, '', 'noreply@stlouisgurudwara.org', [user.email],  html_message=message)
-            return redirect('login')
+        if honeypot:
+            BlacklistedIP.objects.get_or_create(
+                ip_address=ip,
+                defaults={'reason': 'Honeypot triggered'}
+            )
+            return JsonResponse({"status": "bot_detected"}, status=403)
+        else:
+            if firstname and lastname and email and password and phone:
+                CustomUser.objects.create(first_name=firstname, last_name=lastname, phone_number = phone, username = email, email=email, password= make_password(password))
+                user = CustomUser.objects.get(first_name=firstname, last_name=lastname, username = email, phone_number = phone, email=email)
+                current_site = get_current_site(request)
+                subject = 'Activate Your Account'
+                message = render_to_string('email/activation.html', {
+                    'user': user,
+                    'domain': current_site.domain,
+                    'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                    'token': default_token_generator.make_token(user),
+                    'protocol': 'https' if request.is_secure() else 'http',
+                })
+                send_mail(subject, '', 'noreply@stlouisgurudwara.org', [user.email],  html_message=message)
+                return redirect('login')
     return render(request,"registration.html")
 
 def validate_phone_number(phone):
@@ -1245,13 +1251,22 @@ def login(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-        if email and password:
-            user = authenticate(username=email, password=password)
-            if user:
-                auth_login(request, user)
-                return redirect("courses")
-            else:
-                return redirect("login")
+        honeypot = request.POST.get('website', '').strip()
+        ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0] or request.META.get('REMOTE_ADDR')
+        if honeypot:
+            BlacklistedIP.objects.get_or_create(
+                ip_address=ip,
+                defaults={'reason': 'Honeypot triggered'}
+            )
+            return JsonResponse({"status": "bot_detected"}, status=403)
+        else:
+            if email and password:
+                user = authenticate(username=email, password=password)
+                if user:
+                    auth_login(request, user)
+                    return redirect("courses")
+                else:
+                    return redirect("login")
     return render(request, "login.html")
 
 @approved_required
