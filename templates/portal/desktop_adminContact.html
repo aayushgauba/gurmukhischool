@@ -214,6 +214,58 @@
         .modal-body {
             white-space: pre-wrap;
         }
+
+        /* New button styles for spam and delete */
+        .btn-spam {
+            background-color: #ffc107;
+            color: #000;
+            border: 1px solid #ffc107;
+        }
+        
+        .btn-spam:hover {
+            background-color: #e0a800;
+            color: #000;
+        }
+        
+        .btn-delete {
+            background-color: #dc3545;
+            color: #fff;
+            border: 1px solid #dc3545;
+        }
+        
+        .btn-delete:hover {
+            background-color: #c82333;
+            color: #fff;
+        }
+        
+        /* Confirmation dialog styling */
+        .confirmation-dialog {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .confirmation-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .confirmation-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -301,7 +353,7 @@
                     </thead>
                     <tbody>
                         {% for contact in contacts %}
-                        <tr data-date="{{ contact.date|date:'Y-m-d' }}">
+                        <tr data-date="{{ contact.date|date:'Y-m-d' }}" id="contact-row-{{ contact.id }}">
                             <td>{{ contact.name }}</td>
                             <td>{{ contact.email }}</td>
                             <td>{{ contact.date|date:"M d, Y" }}</td>
@@ -340,8 +392,38 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-spam" id="markAsSpam">
+                        <i class="bi bi-exclamation-octagon"></i> Mark as Spam
+                    </button>
+                    <button type="button" class="btn btn-delete" id="deleteMessage">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
                     <a href="#" id="replyEmail" class="btn btn-primary">Reply by Email</a>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Dialog for Delete -->
+    <div class="confirmation-dialog" id="deleteConfirmation">
+        <div class="confirmation-content">
+            <h4>Confirm Deletion</h4>
+            <p>Are you sure you want to delete this message? This action cannot be undone.</p>
+            <div class="confirmation-actions">
+                <button class="btn btn-secondary" id="cancelDelete">Cancel</button>
+                <button class="btn btn-danger" id="confirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confirmation Dialog for Spam -->
+    <div class="confirmation-dialog" id="spamConfirmation">
+        <div class="confirmation-content">
+            <h4>Confirm Spam</h4>
+            <p>Are you sure you want to mark this message as spam?</p>
+            <div class="confirmation-actions">
+                <button class="btn btn-secondary" id="cancelSpam">Cancel</button>
+                <button class="btn btn-warning" id="confirmSpam">Mark as Spam</button>
             </div>
         </div>
     </div>
@@ -352,13 +434,18 @@
             // Handle contact modal popup
             const contactModal = document.getElementById('contactModal');
             const viewButtons = document.querySelectorAll('.view-contact');
+            let currentContactId = null;
             
             viewButtons.forEach(button => {
                 button.addEventListener('click', function() {
+                    const contactId = this.getAttribute('data-contact-id');
                     const contactName = this.getAttribute('data-contact-name');
                     const contactEmail = this.getAttribute('data-contact-email');
                     const contactDate = this.getAttribute('data-contact-date');
                     const contactMessage = this.getAttribute('data-contact-message');
+                    
+                    // Store current contact ID for delete/spam operations
+                    currentContactId = contactId;
                     
                     // Update modal content
                     document.getElementById('contactName').textContent = contactName;
@@ -411,6 +498,88 @@
                     row.style.display = '';
                 });
             }
+            
+            // Delete message confirmation
+            const deleteBtn = document.getElementById('deleteMessage');
+            const deleteConfirmation = document.getElementById('deleteConfirmation');
+            const confirmDeleteBtn = document.getElementById('confirmDelete');
+            const cancelDeleteBtn = document.getElementById('cancelDelete');
+            
+            deleteBtn.addEventListener('click', function() {
+                deleteConfirmation.style.display = 'flex';
+            });
+            
+            cancelDeleteBtn.addEventListener('click', function() {
+                deleteConfirmation.style.display = 'none';
+            });
+            
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (currentContactId) {
+                    // Here you would send an AJAX request to delete the message
+                    fetch(`/admin/contact/delete/${currentContactId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCsrfToken(),
+                            'Content-Type': 'application/json',
+                        },
+                    })
+                }
+            });
+            
+            // Mark as spam confirmation
+            const spamBtn = document.getElementById('markAsSpam');
+            const spamConfirmation = document.getElementById('spamConfirmation');
+            const confirmSpamBtn = document.getElementById('confirmSpam');
+            const cancelSpamBtn = document.getElementById('cancelSpam');
+            
+            spamBtn.addEventListener('click', function() {
+                spamConfirmation.style.display = 'flex';
+            });
+            
+            cancelSpamBtn.addEventListener('click', function() {
+                spamConfirmation.style.display = 'none';
+            });
+            
+            confirmSpamBtn.addEventListener('click', function() {
+                if (currentContactId) {
+                    // Here you would send an AJAX request to mark as spam
+                    fetch(`/admin/contact/spam/${currentContactId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCsrfToken(),
+                            'Content-Type': 'application/json',
+                        },
+                    })
+                    window.location.reload()
+                }
+                                // Hide confirmation dialog
+            });
+            
+            // Function to get CSRF token from cookies
+            function getCsrfToken() {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, 'csrftoken='.length) === 'csrftoken=') {
+                            cookieValue = decodeURIComponent(cookie.substring('csrftoken='.length));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            
+            // Close confirmation dialogs when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === deleteConfirmation) {
+                    deleteConfirmation.style.display = 'none';
+                }
+                if (event.target === spamConfirmation) {
+                    spamConfirmation.style.display = 'none';
+                }
+            });
         });
     </script>
 </body>

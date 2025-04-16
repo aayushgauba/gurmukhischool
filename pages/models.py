@@ -6,3 +6,4 @@ class Contact(models.Model):
     message = models.TextField()
     date = models.DateField(auto_now=True)
     ip_address=models.GenericIPAddressField(null=True, blank=True)
+    is_spam = models.BooleanField(default=False)
