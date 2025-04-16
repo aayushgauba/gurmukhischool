@@ -6,7 +6,7 @@ import joblib
 from main.models import BlacklistedIP
 from django.utils.deprecation import MiddlewareMixin
 from django.core.cache import cache
-MODEL_PATH = "../ai_ip_bot_detector_model.pkl"
+MODEL_PATH = "ai_ip_bot_detector_model.pkl"
 import numpy as np
 model = joblib.load(MODEL_PATH)
 malicious_keywords = [".php", "xmlrpc", "wp-", ".env", ".git", ".bak", "conflg", "shell", "filemanager"]
