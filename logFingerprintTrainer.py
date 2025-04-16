@@ -164,7 +164,7 @@ def detect():
 
     rows = build_rows(parsed, ip_404)
     append_csv(rows)
-
+    deduplicate_csv()
     X, _ = load_feature_matrix()
     if X is None or len(X) < 20:
         print("⚠️  Not enough total samples to train.")
@@ -189,6 +189,16 @@ def detect():
     if ml_blocked:
         print("    " + ", ".join(sorted(ml_blocked)))
 
+def deduplicate_csv():
+    if not os.path.exists(DATA_FILE):
+        print(f"❌ File not found: {DATA_FILE}")
+        return
+    df = pd.read_csv(DATA_FILE)
+    dedup_df = df.drop_duplicates(subset=["ip", "path_len", "kw_hits", "resp_time", 
+                                          "status_idx", "burst_count", "total_404"])
+    dedup_df.reset_index(drop=True, inplace=True)
+    dedup_df.to_csv(DATA_FILE, index=False)
+    print(f"✅ Deduplication complete. Original: {len(df)} rows → Cleaned: {len(dedup_df)} rows")
 # ===================== Run =====================
 if __name__ == "__main__":
     detect()
