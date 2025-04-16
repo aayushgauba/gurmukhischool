@@ -110,11 +110,18 @@ def load_feature_matrix():
     if not os.path.exists(DATA_FILE) or os.path.getsize(DATA_FILE) == 0:
         return None, None
     CSV_HEADER = ["ip", "path_len", "kw_hits", "resp_time", "status_idx", "burst_count", "total_404", "label"]
-    df = pd.read_csv(DATA_FILE, names=CSV_HEADER, skiprows=1, engine="python", on_bad_lines="skip")
-    df = df.reindex(columns=CSV_HEADER).fillna(0)
-    X = df.drop(columns=["ip", "label"]).values
+    df = pd.read_csv(
+        DATA_FILE,
+        names=CSV_HEADER,
+        skiprows=1,
+        engine="python",
+        on_bad_lines="skip"
+    )
+    df = df.reindex(columns=CSV_HEADER)
+    feature_cols = ["path_len", "kw_hits", "resp_time", "status_idx", "burst_count", "total_404"]
+    df[feature_cols] = df[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
+    X = df[feature_cols].values
     return X, df
-
 
 def train_iforest(X):
     clf = IsolationForest(contamination=0.01, random_state=42)
