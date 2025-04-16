@@ -1,47 +1,62 @@
 import os
 import django
 
-# 🛠️ Set up Django environment
+# 🛠️ Django setup
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gurmukhischool.settings")
 django.setup()
 
 from pages.models import Contact
-from main.models import BlacklistedIP
-from transformers import pipeline
+from transformers import BertTokenizerFast, BertForSequenceClassification, Trainer, TrainingArguments
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Dataset
+import torch
+import pandas as pd
 
-def clean_spam_messages():
-    print("🔍 Running daily spam cleanup...")
+# 🧩 Custom Dataset
+class ContactSpamDataset(Dataset):
+    def __init__(self, texts, labels, tokenizer, max_length=512):
+        self.encodings = tokenizer(texts, truncation=True, padding=True, max_length=max_length)
+        self.labels = labels
 
-    # 🧠 Load lightweight spam classifier
-    spam_classifier = pipeline("text-classification", model="mrm8488/bert-tiny-finetuned-sms-spam-detection")
+    def __getitem__(self, idx):
+        return {
+            **{k: torch.tensor(v[idx]) for k, v in self.encodings.items()},
+            "labels": torch.tensor(self.labels[idx], dtype=torch.long)
+        }
 
-    total_scanned = 0
-    total_spam = 0
+    def __len__(self):
+        return len(self.labels)
 
-    for msg in Contact.objects.all():
-        if not msg.message or len(msg.message.strip()) < 5:
-            continue  # Skip empty or too-short messages
+messages = Contact.objects.exclude(message__isnull=True).exclude(message__exact='').all()
+data = [(m.message.strip(), int(m.is_spam)) for m in messages if len(m.message.strip()) > 5]
+df = pd.DataFrame(data, columns=["text", "label"])
+train_texts, val_texts, train_labels, val_labels = train_test_split(df["text"], df["label"], test_size=0.2, random_state=42)
+tokenizer = BertTokenizerFast.from_pretrained("prajjwal1/bert-tiny")
+train_dataset = ContactSpamDataset(train_texts.tolist(), train_labels.tolist(), tokenizer)
+val_dataset = ContactSpamDataset(val_texts.tolist(), val_labels.tolist(), tokenizer)
+model = BertForSequenceClassification.from_pretrained("prajjwal1/bert-tiny", num_labels=2)
+training_args = TrainingArguments(
+    output_dir="./spam_model",
+    evaluation_strategy="epoch",
+    save_strategy="epoch",
+    num_train_epochs=3,
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=8,
+    logging_dir="./logs",
+    logging_steps=10,
+    save_total_limit=1,
+    load_best_model_at_end=True,
+    metric_for_best_model="eval_loss"
+)
 
-        try:
-            result = spam_classifier(msg.message, truncation=True)[0]
-            label = result['label'].lower()
-            score = result['score']
-            total_scanned += 1
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=val_dataset
+)
+trainer.train()
+model.save_pretrained("spam_model")
+tokenizer.save_pretrained("spam_model")
 
-            if label == 'spam' and score > 0.85:
-                ip = msg.ip_address
-                if ip:
-                    BlacklistedIP.objects.get_or_create(
-                        ip_address=ip,
-                        reason = 'Spam detected in daily scan',
-                    )
-                msg.delete()
-                total_spam += 1
-
-        except Exception as e:
-            print(f"⚠️ Error processing message ID {msg.id}: {e}")
-
-    print(f"✅ Done. Scanned: {total_scanned}, Deleted Spam: {total_spam}")
-
-if __name__ == "__main__":
-    clean_spam_messages()
+print("✅ Model retrained with full 512-token context and saved.")
