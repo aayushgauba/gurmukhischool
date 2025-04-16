@@ -193,12 +193,21 @@ def deduplicate_csv():
     if not os.path.exists(DATA_FILE):
         print(f"❌ File not found: {DATA_FILE}")
         return
-    df = pd.read_csv(DATA_FILE)
-    dedup_df = df.drop_duplicates(subset=["ip", "path_len", "kw_hits", "resp_time", 
-                                          "status_idx", "burst_count", "total_404"])
+    df = pd.read_csv(
+        DATA_FILE,
+        names=CSV_HEADER,
+        skiprows=1,
+        engine="python",
+        on_bad_lines="skip"
+    )
+    dedup_df = df.drop_duplicates(subset=[
+        "ip", "path_len", "kw_hits", "resp_time",
+        "status_idx", "burst_count", "total_404", "label"
+    ])
     dedup_df.reset_index(drop=True, inplace=True)
     dedup_df.to_csv(DATA_FILE, index=False)
     print(f"✅ Deduplication complete. Original: {len(df)} rows → Cleaned: {len(dedup_df)} rows")
+
 # ===================== Run =====================
 if __name__ == "__main__":
     detect()
