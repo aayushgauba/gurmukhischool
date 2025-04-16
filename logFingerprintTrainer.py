@@ -177,7 +177,6 @@ def detect():
     ml_blocked = set()
     for row, pred in zip(rows, preds):
         ip = row[0]
-        print(ip, pred)
         if pred == -1 and ip not in auto_blocked:
             if not BlacklistedIP.objects.filter(ip_address=ip).exists():
                 BlacklistedIP.objects.create(
