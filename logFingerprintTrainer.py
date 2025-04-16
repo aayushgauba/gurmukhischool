@@ -109,10 +109,12 @@ def append_csv(rows):
 def load_feature_matrix():
     if not os.path.exists(DATA_FILE) or os.path.getsize(DATA_FILE) == 0:
         return None, None
-    df = pd.read_csv(DATA_FILE, engine="python")
-    df = df.reindex(columns=CSV_HEADER)
-    X = df.drop(columns=["ip", "label"]).fillna(0).values
+    CSV_HEADER = ["ip", "path_len", "kw_hits", "resp_time", "status_idx", "burst_count", "total_404", "label"]
+    df = pd.read_csv(DATA_FILE, names=CSV_HEADER, skiprows=1, engine="python", on_bad_lines="skip")
+    df = df.reindex(columns=CSV_HEADER).fillna(0)
+    X = df.drop(columns=["ip", "label"]).values
     return X, df
+
 
 def train_iforest(X):
     clf = IsolationForest(contamination=0.01, random_state=42)
