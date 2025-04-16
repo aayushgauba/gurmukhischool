@@ -56,39 +56,26 @@ class AIAnomalyMiddleware(MiddlewareMixin):
         key = f"ai_data:{ip}"
         request_data = cache.get(key, [])
         path = request.path
-        status_code = 200
-        response_time = 0.0
-        request_data.append((now, path, status_code, response_time))
-        new_data = []
-        for (ts, p, st, rt) in request_data:
-            if now - ts < self.WINDOW_SECONDS:
-                new_data.append((ts, p, st, rt))
-        cache.set(key, new_data, timeout=self.WINDOW_SECONDS)
-        total_requests = len(new_data)
-        if total_requests < 5:
+        path_len = len(path)
+        kw_hits = sum(1 for kw in malicious_keywords if kw in path.lower())
+        status_code = 404 if "not-found" in path.lower() else 200
+        status_idx = ["200", "403", "404", "500"].index(str(status_code)) if str(status_code) in ["200", "403", "404", "500"] else -1
+        response_time = 0.01  # Replace with real value if available
+        request_data.append((now, path_len, kw_hits, status_idx, response_time))
+        request_data = [entry for entry in request_data if now - entry[0] < self.WINDOW_SECONDS]
+        cache.set(key, request_data, timeout=self.WINDOW_SECONDS)
+        if len(request_data) < 5:
             return None
-        ratio_404 = sum(1 for (ts, p, st, rt) in new_data if st == 404) / total_requests
-        suspicious_hits = 0
-        for (ts, p, st, rt) in new_data:
-            p_lower = p.lower()
-            if any(kw in p_lower for kw in malicious_keywords):
-                suspicious_hits += 1
-        avg_rt = np.mean([rt for (ts, p, st, rt) in new_data]) if new_data else 0
-        sorted_data = sorted(new_data, key=lambda x: x[0])
-        intervals = []
-        for i in range(1, len(sorted_data)):
-            intervals.append(sorted_data[i][0] - sorted_data[i-1][0])
-        avg_interval = np.mean(intervals) if intervals else 0
-        X = np.array([[total_requests, ratio_404, suspicious_hits, avg_rt, avg_interval]], dtype=float)
-        pred = model.predict(X)[0]  # => 1 or -1
+        burst_count = sum(1 for entry in request_data if now - entry[0] <= 10)
+        total_404 = sum(1 for entry in request_data if entry[3] == 2)
+        avg_resp_time = np.mean([entry[4] for entry in request_data])
+        latest = request_data[-1]
+        X = np.array([[latest[1], latest[2], avg_resp_time, latest[3], burst_count, total_404]], dtype=float)
+        pred = model.predict(X)[0]
         if pred == -1:
             BlacklistedIP.objects.get_or_create(ip_address=ip, defaults={"reason": "AI anomaly detection"})
-            return JsonResponse({"status": "blocked", "message": "IsolationForest flagged you as suspicious."}, status=403)
+            return JsonResponse({"status": "blocked", "message": "AI flagged your request as suspicious."}, status=403)
         return None
-
     def get_ip(self, request):
-        """Extract IP from X-Forwarded-For or REMOTE_ADDR"""
         xff = request.META.get('HTTP_X_FORWARDED_FOR')
-        if xff:
-            return xff.split(',')[0].strip()
-        return request.META.get('REMOTE_ADDR')
+        return xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
