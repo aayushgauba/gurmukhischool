@@ -13,7 +13,7 @@ django.setup()
 from main.models import BlacklistedIP
 
 LOG_FILE = r"D:\Users\gauba\Downloads\gurmukhischool\stlouisgurudwara.org.access.log.txt"
-MODEL_FILE = "ai_bot_detector_model.pkl"
+MODEL_FILE = "ai_ip_bot_detector_model.pkl"
 DATA_FILE = "access_samples.csv"
 malicious_keywords = [".php", "xmlrpc", "wp-", ".env", ".git", ".bak", "conflg", "shell", "filemanager"]
 status_codes = ["200", "403", "404", "500"]
