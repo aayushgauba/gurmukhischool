@@ -10,5 +10,4 @@ urlpatterns = [
     path('sitemap', views.sitemap, name='sitemap'),
     path('subscribe', views.subscribe, name='subscribe'),
     path('subscribe/submit', views.subscribePOST, name='subscribePOST'),
-    path('contact/spam/<int:contact_id>/', views.contactSpam, name='contactSpam'),
 ]

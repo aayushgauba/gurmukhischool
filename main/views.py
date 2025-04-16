@@ -46,14 +46,3 @@ def contact(request):
             return redirect("indexMain")
         return JsonResponse({"status": "invalid_form"}, status=400)
     return render(request, 'contact.html')
-
-@require_POST
-def contactSpam(request, contact_id):
-    try:
-        contact = Contact.objects.get(id=contact_id)
-        contact.is_spam = True
-        contact.save()
-        return redirect("contact")
-    except Contact.DoesNotExist:
-        return redirect("contact")
-

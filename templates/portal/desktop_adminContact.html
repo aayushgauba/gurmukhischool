@@ -516,13 +516,14 @@
             confirmDeleteBtn.addEventListener('click', function() {
                 if (currentContactId) {
                     // Here you would send an AJAX request to delete the message
-                    fetch(`/admin/contact/delete/${currentContactId}/`, {
+                    fetch(`/portal/contact/delete/${currentContactId}/`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': getCsrfToken(),
                             'Content-Type': 'application/json',
                         },
                     })
+                    window.location.reload()
                 }
             });
             
@@ -543,7 +544,7 @@
             confirmSpamBtn.addEventListener('click', function() {
                 if (currentContactId) {
                     // Here you would send an AJAX request to mark as spam
-                    fetch(`/admin/contact/spam/${currentContactId}/`, {
+                    fetch(`/portal/contact/spam/${currentContactId}/`, {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': getCsrfToken(),

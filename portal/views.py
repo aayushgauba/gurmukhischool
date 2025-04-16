@@ -215,6 +215,31 @@ def moveCarouselImageDown(request, image_id):
 @login_required
 @approved_required
 @admin_required
+def contactSpam(request, contact_id):
+    try:
+        contact = Contact.objects.get(id=contact_id)
+        contact.is_spam = True
+        contact.save()
+        return redirect("contact")
+    except Contact.DoesNotExist:
+        return redirect("contact")
+    
+@require_POST
+@login_required
+@approved_required
+@admin_required
+def contactDelete(request, contact_id):
+    try:
+        contact = Contact.objects.get(id=contact_id)
+        contact.delete()
+        return redirect("contact")
+    except Contact.DoesNotExist:
+        return redirect("contact")
+
+@require_POST
+@login_required
+@approved_required
+@admin_required
 def delete_carousel_image(request):
     if request.method == 'POST':
         image_id = request.POST.get('image_id')
@@ -895,7 +920,7 @@ def deleteSection(request, section_id):
 @admin_required
 @approved_required
 def adminContactView(request:HttpRequest):
-    contacts = Contact.objects.all()
+    contacts = Contact.objects.filter(is_spam = False)
     user_agent = request.META['HTTP_USER_AGENT'].lower()
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     if "mobile" in user_agent:

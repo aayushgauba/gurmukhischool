@@ -77,4 +77,6 @@ urlpatterns = [
     path('carousel/delete', views.delete_main_carousel_image, name='delete_main_carousel_image'),
     path('admin/user/delete', views.delete_user, name='delete_user'),
     path('logout/', views.signout, name='logout'),
+    path('contact/spam/<int:contact_id>/', views.contactSpam, name='contactSpam'),
+    path('contact/delete/<int:contact_id>/', views.contactDelete, name='contactDelete'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
