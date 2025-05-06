@@ -33,14 +33,7 @@ def contact(request):
         name = request.POST.get('name', '').strip()
         email = request.POST.get('email', '').strip()
         message = request.POST.get('message', '').strip()
-        honeypot = request.POST.get('website', '').strip()
         ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0] or request.META.get('REMOTE_ADDR')
-        if honeypot:
-            BlacklistedIP.objects.get_or_create(
-                ip_address=ip,
-                defaults={'reason': 'Honeypot triggered'}
-            )
-            return JsonResponse({"status": "bot_detected"}, status=403)
         if name and email and message:
             Contact.objects.create(name=name, email=email, message=message, ip_address=ip)
             return redirect("indexMain")

@@ -1,4 +1,5 @@
 {%load static%}
+{% load aiwaf_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -215,7 +216,7 @@
                 <label for="message" class="form-label">Message</label>
                 <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
               </div>
-              <input type="text" class = "website" name ="website" autocomplete="off">
+              {% honeypot_field %}
               <div class="text-center">
                 <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
               </div>

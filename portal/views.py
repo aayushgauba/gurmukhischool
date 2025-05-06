@@ -1136,35 +1136,26 @@ def registration(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         phone = request.POST.get('phoneNumber')
-        honeypot = request.POST.get('website', '').strip()
-        ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0] or request.META.get('REMOTE_ADDR')
         try:
             phone = validate_phone_number(phone)
             if CustomUser.objects.filter(email=email).exists():
                 return redirect('login')
         except ValidationError as e:
             return render(request, "registration.html", {"error": str(e)})
-        if honeypot:
-            BlacklistedIP.objects.get_or_create(
-                ip_address=ip,
-                defaults={'reason': 'Honeypot triggered'}
-            )
-            return JsonResponse({"status": "bot_detected"}, status=403)
-        else:
-            if firstname and lastname and email and password and phone:
-                CustomUser.objects.create(first_name=firstname, last_name=lastname, phone_number = phone, username = email, email=email, password= make_password(password))
-                user = CustomUser.objects.get(first_name=firstname, last_name=lastname, username = email, phone_number = phone, email=email)
-                current_site = get_current_site(request)
-                subject = 'Activate Your Account'
-                message = render_to_string('email/activation.html', {
-                    'user': user,
-                    'domain': current_site.domain,
-                    'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                    'token': default_token_generator.make_token(user),
-                    'protocol': 'https' if request.is_secure() else 'http',
-                })
-                send_mail(subject, '', 'noreply@stlouisgurudwara.org', [user.email],  html_message=message)
-                return redirect('login')
+        if firstname and lastname and email and password and phone:
+            CustomUser.objects.create(first_name=firstname, last_name=lastname, phone_number = phone, username = email, email=email, password= make_password(password))
+            user = CustomUser.objects.get(first_name=firstname, last_name=lastname, username = email, phone_number = phone, email=email)
+            current_site = get_current_site(request)
+            subject = 'Activate Your Account'
+            message = render_to_string('email/activation.html', {
+                'user': user,
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                'token': default_token_generator.make_token(user),
+                'protocol': 'https' if request.is_secure() else 'http',
+            })
+            send_mail(subject, '', 'noreply@stlouisgurudwara.org', [user.email],  html_message=message)
+            return redirect('login')
     return render(request,"registration.html")
 
 def validate_phone_number(phone):
@@ -1279,22 +1270,13 @@ def login(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-        honeypot = request.POST.get('website', '').strip()
-        ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0] or request.META.get('REMOTE_ADDR')
-        if honeypot:
-            BlacklistedIP.objects.get_or_create(
-                ip_address=ip,
-                defaults={'reason': 'Honeypot triggered'}
-            )
-            return JsonResponse({"status": "bot_detected"}, status=403)
-        else:
-            if email and password:
-                user = authenticate(username=email, password=password)
-                if user:
-                    auth_login(request, user)
-                    return redirect("courses")
-                else:
-                    return redirect("login")
+        if email and password:
+            user = authenticate(username=email, password=password)
+            if user:
+                auth_login(request, user)
+                return redirect("courses")
+            else:
+                return redirect("login")
     return render(request, "login.html")
 
 @approved_required
