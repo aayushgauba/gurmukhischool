@@ -27,6 +27,9 @@ def check_for_uploaded_attendance():
 
 def read_attendance_csv(file_path):
     """Read attendance data from a CSV file."""
+    if not os.path.exists(file_path):
+        logging.warning(f"Attendance file not found: {file_path}")
+        return {}
     def parse_date(date_str):
         for fmt in ("%d-%m-%Y", "%d/%m/%Y"):
             try:
