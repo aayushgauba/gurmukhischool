@@ -27,11 +27,19 @@ def check_for_uploaded_attendance():
 
 def read_attendance_csv(file_path):
     """Read attendance data from a CSV file."""
+    def parse_date(date_str):
+        for fmt in ("%d-%m-%Y", "%d/%m/%Y"):
+            try:
+                return datetime.datetime.strptime(date_str, fmt).date()
+            except ValueError:
+                continue
+        raise ValueError(f"Date '{date_str}' is not in a recognized format.")
+
     with open(file_path, 'r', encoding='utf-8-sig') as csvfile:
         csvreader = csv.reader(csvfile)
         date_strings = next(csvreader)
         attendance = next(csvreader)
-        dates = [datetime.datetime.strptime(date, "%d-%m-%Y").date() for date in date_strings]
+        dates = [parse_date(date) for date in date_strings]
         attendance_data = dict(zip(dates, attendance))
         return attendance_data
 
