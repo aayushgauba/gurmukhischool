@@ -166,7 +166,7 @@
             <h2>Students</h2>
             <div class="input-group mb-3">
                 <input type="text" class="form-control" id="student-search" placeholder="Search students" aria-label="Search students" aria-describedby="button-addon2">
-                <button class="btn btn-primary" type="button" id="button-addon2" onclick="searchStudents()">Search</button>
+                <button class="btn btn-primary" type="button" id="search-button">Search</button>
             </div>
             <a href="{% url 'addStudents' course.id %}" class="btn btn-primary mb-3">Add Student</a>
             <table class="student-table" id="student-table">
@@ -185,7 +185,7 @@
                         <td class="student-name">{{student.email}}</td>
                         <td class="student-name">{{student.phone_number}}</td>
                         <td>
-                            <button class="btn btn-primary" onclick="triggerRemoveModal('{{student.id}}', '{{student.first_name}} {{student.last_name}}')">Remove</button>
+                            <button class="btn btn-primary remove-student-btn" data-student-id="{{student.id}}" data-student-name="{{student.first_name}} {{student.last_name}}">Remove</button>
                         </td>
                     </tr>
                     {%endfor%}
@@ -223,19 +223,49 @@
         const removeModal = new bootstrap.Modal(document.getElementById('removeStudentModal'));
         removeModal.show();
     }
-        function searchStudents() {
-            const searchTerm = document.getElementById('student-search').value.toLowerCase();
-            const rows = document.querySelectorAll('#student-table tbody tr');
 
-            rows.forEach(row0 => {
-                const name = row.querySelector('.student-name').textContent.toLowerCase();
-                if (name.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
+    function searchStudents() {
+        const searchTerm = document.getElementById('student-search').value.toLowerCase();
+        const rows = document.querySelectorAll('#student-table tbody tr');
+
+        rows.forEach(row => {
+            const name = row.querySelector('.student-name').textContent.toLowerCase();
+            if (name.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Add event listeners when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search button event listener
+        const searchButton = document.getElementById('search-button');
+        if (searchButton) {
+            searchButton.addEventListener('click', searchStudents);
+        }
+
+        // Search on Enter key press
+        const searchInput = document.getElementById('student-search');
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchStudents();
                 }
             });
         }
-    </script>
+
+        // Remove student button event listeners
+        const removeButtons = document.querySelectorAll('.remove-student-btn');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const studentId = this.getAttribute('data-student-id');
+                const studentName = this.getAttribute('data-student-name');
+                triggerRemoveModal(studentId, studentName);
+            });
+        });
+    });
+</script>
 </body>
 </html>
