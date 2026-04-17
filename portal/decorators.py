@@ -1,6 +1,7 @@
 from django.shortcuts import redirect, render
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
+from aiwaf.django.decorators import aiwaf_exempt
 
 def superuser_required(view_func):
     """
