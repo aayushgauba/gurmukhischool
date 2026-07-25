@@ -279,9 +279,9 @@
                         {%if user.is_superuser and user.usertype == 'Teacher' %}
                         <div class="btn-group">
                             {%if section.Status == True%}
-                                <a href = "{% url 'changeVisibility' section.id %}" class="btn btn-secondary-custom hide-form-btn"><i class="bi bi-eye-slash"></i> Hide</a>
+                                <form method="post" action="{% url 'changeVisibility' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-secondary-custom hide-form-btn"><i class="bi bi-eye-slash"></i> Hide</button></form>
                             {%else%}
-                                <a href = "{% url 'changeVisibility' section.id %}" class="btn btn-secondary-custom show-form-btn"><i class="bi bi-eye"></i> Show</a>
+                                <form method="post" action="{% url 'changeVisibility' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-secondary-custom show-form-btn"><i class="bi bi-eye"></i> Show</button></form>
                             {%endif%}
                             <button type="button" class="btn btn-primary create-folder-btn" data-bs-toggle="modal" data-bs-target="#createFolderModal" data-section-id="{{ section.id }}">
                                 <i class="bi bi-folder-plus"></i> Create Folder
@@ -290,8 +290,8 @@
                         {%endif%}
                         {%if user.is_superuser and user.usertype == 'Teacher' %}
                         <div class="section-buttons">
-                            <a href = "{% url 'moveSectionUp' section.id%}" class="btn btn-sm btn-outline-secondary up-btn"><i class="bi bi-arrow-up"></i></a>
-                            <a href = "{% url 'moveSectionDown' section.id%}" class="btn btn-sm btn-outline-secondary down-btn"><i class="bi bi-arrow-down"></i></a>
+                            <form method="post" action="{% url 'moveSectionUp' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary up-btn"><i class="bi bi-arrow-up"></i></button></form>
+                            <form method="post" action="{% url 'moveSectionDown' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary down-btn"><i class="bi bi-arrow-down"></i></button></form>
                             <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteSyllabusModal{{ section.id }}">
                                 <i class="bi bi-trash"></i> Delete
                             </button>                        </div>

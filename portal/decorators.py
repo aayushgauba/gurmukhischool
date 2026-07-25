@@ -2,12 +2,14 @@ from django.shortcuts import redirect, render
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from aiwaf.django.decorators import aiwaf_exempt
+from functools import wraps
 
 def superuser_required(view_func):
     """
     Decorator for views that checks that the user is logged in and is a superuser,
     returning a 403 Forbidden response if necessary.
     """
+    @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')  # Redirect to login page
@@ -21,10 +23,11 @@ def teacher_required(view_func):
     Decorator for views that checks that the user is logged in and is a superuser,
     returning a 403 Forbidden response if necessary.
     """
+    @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
-        if not request.user.usertype == 'Teacher':
+        if request.user.usertype != request.user.TEACHER:
             raise PermissionDenied("You do not have permission to access this page.")
         return view_func(request, *args, **kwargs)
     return _wrapped_view
@@ -34,25 +37,28 @@ def admin_required(view_func):
     Decorator for views that checks that the user is logged in and is a superuser,
     returning a 403 Forbidden response if necessary.
     """
+    @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
-        if not request.user.usertype == 'Admin':
+        if request.user.usertype != request.user.ADMIN:
             raise PermissionDenied("You do not have permission to access this page.")
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
 def emailSender_required(view_func):
+    @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
         # Allow if usertype is either "Admin" or "EmailSender"
-        if request.user.usertype not in ('Admin', 'EmailSender'):
+        if request.user.usertype not in (request.user.ADMIN, request.user.EMAIL_SENDER):
             raise PermissionDenied("You do not have permission to access this page.")
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
 def approved_required(view_func):
+    @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')

@@ -264,25 +264,25 @@
             <div class="section-card-body">
                 <h2>{{ file.file }}</h2>
                 <p>Type: {{ file_type }}</p>
-                <a href="{{ file.file.url }}" class="btn btn-primary" target="_blank">Download</a>
+                <a href="{% url 'viewMobileContentUpload' file.id %}" class="btn btn-primary" target="_blank">Download</a>
 
                 <div class="viewer mt-4">
                     {% if file_type in 'jpg jpeg png gif' %}
-                        <img src="{{ file.file.url }}" alt="{{ file.name }}" class="img-fluid">
+                        <img src="{% url 'viewMobileContentUpload' file.id %}" alt="{{ file.name }}" class="img-fluid">
                     {% elif file_type in 'mp4 webm ogg' %}
                         <video controls class="w-100">
-                            <source src="{{ file.file.url }}" type="video/{{ file_type }}">
+                            <source src="{% url 'viewMobileContentUpload' file.id %}" type="video/{{ file_type }}">
                             Your browser does not support the video tag.
                         </video>
                     {% elif file_type in 'mp3 wav ogg' %}
                         <audio controls class="w-100">
-                            <source src="{{ file.file.url }}" type="audio/{{ file_type }}">
+                            <source src="{% url 'viewMobileContentUpload' file.id %}" type="audio/{{ file_type }}">
                             Your browser does not support the audio element.
                         </audio>
                     {% elif file_type in 'pdf' %}
-                        <embed src="{{ file.file.url }}" type="application/pdf" width="100%" height="600px">
+                        <embed src="{% url 'viewMobileContentUpload' file.id %}" type="application/pdf" width="100%" height="600px">
                     {% else %}
-                        <p>Cannot preview this file type. Please <a href="{{ file.file.url }}" class="btn btn-primary" target="_blank">Download</a> to view it.</p>
+                        <p>Cannot preview this file type. Please <a href="{% url 'viewMobileContentUpload' file.id %}" class="btn btn-primary" target="_blank">Download</a> to view it.</p>
                     {% endif %}
                 </div>
             </div>

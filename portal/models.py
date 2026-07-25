@@ -10,11 +10,12 @@ class ProfilePhoto(models.Model):
         return f"Photo uploaded on {self.uploaded_at}"
 
 class CustomUser(AbstractUser):
-    WEB_MANAGER = 'webmanager'
-    ADMIN = 'admin'
-    TEACHER = 'teacher'
-    STUDENT = 'student'
-    PARENT = 'parent'
+    WEB_MANAGER = 'WebManager'
+    ADMIN = 'Admin'
+    TEACHER = 'Teacher'
+    STUDENT = 'Student'
+    PARENT = 'Parent'
+    EMAIL_SENDER = 'EmailSender'
 
     USER_TYPES = [
         (WEB_MANAGER, 'Web Manager'),
@@ -22,6 +23,7 @@ class CustomUser(AbstractUser):
         (TEACHER, 'Teacher'),
         (STUDENT, 'Student'),
         (PARENT, 'Parent'),
+        (EMAIL_SENDER, 'Email Sender'),
     ]
 
     profile_photo = models.FileField(upload_to='profile_photos/', blank=True, null=True)

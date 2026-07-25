@@ -296,7 +296,7 @@
                             <tr class="file-row">
                                 <td class="folder-level-1"><a href="#" class="file"><i class="bi bi-file-earmark"></i> {{submission.file}}</a></td>
                                 <td>
-                                    <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewFileModal" data-file-url="{{ submission.file.url }}">View</a>
+                                    <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewFileModal" data-file-url="{% url 'view_submission_file' submission.id %}">View</a>
                                 </td>
                             </tr>
 

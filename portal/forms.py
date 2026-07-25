@@ -5,7 +5,6 @@ from django_select2.forms import Select2MultipleWidget
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 
-people = CustomUser.objects.filter(usertype="Student")
 class UploadedFileForm(forms.ModelForm):
     class Meta:
         model = UploadedFile
@@ -13,11 +12,17 @@ class UploadedFileForm(forms.ModelForm):
 
 class UploadedAttendanceForm(forms.ModelForm):
     student = forms.ModelChoiceField(
-        queryset=people,
+        queryset=CustomUser.objects.none(),
     )
     class Meta:
         model = UploadedAttendance
         fields = ['file','student']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['student'].queryset = CustomUser.objects.filter(
+            usertype=CustomUser.STUDENT
+        )
     
 
 class CarouselImageForm(forms.ModelForm):

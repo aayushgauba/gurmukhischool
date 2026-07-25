@@ -1,8 +1,6 @@
 from django.contrib import admin
 from django.urls import path
 from . import views
-from django.conf import settings
-from django.conf.urls.static import static
 
 urlpatterns = [
     path('students/<int:course_id>', views.students, name='students'),
@@ -34,19 +32,18 @@ urlpatterns = [
     path('section/<int:section_id>/folder/assignment/create/<int:folder_id>', views.createAssignment, name='createAssignment'),
     path('section/<int:section_id>/folder/assignment/view/<int:folder_id>/<int:assignment_id>', views.viewAssignment, name='viewAssignment'),
     path('section/<int:section_id>/folder/assignment/edit/<int:folder_id>/<int:assignment_id>', views.editAssignment, name='editAssignment'),
-    path('section/<int:section_id>/folder/assignment/edit/<int:folder_id>/<int:assignment_id>', views.editAssignment, name='editAssignment'),
     path('submission/<int:folder_id>/folder/<int:user_id>/assignment/<int:assignment_id>', views.submissions, name='submissions'),
     path('grade/submission/<int:folder_id>/folder/<int:user_id>/assignment/<int:assignment_id>/<int:course_id>', views.assignGradeToAssignment, name='assignGradeToAssignment'),
     path('section/<int:section_id>/folder/assignment/delete/<int:folder_id>/<int:assignment_id>', views.deleteAssignment, name='deleteAssignment'),
-    path('section/<int:section_id>/folder/assignment/delete/<int:folder_id>/<int:assignment_id>', views.deleteAssignment, name='deleteAssignment'),
     path('section/<int:section_id>/folder/assignment/submit/<int:folder_id>/<int:assignment_id>/delete', views.deleteSubmission, name='deleteSubmission'),
     path('section/<int:section_id>/folder/assignment/upload/<int:folder_id>/<int:assignment_id>/existing', views.addExistingFilesToAssignment, name='addExistingFilesToAssignment'),
-    path('section/<int:section_id>/folder/assignment/delete/<int:folder_id>/<int:assignment_id>', views.deleteFilesFromAssignment, name='deleteFilesFromAssignment'),
+    path('section/<int:section_id>/folder/assignment/file/delete/<int:folder_id>/<int:assignment_id>', views.deleteFilesFromAssignment, name='deleteFilesFromAssignment'),
     path('section/<int:section_id>/folder/assignment/upload/<int:folder_id>/<int:assignment_id>/new', views.addNewFilesToAssignment, name='addNewFilesToAssignment'),
     path('reset', views.PasswordResetView, name='reset'),
     path('section/<int:section_id>/folder/assignment/submit/<int:folder_id>/<int:assignment_id>', views.submitFilesToAssignment, name='submitFilesToAssignment'),
     path('grade/view/<int:folder_id>/folder/assignment/<int:assignment_id>', views.gradesforAssignment, name='gradesforAssignment'),
     path('file/<int:file_id>', views.viewMobileContentUpload, name = "viewMobileContentUpload"),
+    path('submission/file/<int:submission_id>', views.view_submission_file, name='view_submission_file'),
     path('file/delete/<int:pk>/<int:section_id>/<int:folder_id>', views.delete_file, name='delete_file'),
     path('login', views.login, name='login'),
     path('grades/<int:course_id>', views.grades, name='grades'),
@@ -79,4 +76,4 @@ urlpatterns = [
     path('logout/', views.signout, name='logout'),
     path('contact/spam/<int:contact_id>/', views.contactSpam, name='contactSpam'),
     path('contact/delete/<int:contact_id>/', views.contactDelete, name='contactDelete'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]

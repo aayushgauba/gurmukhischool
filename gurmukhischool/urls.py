@@ -26,4 +26,8 @@ urlpatterns = [
     path('portal/', include('portal.urls')),
     path('activate/<uidb64>/<token>/', activate, name='activate'),
     path('account_activation_sent/', account_activation_sent, name='account_activation_sent'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

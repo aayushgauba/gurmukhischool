@@ -1,5 +1,4 @@
 {% load static %}
-{% load aiwaf_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -137,7 +136,6 @@
           <label for="password" class="form-label">Password:</label>
           <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
         </div>
-        {% honeypot_field %}
         <button type="submit" class="btn btn-primary w-100">Login</button>
       </form>
       <div class="additional-options mt-3">
