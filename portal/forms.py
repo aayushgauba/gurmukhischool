@@ -4,13 +4,32 @@ from .models import Announcement, Courses, CustomUser, CarouselImage, GroupPhoto
 from django_select2.forms import Select2MultipleWidget
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
+
+MAX_UPLOAD_SIZE = 20 * 1024 * 1024
+DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg']
+
+
+def validate_upload_size(upload):
+    if upload.size > MAX_UPLOAD_SIZE:
+        raise ValidationError("Files must be 20 MB or smaller.")
+
+
+def validated_file_field(extensions):
+    return forms.FileField(validators=[
+        FileExtensionValidator(allowed_extensions=extensions),
+        validate_upload_size,
+    ])
 
 class UploadedFileForm(forms.ModelForm):
+    file = validated_file_field(DOCUMENT_EXTENSIONS)
     class Meta:
         model = UploadedFile
         fields = ['file']
 
 class UploadedAttendanceForm(forms.ModelForm):
+    file = validated_file_field(['csv'])
     student = forms.ModelChoiceField(
         queryset=CustomUser.objects.none(),
     )
@@ -19,28 +38,36 @@ class UploadedAttendanceForm(forms.ModelForm):
         fields = ['file','student']
 
     def __init__(self, *args, **kwargs):
+        course = kwargs.pop('course', None)
         super().__init__(*args, **kwargs)
-        self.fields['student'].queryset = CustomUser.objects.filter(
-            usertype=CustomUser.STUDENT
-        )
+        students = CustomUser.objects.filter(usertype=CustomUser.STUDENT)
+        if course is not None:
+            students = students.filter(
+                id__in=course.People.values_list('id', flat=True)
+            )
+        self.fields['student'].queryset = students
     
 
 class CarouselImageForm(forms.ModelForm):
+    image = forms.ImageField(validators=[validate_upload_size])
     class Meta:
         model = CarouselImage
         fields = ['title', 'image', 'description']
 
 class SyllabusUploadForm(forms.ModelForm):
+    Syllabus = validated_file_field(['pdf'])
     class Meta:
         model = Courses
         fields = ['Syllabus']  # Only include the Syllabus field
 
 class ProfilePhotoForm(forms.ModelForm):
+    file = forms.ImageField(validators=[validate_upload_size])
     class Meta:
         model = ProfilePhoto
         fields = ['file']
 
 class FileUploadForm(forms.ModelForm):
+    file = validated_file_field(DOCUMENT_EXTENSIONS)
     class Meta:
         model = filestoAssignment
         fields = ['file']
@@ -53,6 +80,7 @@ class FileUploadForm(forms.ModelForm):
         self.instance.assignment_id = assignment_id
 
 class GroupPhotoUploadForm(forms.ModelForm):
+    file = forms.ImageField(validators=[validate_upload_size])
     class Meta:
         model = GroupPhotoAttendance
         fields = ['file']

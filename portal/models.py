@@ -70,6 +70,13 @@ class UploadedFile(models.Model):
 class UploadedAttendance(models.Model):
     file = models.FileField(upload_to='attendance/')
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    course = models.ForeignKey(
+        Courses,
+        on_delete=models.CASCADE,
+        related_name='attendance_uploads',
+        null=True,
+        blank=True,
+    )
 
 class EmailSubscriber(models.Model):
     email = models.EmailField(unique=True)
@@ -111,10 +118,25 @@ class Announcement(models.Model):
 
 class Attendance(models.Model):
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    course = models.ForeignKey(
+        Courses,
+        on_delete=models.CASCADE,
+        related_name='attendance_records',
+        null=True,
+        blank=True,
+    )
     day = models.PositiveIntegerField()
     month = models.PositiveIntegerField()
     year = models.PositiveIntegerField()  # Optional if you need to track the year
     status = models.CharField(max_length=10, choices=[('Present', 'Present'), ('Absent', 'Absent')])
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'course', 'day', 'month', 'year'],
+                name='unique_student_course_attendance_day',
+            ),
+        ]
 
 class Folder(models.Model):
     Title = models.CharField(max_length=200)
@@ -135,11 +157,38 @@ class Grade(models.Model):
     user_id = models.IntegerField()
     grade = models.FloatField()
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['assignment_id', 'course_id', 'user_id'],
+                name='unique_assignment_course_user_grade',
+            ),
+            models.CheckConstraint(
+                check=models.Q(grade__gte=0, grade__lte=100),
+                name='grade_between_0_and_100',
+            ),
+        ]
+
 class Schedule(models.Model):
     startDate = models.CharField(max_length=7)
     endDate = models.CharField(max_length=7)
     days = models.TextField()
     course = models.ForeignKey(Courses, on_delete=models.CASCADE)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['course'],
+                name='unique_schedule_per_course',
+            ),
+        ]
+
 class GroupPhotoAttendance(models.Model):
     file = models.FileField(upload_to='group_photo/', unique = True)
+    course = models.ForeignKey(
+        Courses,
+        on_delete=models.CASCADE,
+        related_name='group_photo_uploads',
+        null=True,
+        blank=True,
+    )

@@ -3,6 +3,7 @@ from datetime import date
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from django.db import IntegrityError, transaction
 
 from .models import (
     Assignment,
@@ -12,7 +13,10 @@ from .models import (
     Folder,
     Section,
     WeeklyEmail,
+    Attendance,
+    Grade,
 )
+from .forms import UploadedFileForm
 
 
 class PortalSecurityTests(TestCase):
@@ -126,3 +130,68 @@ class PortalSecurityTests(TestCase):
             reverse("reset"), {"email": "missing@example.com"}
         )
         self.assertRedirects(response, reverse("login"))
+
+    def test_attendance_is_scoped_to_course(self):
+        other_course = Courses.objects.create(
+            Title="Other Course",
+            Description="Test",
+        )
+        first = Attendance.objects.create(
+            student=self.student,
+            course=self.course,
+            day=1,
+            month=1,
+            year=2026,
+            status="Present",
+        )
+        second = Attendance.objects.create(
+            student=self.student,
+            course=other_course,
+            day=1,
+            month=1,
+            year=2026,
+            status="Absent",
+        )
+        self.assertNotEqual(first.course_id, second.course_id)
+
+    def test_duplicate_grade_is_rejected(self):
+        Grade.objects.create(
+            user_id=self.student.id,
+            course_id=self.course.id,
+            assignment_id=self.assignment.id,
+            grade=90,
+        )
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Grade.objects.create(
+                user_id=self.student.id,
+                course_id=self.course.id,
+                assignment_id=self.assignment.id,
+                grade=80,
+            )
+
+    def test_dangerous_upload_extension_is_rejected(self):
+        form = UploadedFileForm(
+            files={"file": SimpleUploadedFile("payload.html", b"<script>")}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("file", form.errors)
+
+    def test_logout_rejects_get(self):
+        self.client.force_login(self.student)
+        response = self.client.get(reverse("logout"))
+        self.assertEqual(response.status_code, 405)
+
+    def test_admin_cannot_delete_self(self):
+        admin = CustomUser.objects.create_user(
+            username="admin@example.com",
+            password="a-long-test-password",
+            usertype=CustomUser.ADMIN,
+            approved=True,
+        )
+        self.client.force_login(admin)
+        response = self.client.post(
+            reverse("delete_user"),
+            {"user_id": admin.id},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(CustomUser.objects.filter(id=admin.id).exists())

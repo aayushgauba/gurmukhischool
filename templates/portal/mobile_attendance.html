@@ -273,7 +273,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="photoUploadForm" method="post" action="{% url 'uploadGroupPhoto' %}" enctype="multipart/form-data">
+                    <form id="photoUploadForm" method="post" action="{% url 'uploadGroupPhoto' course.id %}" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{photoform|crispy}}
                     </form>

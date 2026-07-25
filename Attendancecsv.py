@@ -59,6 +59,7 @@ def scan_attendance():
             status = "Present" if status == 'P' else "Absent"
             Attendance.objects.update_or_create(
                 student=user,
+                course=attendance.course,
                 day=date.day,
                 month=date.month,
                 year=date.year,

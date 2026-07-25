@@ -22,10 +22,11 @@ from pages.models import Contact
 from django.core.exceptions import ValidationError
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.password_validation import validate_password
+from django.db import transaction
+from django.db.models import Avg
 import re
 import os
 import asyncio
-import threading
 import calendar
 from datetime import datetime
 import json
@@ -33,6 +34,16 @@ import json
 
 def _user_agent(request):
     return request.META.get('HTTP_USER_AGENT', '').lower()
+
+
+def _parse_grade(value):
+    try:
+        grade = float(value)
+    except (TypeError, ValueError):
+        raise ValidationError("Grade must be a number.")
+    if not 0 <= grade <= 100:
+        raise ValidationError("Grade must be between 0 and 100.")
+    return grade
 
 
 def _is_teacher(user):
@@ -138,7 +149,9 @@ def delete_file(request, pk, section_id, folder_id):
 @teacher_required
 @superuser_required
 @login_required
+@require_POST
 def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
+    _course_graph(section_id, folder_id, assignment_id)
     if request.method == "POST":
         file_id = request.POST.get('existing_file')
         file = UploadedFile.objects.get(id = file_id)
@@ -323,6 +336,7 @@ def delete_main_carousel_image(request):
 @require_POST
 @login_required
 def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
+    _course_graph(section_id, folder_id, assignment_id)
     if request.method == "POST":
         form = UploadedFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -353,6 +367,7 @@ def submitFilesToAssignment(request, section_id, folder_id, assignment_id):
 @require_POST
 @login_required
 def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
+    _course_graph(section_id, folder_id, assignment_id)
     if request.method == "POST":
         file_id = request.POST.get('file_id')
         assignment = Assignment.objects.get(id = assignment_id)
@@ -397,6 +412,7 @@ def viewAssignment(request: HttpRequest, section_id, folder_id, assignment_id):
 @require_POST
 @login_required
 def createAssignment(request, section_id, folder_id):
+    _course_graph(section_id, folder_id)
     if request.method == 'POST':
         title = request.POST.get('title')
         description = request.POST.get('description')
@@ -412,6 +428,7 @@ def createAssignment(request, section_id, folder_id):
 @require_POST
 @login_required
 def editAssignment(request, section_id, folder_id, assignment_id):
+    _course_graph(section_id, folder_id, assignment_id)
     if request.method == 'POST':
         title = request.POST.get('title')
         description = request.POST.get('description')
@@ -430,6 +447,7 @@ def editAssignment(request, section_id, folder_id, assignment_id):
 @require_POST
 @login_required
 def deleteAssignment(request, section_id, folder_id, assignment_id):
+    _course_graph(section_id, folder_id, assignment_id)
     if request.method == 'POST':
         assignment = Assignment.objects.get(id = assignment_id)
         assignment.delete()
@@ -460,6 +478,7 @@ def deleteSubmission(request, section_id, folder_id, assignment_id):
 @require_POST
 @login_required
 def uploadFile(request, section_id, folder_id):
+    _course_graph(section_id, folder_id)
     if request.method == 'POST':
         form = UploadedFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -596,7 +615,7 @@ def courses(request: HttpRequest):
         courses = Courses.objects.filter(People = request.user).order_by("id")
     elif user.usertype == "Admin" and user.is_superuser:
         return redirect("adminViewHome")
-    elif user.usertype == "EmailSender" and user.is_superuser:
+    elif user.usertype == CustomUser.EMAIL_SENDER:
         return redirect("calenderNotification")
     else:
         return render(request, "portal/unknown_usertype.html", {"user": user})
@@ -614,16 +633,25 @@ def courses(request: HttpRequest):
 @login_required
 @require_POST
 def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_id):
+    _, _, folder, assignment = _course_graph(
+        folder_id=folder_id,
+        assignment_id=assignment_id,
+    )
+    if folder.Course_id != course_id:
+        raise Http404
+    course = get_object_or_404(Courses, id=course_id)
+    if not course.People.filter(id=user_id, usertype=CustomUser.STUDENT).exists():
+        raise Http404
     try:
-        grade = Grade.objects.get(user_id=user_id, assignment_id=assignment_id, course_id = course_id)
-        newGrade = request.POST.get("grade")
-        grade.grade = newGrade
-        grade.save()
-    except Grade.DoesNotExist:
-        newGrade = request.POST.get("grade")
-        Grade.objects.create(user_id=user_id, assignment_id=assignment_id, grade=newGrade, course_id= course_id)
-    except Exception as e:
-        print(f"An error occurred: {e}")
+        new_grade = _parse_grade(request.POST.get("grade"))
+    except ValidationError as error:
+        return JsonResponse({"detail": error.message}, status=400)
+    Grade.objects.update_or_create(
+        user_id=user_id,
+        assignment_id=assignment_id,
+        course_id=course_id,
+        defaults={"grade": new_grade},
+    )
     return redirect("submissions", folder_id, user_id, assignment_id)
 
 @approved_required
@@ -632,74 +660,83 @@ def grades(request: HttpRequest, course_id = None):
     user_agent = _user_agent(request)
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     if course_id is not None:
-        requested_course = get_object_or_404(Courses, id=course_id)
-        _require_course_access(request.user, requested_course)
-        grades = Grade.objects.filter(course_id = course_id)
-        if grades:
-            if request.user.usertype == "Student":
-                grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id)
-                gradeArray = []
-                final = 0
-                print(grades.count())
-                for grade in grades:
-                    dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":grade.grade}
-                    gradeArray.append(dict)
-                    final = final + grade.grade
-                finals = final/grades.count()
-                course = Courses.objects.get(id = course_id)
-                if "mobile" in user_agent:
-                    return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
-                else:
-                    return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals, "profile_photo":profile_photo})
-            elif request.user.is_superuser and request.user.usertype == "Teacher":
-                grades = Grade.objects.filter(course_id = course_id)
-                sections = Section.objects.filter(Course_id=course_id)
-                folders = Folder.objects.filter(section__in=sections.values_list('id', flat=True))
-                assignments = Assignment.objects.filter(folder__in=folders.values_list('id', flat=True)).distinct()        
-                gradeArray = []
-                final = 0
-                print(grades.count())
-                for assignment in assignments:
-                    grades = Grade.objects.filter(assignment_id = assignment.id)
-                    average = 0
-                    for grade in grades:
-                        average = average + grade.grade
-                    average = average / grades.count()
-                    dict = {"title":Assignment.objects.get(id = grade.assignment_id).title, "grade":average}
-                    gradeArray.append(dict)
-                    final = final + average
-                finals = final/assignments.count()
-                course = Courses.objects.get(id = course_id)
-                if "mobile" in user_agent:
-                    return render(request, "portal/mobile_grades.html", {"grades":gradeArray, "course":course, "final":finals})
-                else:
-                    return render(request, "portal/desktop_grades.html", {"grades":gradeArray, "course":course, "final":finals, "profile_photo":profile_photo})
-        else:
-            course = Courses.objects.get(id = course_id)
-            if "mobile" in user_agent:
-                return render(request, "portal/mobile_grades.html", {"course":course})
-            else:
-                return render(request, "portal/desktop_grades.html", {"course":course})
-        return HttpResponse(grades = Grade.objects.filter(user_id = request.user.id, course_id = course_id))
-    else:
-        if request.user.is_superuser and request.user.usertype == "Teacher":
-            courses = Courses.objects.all()
-            averageArray = []
-            for course in courses:
-                grades = Grade.objects.filter(course_id = course.id)
-                if grades:
-                    averageGrade = float(0)
-                    for grade in grades:
-                        averageGrade += grade
-                    averageGrade = float(averageGrade / float(len(grades)))
-                    dict = {'id':course_id, 'grade':averageGrade}
-                else:
-                    dict = {'id':course_id, 'grade':None}
-                averageArray.append(dict)
-                if "mobile" in user_agent:
-                    return render(request, "portal/mobile_grades.html", {'grades':averageArray})
-                else:
-                    return render(request, "portal/desktop_grades.html", {'grades':averageArray})
+        course = get_object_or_404(Courses, id=course_id)
+        _require_course_access(request.user, course)
+        grade_array = []
+        if request.user.usertype == CustomUser.STUDENT:
+            student_grades = Grade.objects.filter(
+                user_id=request.user.id,
+                course_id=course_id,
+            )
+            assignments = {
+                assignment.id: assignment
+                for assignment in Assignment.objects.filter(
+                    id__in=student_grades.values_list('assignment_id', flat=True)
+                )
+            }
+            for grade in student_grades:
+                assignment = assignments.get(grade.assignment_id)
+                if assignment:
+                    grade_array.append({
+                        "title": assignment.title,
+                        "grade": grade.grade,
+                    })
+        elif _is_teacher(request.user):
+            assignment_ids = Folder.objects.filter(
+                Course_id=course_id
+            ).values_list('Assignments__id', flat=True)
+            assignments = Assignment.objects.filter(
+                id__in=assignment_ids
+            ).distinct()
+            averages = {
+                row['assignment_id']: row['average']
+                for row in Grade.objects.filter(
+                    course_id=course_id,
+                    assignment_id__in=assignments.values_list('id', flat=True),
+                ).values('assignment_id').annotate(average=Avg('grade'))
+            }
+            grade_array = [
+                {"title": assignment.title, "grade": averages[assignment.id]}
+                for assignment in assignments
+                if assignment.id in averages
+            ]
+
+        final = (
+            sum(item["grade"] for item in grade_array) / len(grade_array)
+            if grade_array else None
+        )
+        template = (
+            "portal/mobile_grades.html"
+            if "mobile" in user_agent
+            else "portal/desktop_grades.html"
+        )
+        return render(request, template, {
+            "grades": grade_array,
+            "course": course,
+            "final": final,
+            "profile_photo": profile_photo,
+        })
+
+    if not _is_teacher(request.user):
+        return redirect("courses")
+    average_array = [
+        {
+            "id": course.id,
+            "grade": Grade.objects.filter(
+                course_id=course.id
+            ).aggregate(average=Avg("grade"))["average"],
+        }
+        for course in Courses.objects.all()
+    ]
+    template = (
+        "portal/mobile_grades.html"
+        if "mobile" in user_agent
+        else "portal/desktop_grades.html"
+    )
+    return render(request, template, {
+        "grades": average_array,
+        "profile_photo": profile_photo,
+    })
 
 @approved_required
 @login_required
@@ -740,6 +777,7 @@ def mark_attendance(request: HttpRequest, course_id, day, month, year):
             # Update or create the attendance record
             Attendance.objects.update_or_create(
                 student=student,
+                course_id=course_id,
                 day=selected_day,
                 month=selected_month,
                 year=selected_year,
@@ -753,7 +791,7 @@ def mark_attendance(request: HttpRequest, course_id, day, month, year):
 
         # Query attendance records for the given day, month, and year
         attendance_records = Attendance.objects.filter(
-            day=day, month=month, year=year
+            course_id=course_id, day=day, month=month, year=year
         )
 
         attendanceArray =[]
@@ -815,9 +853,9 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
         weeks.append(week)
 
     if not request.user.is_superuser and request.user.usertype == "Student":
-        attendance = Attendance.objects.filter(year = year, month = month, student = request.user, status = "Present").values_list('day', flat=True)
+        attendance = Attendance.objects.filter(course=course, year = year, month = month, student = request.user, status = "Present").values_list('day', flat=True)
         attendance_days = list(attendance)
-        absent = Attendance.objects.filter(year = year, month = month, student = request.user, status = "Absent").values_list('day', flat=True)
+        absent = Attendance.objects.filter(course=course, year = year, month = month, student = request.user, status = "Absent").values_list('day', flat=True)
         absent_days = list(absent)
         context = {
         'year': year,
@@ -840,7 +878,7 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
             schedule = Schedule.objects.get(course = Courses.objects.get(id = course_id))
         except Exception as e:
             schedule = None
-        attendanceForm = UploadedAttendanceForm()
+        attendanceForm = UploadedAttendanceForm(course=course)
         if schedule:
             startDate = datetime.strptime(schedule.startDate, "%Y-%m") 
             endDate = datetime.strptime(schedule.endDate, "%Y-%m") 
@@ -879,11 +917,18 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
 @require_POST
 @login_required
 def uploadAttendanceData(request, course_id):
+    course = get_object_or_404(Courses, id=course_id)
     next_url = request.META.get('HTTP_REFERER', '/')
-    form = UploadedAttendanceForm(request.POST, request.FILES)
+    form = UploadedAttendanceForm(
+        request.POST,
+        request.FILES,
+        course=course,
+    )
     print("Submitted data:", form)
     if form.is_valid():
-        form.save()
+        upload = form.save(commit=False)
+        upload.course = course
+        upload.save()
     return redirect(next_url)
 
 @approved_required
@@ -891,12 +936,15 @@ def uploadAttendanceData(request, course_id):
 @superuser_required
 @require_POST
 @login_required
-def uploadGroupPhoto(request):
+def uploadGroupPhoto(request, course_id):
+    course = get_object_or_404(Courses, id=course_id)
     next_url = request.META.get('HTTP_REFERER', '/')
     form = GroupPhotoUploadForm(request.POST, request.FILES)
     print("Submitted data:", form)
     if form.is_valid():
-        form.save()
+        upload = form.save(commit=False)
+        upload.course = course
+        upload.save()
     return redirect(next_url)
 
 @approved_required    
@@ -909,15 +957,23 @@ def scheduleDefine(request, course_id):
     choices = request.POST.getlist('week')
     startDate = request.POST.get('startDate')
     endDate= request.POST.get('endDate')
-    choices = json.dumps(choices)
-    course = Courses.objects.get(id = course_id)
-    print(choices)
     try:
-        schedule = Schedule.objects.get(course = course)
-        schedule.delete()
-        Schedule.objects.create(startDate = startDate, endDate = endDate, days=choices, course = course)
-    except Exception as e:
-        Schedule.objects.create(startDate = startDate, endDate = endDate, days=choices, course = course)
+        start = datetime.strptime(startDate or "", "%Y-%m")
+        end = datetime.strptime(endDate or "", "%Y-%m")
+        weekdays = [int(choice) for choice in choices]
+    except (TypeError, ValueError):
+        return JsonResponse({"detail": "Invalid schedule values."}, status=400)
+    if start > end or any(day not in range(7) for day in weekdays):
+        return JsonResponse({"detail": "Invalid schedule range."}, status=400)
+    course = get_object_or_404(Courses, id=course_id)
+    Schedule.objects.update_or_create(
+        course=course,
+        defaults={
+            "startDate": startDate,
+            "endDate": endDate,
+            "days": json.dumps(weekdays),
+        },
+    )
     return redirect(next_url)
 
 
@@ -938,7 +994,6 @@ def adminViewHome(request:HttpRequest):
         user.is_superuser = user_type in (
             CustomUser.TEACHER,
             CustomUser.ADMIN,
-            CustomUser.EMAIL_SENDER,
         )
         user.is_active = True
         user.approved = True
@@ -982,7 +1037,24 @@ def adminUsers(request:HttpRequest):
 def delete_user(request):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
-        user = CustomUser.objects.get(id=user_id)
+        user = get_object_or_404(CustomUser, id=user_id)
+        if user == request.user:
+            return JsonResponse(
+                {"detail": "You cannot delete your own account."},
+                status=400,
+            )
+        if (
+            user.usertype == CustomUser.ADMIN
+            and CustomUser.objects.filter(
+                usertype=CustomUser.ADMIN,
+                approved=True,
+                is_active=True,
+            ).count() <= 1
+        ):
+            return JsonResponse(
+                {"detail": "The last active administrator cannot be deleted."},
+                status=400,
+            )
         user.delete()
         return redirect('adminUsers')
 
@@ -993,7 +1065,24 @@ def delete_user(request):
 def admit_user(request):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
-        user = CustomUser.objects.get(id=user_id)
+        user = get_object_or_404(CustomUser, id=user_id)
+        if user == request.user:
+            return JsonResponse(
+                {"detail": "You cannot revoke your own approval."},
+                status=400,
+            )
+        if (
+            user.usertype == CustomUser.ADMIN
+            and CustomUser.objects.filter(
+                usertype=CustomUser.ADMIN,
+                approved=True,
+                is_active=True,
+            ).count() <= 1
+        ):
+            return JsonResponse(
+                {"detail": "The last active administrator cannot be revoked."},
+                status=400,
+            )
         user.approved = False
         user.save()
         return redirect('adminViewHome')
@@ -1001,29 +1090,59 @@ def admit_user(request):
 
 @require_POST
 @teacher_required
+@superuser_required
 @login_required
 @approved_required
 def deleteCourse(request, course_id):
     if request.method == 'POST':
-        course = Courses.objects.get(id = course_id)
-        sections = Section.objects.filter(Course_id = course_id)
-        for section in sections:
-            section.delete()
-        grades = Grade.objects.filter(course_id = course_id)
-        for grade in grades:
-            grade.delete()    
-        course.delete()
+        course = get_object_or_404(Courses, id=course_id)
+        with transaction.atomic():
+            sections = list(Section.objects.filter(Course_id=course_id))
+            folders = {
+                folder.id: folder
+                for section in sections
+                for folder in section.Folders.all()
+            }
+            assignments = {
+                assignment.id: assignment
+                for folder in folders.values()
+                for assignment in folder.Assignments.all()
+            }
+            for section in sections:
+                section.delete()
+            for folder in folders.values():
+                if not folder.section_set.exists():
+                    folder.delete()
+            for assignment in assignments.values():
+                if not assignment.folder_set.exists():
+                    assignment.delete()
+            Grade.objects.filter(course_id=course_id).delete()
+            course.delete()
         return redirect("courses")
 
 @require_POST
 @teacher_required
+@superuser_required
 @login_required
 @approved_required
 def deleteSection(request, section_id):
-    section = Section.objects.get(id=section_id)
+    section = get_object_or_404(Section, id=section_id)
     course_id = section.Course_id
     section_order_num = section.ONum
-    section.delete()
+    folders = list(section.Folders.all())
+    assignments = {
+        assignment.id: assignment
+        for folder in folders
+        for assignment in folder.Assignments.all()
+    }
+    with transaction.atomic():
+        section.delete()
+        for folder in folders:
+            if not folder.section_set.exists():
+                folder.delete()
+        for assignment in assignments.values():
+            if not assignment.folder_set.exists():
+                assignment.delete()
     remaining_sections = Section.objects.filter(Course_id=course_id).order_by('ONum')
     for idx, sec in enumerate(remaining_sections):
         if sec.ONum > section_order_num:
@@ -1062,6 +1181,7 @@ def upload_profile_photo(request, course_id=None):
 
 @approved_required
 @login_required
+@require_POST
 def signout(request):
     logout(request) 
     return redirect('login')
@@ -1085,7 +1205,8 @@ def profile(request: HttpRequest, course_id=None):
 
 def send_announcement_emails(announcement):
     recipients = set()
-    for course in announcement.recipients.all():  # Convert QuerySet to list
+    all_sent = True
+    for course in announcement.recipients.all():
         students = course.People.filter(usertype=CustomUser.STUDENT).distinct()
         for student in students:
             if student.email not in recipients:
@@ -1101,7 +1222,10 @@ def send_announcement_emails(announcement):
                     )
                     print(f"Email sent to: {student.email}")
                 except Exception as e:
+                    all_sent = False
                     print(f"Failed to send email to: {student.email}, error: {e}")
+    announcement.sent = all_sent
+    announcement.save(update_fields=['sent'])
 
 @approved_required
 @teacher_required
@@ -1117,8 +1241,7 @@ def create_announcement(request: HttpRequest):
             print("Form is valid")
             announcement = form.save()
 
-            # Schedule the async task after the response is returned
-            threading.Thread(target=send_announcement_emails, args=(announcement,)).start()
+            send_announcement_emails(announcement)
 
             return redirect('announcements')  # Redirect to the announcements page after saving
         else:
@@ -1139,8 +1262,11 @@ def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     user_agent = _user_agent(request)
     gradeArray = []
-    course_id = Folder.objects.get(id = folder_id).Course_id
-    Course = Courses.objects.get(id = course_id)
+    Course, _, _, _ = _course_graph(
+        folder_id=folder_id,
+        assignment_id=assignment_id,
+    )
+    course_id = Course.id
     for people in Course.People.all():
         try:
             grade = Grade.objects.get(assignment_id = assignment_id, course_id= course_id, user_id = people.id).grade
@@ -1155,11 +1281,15 @@ def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
                 grade_new = ""
             if grade_new:
                 try:
-                    grade = Grade.objects.get(assignment_id = assignment_id, course_id= course_id, user_id = people['id'])
-                    grade.grade = float(grade_new)
-                    grade.save()
-                except Grade.DoesNotExist:
-                    savegrade = Grade.objects.create(assignment_id = assignment_id, course_id= course_id, user_id = people['id'], grade = grade_new)
+                    grade_value = _parse_grade(grade_new)
+                except ValidationError:
+                    continue
+                Grade.objects.update_or_create(
+                    assignment_id=assignment_id,
+                    course_id=course_id,
+                    user_id=people['id'],
+                    defaults={"grade": grade_value},
+                )
         return redirect("gradesforAssignment", folder_id, assignment_id)
     if "mobile" in user_agent:    
         return render(request, "portal/mobile_gradeStudents.html", {"grades":gradeArray, "course":Course, "profile_photo":profile_photo})
@@ -1173,8 +1303,12 @@ def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
 @require_POST
 def removeStudentFromCourse(request, course_id):
     id = request.POST.get("student_id")
-    student = CustomUser.objects.get(id = id)
-    course = Courses.objects.get(id = course_id)
+    course = get_object_or_404(Courses, id=course_id)
+    student = get_object_or_404(
+        course.People,
+        id=id,
+        usertype=CustomUser.STUDENT,
+    )
     course.People.remove(student)
     return redirect("students", course.id)
 
@@ -1185,13 +1319,18 @@ def removeStudentFromCourse(request, course_id):
 def submissions(request: HttpRequest, folder_id, user_id, assignment_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     user_agent = _user_agent(request)
-    try:
-        grade = Grade.objects.get(user_id = user_id, assignment_id= assignment_id)
-    except Grade.DoesNotExist:
-        grade = None
-    folder = Folder.objects.get(id = folder_id)
+    course, _, folder, assignment = _course_graph(
+        folder_id=folder_id,
+        assignment_id=assignment_id,
+    )
+    if not course.People.filter(id=user_id, usertype=CustomUser.STUDENT).exists():
+        raise Http404
+    grade = Grade.objects.filter(
+        user_id=user_id,
+        assignment_id=assignment_id,
+        course_id=course.id,
+    ).first()
     submissions = filestoAssignment.objects.filter(user_id =user_id, assignment_id = assignment_id)
-    assignment = Assignment.objects.get(id = assignment_id)
     user = CustomUser.objects.get(id = user_id)
     if "mobile" in user_agent:
         return render(request, "portal/mobile_submissionView.html", context = {"submissions":submissions, "grade":grade, "folder":folder, "user": user, "assignment":assignment, "profile_photo":profile_photo})

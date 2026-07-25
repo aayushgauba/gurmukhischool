@@ -198,8 +198,14 @@ def scan_group_photos():
 
         # Step 4: Mark attendance
         for user, status in attendance_list:
+            if (
+                group_photo.course_id
+                and not group_photo.course.People.filter(pk=user.pk).exists()
+            ):
+                continue
             Attendance.objects.update_or_create(
                 student=user,
+                course=group_photo.course,
                 day=datetime.datetime.today().day,
                 month=datetime.datetime.today().month,
                 year=datetime.datetime.today().year,
