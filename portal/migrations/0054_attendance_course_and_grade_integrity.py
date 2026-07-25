@@ -135,11 +135,4 @@ class Migration(migrations.Migration):
                 name="unique_schedule_per_course",
             ),
         ),
-        migrations.AddConstraint(
-            model_name="grade",
-            constraint=models.CheckConstraint(
-                check=models.Q(grade__gte=0, grade__lte=100),
-                name="grade_between_0_and_100",
-            ),
-        ),
     ]

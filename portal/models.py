@@ -163,10 +163,6 @@ class Grade(models.Model):
                 fields=['assignment_id', 'course_id', 'user_id'],
                 name='unique_assignment_course_user_grade',
             ),
-            models.CheckConstraint(
-                check=models.Q(grade__gte=0, grade__lte=100),
-                name='grade_between_0_and_100',
-            ),
         ]
 
 class Schedule(models.Model):
