@@ -142,7 +142,7 @@ def fileView(request, file_id):
     file = get_object_or_404(UploadedFile, id=file_id)
     course_ids = set(Folder.objects.filter(files=file).values_list('course_id', flat=True))
     course_ids.update(Folder.objects.filter(
-        Assignments__files=file
+        assignments__files=file
     ).values_list('course_id', flat=True))
     courses = Course.objects.filter(pk__in=course_ids)
     if not any(_can_access_course(request.user, course) for course in courses):
@@ -607,7 +607,7 @@ def viewMobileContentUpload(request, file_id):
     file = get_object_or_404(UploadedFile, id=file_id)
     course_ids = set(Folder.objects.filter(files=file).values_list('course_id', flat=True))
     course_ids.update(Folder.objects.filter(
-        Assignments__files=file
+        assignments__files=file
     ).values_list('course_id', flat=True))
     if not any(
         _can_access_course(request.user, course)
@@ -621,7 +621,7 @@ def viewMobileContentUpload(request, file_id):
 @login_required
 def view_submission_file(request, submission_id):
     submission = get_object_or_404(Submission, id=submission_id)
-    folders = Folder.objects.filter(Assignments__id=submission.assignment_id)
+    folders = Folder.objects.filter(assignments__id=submission.assignment_id)
     if submission.user_id != request.user.id and not (
         _is_teacher(request.user) and folders.exists()
     ):
@@ -714,7 +714,7 @@ def grades(request: HttpRequest, course_id = None):
         elif _is_teacher(request.user):
             assignment_ids = Folder.objects.filter(
                 course_id=course_id
-            ).values_list('Assignments__id', flat=True)
+            ).values_list('assignments__id', flat=True)
             assignments = Assignment.objects.filter(
                 id__in=assignment_ids
             ).distinct()
