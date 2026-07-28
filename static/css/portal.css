@@ -62,9 +62,17 @@ body.portal-body {
 }
 
 .portal-sidebar {
+    --bs-offcanvas-bg: var(--portal-sidebar);
+    --bs-offcanvas-color: #fff;
     width: var(--portal-sidebar-width);
     padding: 1.25rem;
-    background: var(--portal-sidebar);
+    background-color: var(--portal-sidebar) !important;
+    color: #fff;
+}
+
+.portal-sidebar .offcanvas-body,
+.portal-sidebar .offcanvas-header {
+    background-color: var(--portal-sidebar);
     color: #fff;
 }
 
