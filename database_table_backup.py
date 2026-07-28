@@ -329,6 +329,7 @@ def main():
         if connection.vendor == "postgresql"
         else nullcontext()
     )
+    lock_acquired = False
     try:
         with postgres_context:
             if connection.vendor == "postgresql":
@@ -337,6 +338,7 @@ def main():
                         "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ"
                     )
             acquire_lock(connection)
+            lock_acquired = True
             if args.command == "create":
                 create_backups(connection)
             elif args.command == "list":
@@ -347,13 +349,14 @@ def main():
         print(f"Backup operation failed: {exc}", file=sys.stderr)
         return 1
     finally:
-        try:
-            release_lock(connection)
-        except Exception as exc:
-            print(
-                f"Warning: could not release the database lock: {exc}",
-                file=sys.stderr,
-            )
+        if lock_acquired:
+            try:
+                release_lock(connection)
+            except Exception as exc:
+                print(
+                    f"Warning: could not release the database lock: {exc}",
+                    file=sys.stderr,
+                )
     return 0
 
 
