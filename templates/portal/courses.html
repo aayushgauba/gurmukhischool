@@ -1,0 +1,164 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Courses{% endblock %}
+{% block meta_description %}View and manage Gurmukhi School courses.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">{{ user.get_user_type_display|default:user.user_type }} portal</p>
+        <h1 class="portal-page-title">Courses</h1>
+        <p class="portal-page-description">
+            {% if user.is_superuser and user.user_type == user.TEACHER %}
+            Create courses, manage syllabi, and open course materials.
+            {% else %}
+            Open a course to view its sections, files, and assignments.
+            {% endif %}
+        </p>
+    </div>
+    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#createCourseModal">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        Add course
+    </button>
+    {% endif %}
+</header>
+
+{% if courses %}
+<section class="course-grid" aria-label="Available courses">
+    {% for course in courses %}
+    <article class="course-card">
+        <div class="course-card-body">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+                <h2 class="course-card-title">{{ course.title }}</h2>
+                {% if course.syllabus %}
+                <span class="badge text-bg-light border" title="A syllabus is available">
+                    <i class="bi bi-file-earmark-check me-1" aria-hidden="true"></i>Syllabus
+                </span>
+                {% endif %}
+            </div>
+            <p class="course-card-description">
+                {{ course.description|default:'No course description has been added yet.' }}
+            </p>
+            <div class="course-card-actions">
+                <a class="btn btn-portal-primary" href="{% url 'course' course.id %}">
+                    Open course
+                </a>
+                {% if course.syllabus %}
+                <a class="btn btn-outline-secondary" href="{% url 'view_syllabus' course.id %}" target="_blank" rel="noopener">
+                    View syllabus
+                </a>
+                {% endif %}
+                {% if user.is_superuser and user.user_type == user.TEACHER %}
+                <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#uploadSyllabusModal{{ course.id }}"
+                >
+                    {% if course.syllabus %}Replace{% else %}Add{% endif %} syllabus
+                </button>
+                <button
+                    class="btn btn-outline-danger"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#deleteCourseModal{{ course.id }}"
+                >
+                    Delete
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </article>
+
+    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    <div class="modal fade" id="uploadSyllabusModal{{ course.id }}" tabindex="-1" aria-labelledby="uploadSyllabusTitle{{ course.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{% url 'upload_syllabus' course.id %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="uploadSyllabusTitle{{ course.id }}">Upload syllabus for {{ course.title }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label" for="syllabus{{ course.id }}">PDF syllabus</label>
+                        <input class="form-control" id="syllabus{{ course.id }}" name="syllabus" type="file" accept="application/pdf,.pdf" required>
+                        <div class="form-text">PDF files up to 20 MB are accepted.</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-portal-primary">Upload syllabus</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteCourseModal{{ course.id }}" tabindex="-1" aria-labelledby="deleteCourseTitle{{ course.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{% url 'deleteCourse' course.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="deleteCourseTitle{{ course.id }}">Delete {{ course.title }}?</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">This permanently removes the course and its related portal records. This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete course</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</section>
+{% else %}
+<section class="portal-empty-state" aria-labelledby="emptyCoursesTitle">
+    <i class="bi bi-journal-bookmark" aria-hidden="true"></i>
+    <h2 class="fs-4" id="emptyCoursesTitle">No courses available</h2>
+    <p class="text-secondary mb-0">
+        {% if user.is_superuser and user.user_type == user.TEACHER %}
+        Add the first course to get started.
+        {% else %}
+        You have not been enrolled in a course yet.
+        {% endif %}
+    </p>
+</section>
+{% endif %}
+
+{% if user.is_superuser and user.user_type == user.TEACHER %}
+<div class="modal fade" id="createCourseModal" tabindex="-1" aria-labelledby="createCourseTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{% url 'courseAdd' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="createCourseTitle">Create a course</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="courseTitle">Course name</label>
+                        <input class="form-control" id="courseTitle" name="title" maxlength="20" required>
+                    </div>
+                    <div>
+                        <label class="form-label" for="courseDescription">Description</label>
+                        <textarea class="form-control" id="courseDescription" name="description" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-portal-primary">Create course</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

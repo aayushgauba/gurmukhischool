@@ -1,0 +1,323 @@
+:root {
+    --portal-accent: #f5b700;
+    --portal-accent-dark: #c89100;
+    --portal-bg: #f5f6f8;
+    --portal-border: #dfe3e8;
+    --portal-ink: #1d2733;
+    --portal-muted: #667085;
+    --portal-sidebar: #1f2933;
+    --portal-sidebar-width: 17rem;
+}
+
+body.portal-body {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--portal-bg);
+    color: var(--portal-ink);
+    font-family: "Mukta", system-ui, -apple-system, sans-serif;
+}
+
+.portal-skip-link {
+    position: fixed;
+    left: 1rem;
+    top: -5rem;
+    z-index: 2000;
+    padding: 0.65rem 1rem;
+    border-radius: 0.5rem;
+    background: #fff;
+    color: #000;
+}
+
+.portal-skip-link:focus {
+    top: 1rem;
+}
+
+.portal-mobile-header {
+    min-height: 4rem;
+    background: var(--portal-accent);
+    box-shadow: 0 2px 12px rgb(16 24 40 / 12%);
+}
+
+.portal-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: inherit;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.portal-brand:hover {
+    color: inherit;
+}
+
+.portal-mark {
+    color: var(--portal-accent);
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.portal-mobile-header .portal-mark {
+    color: #111;
+}
+
+.portal-sidebar {
+    width: var(--portal-sidebar-width);
+    padding: 1.25rem;
+    background: var(--portal-sidebar);
+    color: #fff;
+}
+
+.portal-sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 2.75rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.6rem;
+    color: #e7ebef;
+    font-weight: 600;
+}
+
+.portal-sidebar .nav-link:hover,
+.portal-sidebar .nav-link:focus-visible {
+    background: rgb(255 255 255 / 9%);
+    color: #fff;
+}
+
+.portal-sidebar .nav-link.active {
+    background: var(--portal-accent);
+    color: #171717;
+}
+
+.portal-user {
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgb(255 255 255 / 15%);
+}
+
+.portal-avatar,
+.portal-avatar-fallback {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.portal-avatar-fallback {
+    display: grid;
+    place-items: center;
+    background: var(--portal-accent);
+    color: #171717;
+    font-weight: 700;
+}
+
+.portal-user-name,
+.portal-user-role {
+    overflow: hidden;
+    margin: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.portal-user-role {
+    color: #b8c0ca;
+    font-size: 0.85rem;
+}
+
+.portal-main {
+    width: 100%;
+    min-width: 0;
+    padding: 1.25rem;
+}
+
+.portal-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.portal-eyebrow {
+    margin-bottom: 0.25rem;
+    color: var(--portal-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.portal-page-title {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 700;
+}
+
+.portal-page-description {
+    max-width: 42rem;
+    margin: 0.35rem 0 0;
+    color: var(--portal-muted);
+}
+
+.btn-portal-primary {
+    border-color: var(--portal-accent);
+    background: var(--portal-accent);
+    color: #151515;
+    font-weight: 700;
+}
+
+.btn-portal-primary:hover,
+.btn-portal-primary:focus-visible {
+    border-color: var(--portal-accent-dark);
+    background: var(--portal-accent-dark);
+    color: #111;
+}
+
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 1rem;
+}
+
+.course-card {
+    display: flex;
+    min-height: 15rem;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.course-card:hover {
+    border-color: #c9ced6;
+    box-shadow: 0 8px 24px rgb(16 24 40 / 9%);
+}
+
+.course-card-body {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    padding: 1.25rem;
+}
+
+.course-card-title {
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.course-card-description {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    color: var(--portal-muted);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+}
+
+.course-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.portal-empty-state {
+    padding: clamp(2rem, 8vw, 5rem) 1.5rem;
+    border: 1px dashed #c6cbd2;
+    border-radius: 0.9rem;
+    background: #fff;
+    text-align: center;
+}
+
+.portal-empty-state i {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: var(--portal-muted);
+    font-size: 2.5rem;
+}
+
+.portal-bottom-nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1030;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    min-height: 4.25rem;
+    border-top: 1px solid #343d47;
+    background: var(--portal-sidebar);
+}
+
+.portal-bottom-nav a,
+.portal-bottom-nav button {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 0.1rem;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: #e7ebef;
+    font-size: 0.78rem;
+    text-decoration: none;
+}
+
+.portal-bottom-nav i {
+    font-size: 1.2rem;
+}
+
+.portal-bottom-nav .active {
+    color: var(--portal-accent);
+}
+
+.modal-header {
+    border-bottom-color: #e4c35e;
+    background: #fff8df;
+}
+
+@media (min-width: 992px) {
+    .portal-shell {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .portal-sidebar {
+        position: sticky;
+        top: 0;
+        display: flex;
+        height: 100vh;
+        flex: 0 0 var(--portal-sidebar-width);
+        flex-direction: column;
+    }
+
+    .portal-main {
+        padding: 2rem clamp(2rem, 5vw, 4rem);
+    }
+}
+
+@media (max-width: 991.98px) {
+    body.portal-body {
+        padding-bottom: 4.25rem;
+    }
+
+    .portal-sidebar {
+        width: min(88vw, 20rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}

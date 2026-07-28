@@ -608,23 +608,27 @@ def view_submission_file(request, submission_id):
 def courses(request: HttpRequest):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     user = request.user
-    form = SyllabusUploadForm()
     courses = None
     if user.user_type == CustomUser.TEACHER:
-        courses = Course.objects.all().order_by("id")
+        courses = Course.objects.all().order_by("title")
     elif user.user_type == CustomUser.STUDENT:
-        courses = Course.objects.filter(people = request.user).order_by("id")
+        courses = Course.objects.filter(people=request.user).order_by("title")
     elif user.user_type == CustomUser.ADMIN and user.is_superuser:
         return redirect("adminViewHome")
     elif user.user_type == CustomUser.EMAIL_SENDER:
         return redirect("calenderNotification")
     else:
         return render(request, "portal/unknown_usertype.html", {"user": user})
-    user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
-    if "mobile" in user_agent:
-        return render(request, 'portal/mobile_courses.html', {"user": user,"profile_photo":profile_photo, "courses": courses, "form": form})
-    else:
-        return render(request, "portal/desktop_courses.html", {"user": user, "profile_photo":profile_photo, "courses": courses, "form": form})
+    return render(
+        request,
+        "portal/courses.html",
+        {
+            "user": user,
+            "profile_photo": profile_photo,
+            "courses": courses,
+            "active_nav": "courses",
+        },
+    )
 
 
 

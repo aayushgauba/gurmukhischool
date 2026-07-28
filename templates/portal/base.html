@@ -1,0 +1,105 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{% block meta_description %}Sikh Study Circle Gurmukhi School portal{% endblock %}">
+    <title>{% block title %}Portal{% endblock %} | Sikh Study Circle Gurmukhi School</title>
+    <link rel="icon" href="{% static 'images/logo.jpg' %}" type="image/jpeg">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/portal.css' %}" rel="stylesheet">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="portal-body">
+    <a class="portal-skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="portal-mobile-header navbar d-lg-none sticky-top px-3">
+        <a class="portal-brand" href="{% url 'courses' %}">
+            <span class="portal-mark" aria-hidden="true">ੴ</span>
+            <span>Gurmukhi School</span>
+        </a>
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#portalMenu"
+            aria-controls="portalMenu"
+            aria-label="Open navigation"
+        >
+            <i class="bi bi-list fs-2" aria-hidden="true"></i>
+        </button>
+    </header>
+
+    <div class="portal-shell">
+        <aside class="portal-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="portalMenu" aria-label="Portal menu">
+            <div class="offcanvas-header d-lg-none">
+                <h2 class="offcanvas-title fs-5">Portal menu</h2>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#portalMenu" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body d-flex flex-column p-0">
+                <a class="portal-brand mb-4" href="{% url 'courses' %}">
+                    <span class="portal-mark" aria-hidden="true">ੴ</span>
+                    <span>Gurmukhi School</span>
+                </a>
+
+                {% include 'portal/components/navigation.html' %}
+
+                <div class="portal-user">
+                    {% if profile_photo %}
+                    <img
+                        class="portal-avatar"
+                        src="{{ profile_photo.file.url }}"
+                        width="38"
+                        height="38"
+                        alt=""
+                    >
+                    {% else %}
+                    <span class="portal-avatar-fallback" aria-hidden="true">
+                        {{ user.first_name|first|default:user.username|first|upper }}
+                    </span>
+                    {% endif %}
+                    <div>
+                        <p class="portal-user-name">{{ user.get_full_name|default:user.username }}</p>
+                        <p class="portal-user-role">{{ user.get_user_type_display|default:user.user_type }}</p>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mt-3">
+                    <a class="btn btn-outline-light btn-sm" href="{% url 'profile' %}">Account</a>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-light btn-sm w-100" type="submit">Sign out</button>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <main class="portal-main" id="main-content" tabindex="-1">
+            {% include 'portal/components/messages.html' %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <nav class="portal-bottom-nav d-lg-none" aria-label="Mobile portal navigation">
+        <a href="{% url 'courses' %}"{% if active_nav == 'courses' %} class="active" aria-current="page"{% endif %}>
+            <i class="bi bi-book" aria-hidden="true"></i><span>Courses</span>
+        </a>
+        <a href="{% url 'announcements' %}"{% if active_nav == 'announcements' %} class="active" aria-current="page"{% endif %}>
+            <i class="bi bi-megaphone" aria-hidden="true"></i><span>Updates</span>
+        </a>
+        <a href="{% url 'profile' %}"{% if active_nav == 'profile' %} class="active" aria-current="page"{% endif %}>
+            <i class="bi bi-person-circle" aria-hidden="true"></i><span>Profile</span>
+        </a>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Logout</span></button>
+        </form>
+    </nav>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
