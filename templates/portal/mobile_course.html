@@ -9,7 +9,7 @@
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-    <style nonce="{{ request.csp_nonce }}">
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Mukta', sans-serif;
             background-color: #f2f3f4;
@@ -124,7 +124,7 @@
     <!-- Header for mobile app view -->
     <header class="header-custom">
         <a class="navbar-brand" href="#">
-            <span class="fs-4 logo">ੴ</span> {{ user.usertype }} Portal
+            <span class="fs-4 logo">ੴ</span> {{ user.user_type }} Portal
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
             <i class="bi bi-list"></i>
@@ -134,8 +134,8 @@
         <!-- Content -->
         <div class="content content-expanded">
             <div class="d-flex flex-column flex-md-row justify-content-between mb-3">
-                <h2 class="course-heading mb-2 mb-md-0 text-primary">{{ course.Title }}</h2>
-                {% if user.is_superuser and user.usertype == 'Teacher' %}
+                <h2 class="course-heading mb-2 mb-md-0 text-primary">{{ course.title }}</h2>
+                {% if user.is_superuser and user.user_type == 'Teacher' %}
                 <button type="button" class="btn btn-primary create-folder-btn mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#createSectionModal" data-section-id="{{ section.id }}">
                     <i class="bi bi-plus-circle"></i> Add Section
                 </button>
@@ -146,10 +146,10 @@
                 {% for section in sections %}
                 <div class="card section-card mb-3">
                     <div class="card-header section-card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">{{ section.Title }}</h5>
-                        {% if user.is_superuser and user.usertype == 'Teacher' %}
+                        <h5 class="mb-0">{{ section.title }}</h5>
+                        {% if user.is_superuser and user.user_type == 'Teacher' %}
                         <div class="btn-group ms-2">
-                            {% if section.Status %}
+                            {% if section.status %}
                                 <form method="post" action="{% url 'changeVisibility' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-secondary-custom hide-form-btn"><i class="bi bi-eye-slash"></i></button></form>
                             {% else %}
                                 <form method="post" action="{% url 'changeVisibility' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-secondary-custom show-form-btn"><i class="bi bi-eye"></i></button></form>
@@ -168,7 +168,7 @@
                         {% endif %}
                     </div>
                     <div class="card-body section-card-body">
-                        {% if section.Folders.all %}
+                        {% if section.folders.all %}
                         <div class="table-responsive">
                             <table class="file-system-table table table-striped table-bordered">
                                 <thead>
@@ -178,19 +178,19 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for folder in section.Folders.all %}
+                                    {% for folder in section.folders.all %}
                                     <tr class="folder-row">
                                         <td>
                                             <a href="#" class="folder" onclick="toggleFolder(this)">
-                                                <i class="bi bi-folder"></i> {{ folder.Title }}
+                                                <i class="bi bi-folder"></i> {{ folder.title }}
                                             </a>
                                         </td>
                                         <td>
                                             <a href="{% url 'folder' section.id folder.id %}" class="folder">View</a>
                                         </td>
                                     </tr>
-                                    {% if folder.Files.all %}
-                                    {% for file in folder.Files.all %}
+                                    {% if folder.files.all %}
+                                    {% for file in folder.files.all %}
                                     <tr class="file-row hidden">
                                         <td class="folder-level-1">
                                             <a href="{% url 'viewMobileContentUpload' file.id %}" class="file">
@@ -201,8 +201,8 @@
                                     </tr>
                                     {% endfor %}
                                     {% endif %}
-                                    {% if folder.Assignments.all %}
-                                    {% for assignment in folder.Assignments.all %}
+                                    {% if folder.assignments.all %}
+                                    {% for assignment in folder.assignments.all %}
                                     <tr class="file-row hidden">
                                         <td class="folder-level-1">
                                             <a href="#" class="assignment">
@@ -228,7 +228,7 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <p>Are you sure you want to delete {{section.Title}}?</p>
+                                <p>Are you sure you want to delete {{section.title}}?</p>
                             </div>
                             <div class="modal-footer">
                                 <form id="deleteCourseModal" action="{% url 'deleteSection' section.id %}" method="post">
@@ -245,7 +245,7 @@
         </div>
     </div>
  <!-- Modal -->
- {%if user.is_superuser and user.usertype == 'Teacher' %}
+ {%if user.is_superuser and user.user_type == 'Teacher' %}
  <div class="modal fade" id="createSectionModal" tabindex="-1" aria-labelledby="createSectionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -300,12 +300,12 @@
     <!-- Bottom Navigation Bar -->
     <nav class="bottom-nav">
         <a href="{% url 'courses' %}" class="nav-link active"><i class="bi bi-book"></i><br>Courses</a>
-        {% if course.Syllabus %}
+        {% if course.syllabus %}
         <a href="{% url 'view_syllabus' course.id %}" class="nav-link"><i class="bi bi-journal-text"></i><br>Syllabus</a>
         {%endif%}
         <a href="{% url 'attendance' course.id %}" class="nav-link"><i class="bi bi-calendar-check"></i><br>Attendance</a>
         <a href="{%url 'grades' course.id %}" class="nav-link"><i class="bi bi-bar-chart-line"></i><br>Grades</a>
-        {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+        {%if request.user.is_superuser and request.user.user_type == "Teacher" %}
         <a href="{% url 'students' course.id %}" class="nav-link"><i class="bi bi-people"></i><br>Students</a>
         {%endif%}
     </nav>
@@ -339,8 +339,8 @@
         </div>
     </div>
 
-    <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-    <script nonce="{{ request.csp_nonce }}">
+    <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+    <script nonce="{{ csp_nonce }}">
         document.querySelector('.navbar-toggler').addEventListener('click', function () {
             document.querySelector('#sidebarMenu').classList.toggle('show');
         });

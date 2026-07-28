@@ -36,7 +36,7 @@ def read_attendance_csv(file_path):
                 return datetime.datetime.strptime(date_str, fmt).date()
             except ValueError:
                 continue
-        raise ValueError(f"Date '{date_str}' is not in a recognized format.")
+        raise ValueError(f"date '{date_str}' is not in a recognized format.")
 
     with open(file_path, 'r', encoding='utf-8-sig') as csvfile:
         csvreader = csv.reader(csvfile)

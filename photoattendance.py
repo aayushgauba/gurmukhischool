@@ -77,7 +77,7 @@ def calculate_user_embedding(user, detector_backend="retinaface", align=True):
 def update_embeddings_for_all_students(detector_backend="retinaface", align=True):
     logging.info("Updating embeddings for all student profiles that need recalculation...")
     # Filter only Student type
-    students = CustomUser.objects.filter(usertype="Student")
+    students = CustomUser.objects.filter(user_type="Student")
 
     for user in students:
         # If the user’s embedding is missing or user.modified_profile_photo == True,
@@ -95,7 +95,7 @@ def get_stored_embeddings():
     """
     logging.info("Fetching stored embeddings for students...")
     students_with_embeddings = CustomUser.objects.filter(
-        usertype="Student",
+        user_type="Student",
         embedding__isnull=False
     )
 
@@ -200,7 +200,7 @@ def scan_group_photos():
         for user, status in attendance_list:
             if (
                 group_photo.course_id
-                and not group_photo.course.People.filter(pk=user.pk).exists()
+                and not group_photo.course.people.filter(pk=user.pk).exists()
             ):
                 continue
             Attendance.objects.update_or_create(

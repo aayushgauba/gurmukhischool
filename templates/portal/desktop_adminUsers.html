@@ -8,7 +8,7 @@
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-    <style nonce="{{ request.csp_nonce }}">
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Mukta', sans-serif;
             background-color: #f2f3f4;
@@ -179,7 +179,7 @@
     <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
+                <span class="fs-4 logo">ੴ</span> {{user.user_type}} Portal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
@@ -196,7 +196,7 @@
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
-                {% if request.user.usertype == "Admin" %}
+                {% if request.user.user_type == "Admin" %}
                 <li class="nav-item">
                     <a href="{% url 'adminViewHome' %}" class="nav-link">
                         <i class="bi bi-speedometer2"></i> Dashboard
@@ -359,8 +359,8 @@ Edit
             </div>
         </div>
     </div>
-    <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-    <script nonce="{{ request.csp_nonce }}">
+    <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+    <script nonce="{{ csp_nonce }}">
         const editModal = document.getElementById('editModal');
 editModal.addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;

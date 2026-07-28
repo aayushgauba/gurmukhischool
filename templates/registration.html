@@ -8,7 +8,7 @@
   <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
   <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
   <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-  <style nonce="{{ request.csp_nonce }}">
+  <style nonce="{{ csp_nonce }}">
     body {
       font-family: 'Mukta', sans-serif;
       display: flex;
@@ -193,8 +193,8 @@
     </div>
   </footer>
 
-  <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-  <script nonce="{{ request.csp_nonce }}">
+  <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+  <script nonce="{{ csp_nonce }}">
     document.addEventListener("DOMContentLoaded", function() {
       const phoneInput = document.getElementById('phoneNumber');
   

@@ -1,4 +1,3 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -32,7 +31,7 @@ class CustomUser(AbstractUser):
         related_name='users',
         blank=True
     )
-    usertype = models.CharField(max_length=20, choices=USER_TYPES, blank = True)
+    user_type = models.CharField(max_length=20, choices=USER_TYPES, blank = True)
     phone_number = models.CharField(max_length=15, blank=True, null=True, unique = False)
     birth_date = models.DateField(blank=True, null=True)
     approved = models.BooleanField(blank=False, default=False)
@@ -49,20 +48,28 @@ class CarouselImage(models.Model):
     def __str__(self):
         return self.title
 
-class filestoAssignment(models.Model):
+class Submission(models.Model):
     file = models.FileField(upload_to='uploads/', unique = True)
-    user_id = models.IntegerField()
-    assignment_id = models.IntegerField()
-    Date = models.DateField(auto_now_add=True)
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='submissions',
+    )
+    assignment = models.ForeignKey(
+        'Assignment',
+        on_delete=models.CASCADE,
+        related_name='submissions',
+    )
+    date = models.DateField(auto_now_add=True)
 
-class Courses(models.Model):
-    Title = models.CharField(max_length=20, unique=True)
-    Description = models.TextField()
-    Status = models.BooleanField(default=True)
-    Syllabus = models.FileField(upload_to='syllabus/', blank=True)
-    People = models.ManyToManyField(CustomUser, blank=True)
+class Course(models.Model):
+    title = models.CharField(max_length=20, unique=True)
+    description = models.TextField()
+    status = models.BooleanField(default=True)
+    syllabus = models.FileField(upload_to='syllabus/', blank=True)
+    people = models.ManyToManyField(CustomUser, blank=True)
     def __str__(self):
-        return self.Title
+        return self.title
     
 class UploadedFile(models.Model):
     file = models.FileField(upload_to='uploads/', unique = True)
@@ -71,7 +78,7 @@ class UploadedAttendance(models.Model):
     file = models.FileField(upload_to='attendance/')
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     course = models.ForeignKey(
-        Courses,
+        Course,
         on_delete=models.CASCADE,
         related_name='attendance_uploads',
         null=True,
@@ -111,7 +118,7 @@ class Assignment(models.Model):
 
 class Announcement(models.Model):
     title = models.CharField(max_length=200)
-    recipients = models.ManyToManyField(Courses, blank=False)
+    recipients = models.ManyToManyField(Course, blank=False)
     content = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     sent = models.BooleanField(default=False)
@@ -119,7 +126,7 @@ class Announcement(models.Model):
 class Attendance(models.Model):
     student = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     course = models.ForeignKey(
-        Courses,
+        Course,
         on_delete=models.CASCADE,
         related_name='attendance_records',
         null=True,
@@ -139,37 +146,57 @@ class Attendance(models.Model):
         ]
 
 class Folder(models.Model):
-    Title = models.CharField(max_length=200)
-    Course_id = models.IntegerField()
-    Files = models.ManyToManyField(UploadedFile, blank=True)
-    Assignments = models.ManyToManyField(Assignment, blank=True)
+    title = models.CharField(max_length=200)
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='folders',
+    )
+    files = models.ManyToManyField(UploadedFile, blank=True)
+    assignments = models.ManyToManyField(Assignment, blank=True)
 
 class Section(models.Model):
-    Title = models.CharField(max_length=200)
-    Course_id = models.IntegerField()
-    ONum = models.IntegerField()
-    Status = models.BooleanField(default=True)
-    Folders = models.ManyToManyField(Folder, blank = True)
+    title = models.CharField(max_length=200)
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='sections',
+    )
+    order = models.IntegerField()
+    status = models.BooleanField(default=True)
+    folders = models.ManyToManyField(Folder, blank = True)
 
 class Grade(models.Model):
-    assignment_id = models.IntegerField()
-    course_id = models.IntegerField()
-    user_id = models.IntegerField()
+    assignment = models.ForeignKey(
+        Assignment,
+        on_delete=models.CASCADE,
+        related_name='grades',
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='grades',
+    )
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='grades',
+    )
     grade = models.FloatField()
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['assignment_id', 'course_id', 'user_id'],
+                fields=['assignment', 'course', 'user'],
                 name='unique_assignment_course_user_grade',
             ),
         ]
 
 class Schedule(models.Model):
-    startDate = models.CharField(max_length=7)
-    endDate = models.CharField(max_length=7)
+    start_date = models.CharField(max_length=7)
+    end_date = models.CharField(max_length=7)
     days = models.TextField()
-    course = models.ForeignKey(Courses, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
 
     class Meta:
         constraints = [
@@ -182,7 +209,7 @@ class Schedule(models.Model):
 class GroupPhotoAttendance(models.Model):
     file = models.FileField(upload_to='group_photo/', unique = True)
     course = models.ForeignKey(
-        Courses,
+        Course,
         on_delete=models.CASCADE,
         related_name='group_photo_uploads',
         null=True,

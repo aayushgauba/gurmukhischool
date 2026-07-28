@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gurmukhischool.settings')
 django.setup()
-from portal.models import Announcement, EmailSubscriber, WeeklyEmail, Courses, UploadedAttendance, Attendance, CustomUser, GroupPhotoAttendance
+from portal.models import Announcement, EmailSubscriber, WeeklyEmail, Course, UploadedAttendance, Attendance, CustomUser, GroupPhotoAttendance
 
 # Add the directory containing the 'pages' module to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

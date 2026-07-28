@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gurmukhischool.settings')
 django.setup()
-from portal.models import Announcement, Courses, UploadedAttendance, Attendance, CustomUser, GroupPhotoAttendance
+from portal.models import Announcement, Course, UploadedAttendance, Attendance, CustomUser, GroupPhotoAttendance
 
 # Add the directory containing the 'pages' module to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -19,7 +19,7 @@ def userFix():
     logging.info("Fixing user permissions...")
     users = CustomUser.objects.all()
     for user in users:
-        is_superuser = user.usertype in ('Teacher', 'Admin', 'EmailSender')
+        is_superuser = user.user_type in ('Teacher', 'Admin', 'EmailSender')
         if user.is_superuser != is_superuser:
             user.is_superuser = is_superuser
             user.save()

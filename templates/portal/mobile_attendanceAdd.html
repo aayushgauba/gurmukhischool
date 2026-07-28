@@ -6,10 +6,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Courses | Sikh Study Circle Gurmukhi School</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;600&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.2/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Mukta', sans-serif;
             background-color: #f2f3f4;
@@ -200,7 +200,7 @@
     <!-- Header for mobile app view -->
     <header class="header-custom">
         <a class="navbar-brand" href="#">
-            <span class="fs-4 logo">ੴ</span> {{ user.usertype }} Portal
+            <span class="fs-4 logo">ੴ</span> {{ user.user_type }} Portal
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
             <i class="bi bi-list"></i>
@@ -242,19 +242,19 @@
     
     <nav class="bottom-nav">
         <a href="{% url 'courses' %}" class="nav-link"><i class="bi bi-book"></i><br>Courses</a>
-        {% if course.Syllabus %}
+        {% if course.syllabus %}
         <a href="{% url 'view_syllabus' course.id %}" class="nav-link"><i class="bi bi-journal-text"></i><br>Syllabus</a>
         {%endif%}
         <a href="{% url 'attendance' course.id %}" class="nav-link active"><i class="bi bi-calendar-check"></i><br>Attendance</a>
         <a href="{%url 'grades' course.id %}" class="nav-link"><i class="bi bi-bar-chart-line"></i><br>Grades</a>
-        {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+        {%if request.user.is_superuser and request.user.user_type == "Teacher" %}
         <a href="{% url 'students' course.id %}" class="nav-link"><i class="bi bi-people"></i><br>Students</a>
         {%endif%}
     </nav>
 
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script nonce="{{ csp_nonce }}">
         document.querySelector('.navbar-toggler').addEventListener('click', function () {
             document.querySelector('#sidebarMenu').classList.toggle('show');
         });

@@ -260,7 +260,7 @@
     <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <span class="fs-4 logo">ੴ</span> {{ user.usertype }} Portal
+                <span class="fs-4 logo">ੴ</span> {{ user.user_type }} Portal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
@@ -274,7 +274,7 @@
         <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
                 <span class="fs-4 logo">ੴ</span>
-                <span class="ms-2">{{ user.usertype }} Portal</span>
+                <span class="ms-2">{{ user.user_type }} Portal</span>
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
@@ -309,7 +309,7 @@
         <div class="section-card-header">
             Announcements
             <!-- Create Announcement Anchor Tag -->
-             {% if request.user.is_superuser and request.user.usertype == "Teacher" %}
+             {% if request.user.is_superuser and request.user.user_type == "Teacher" %}
             <a href="{% url 'create_announcement' %}" class="btn btn-primary float-right">Create Announcement</a>
             {%endif%}
         </div>
@@ -327,7 +327,7 @@
         </div>
     </div>
 </div>
-<script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
+<script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
 
 </body>
 </html>

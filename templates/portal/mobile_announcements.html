@@ -9,7 +9,7 @@
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-    <style nonce="{{ request.csp_nonce }}">
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Mukta', sans-serif;
             background-color: #f2f3f4;
@@ -311,7 +311,7 @@
     <!-- Header for mobile app view -->
     <header class="header-custom">
         <a class="navbar-brand" href="#">
-            <span class="fs-4 logo">ੴ</span> {{ user.usertype }} Portal
+            <span class="fs-4 logo">ੴ</span> {{ user.user_type }} Portal
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
             <i class="bi bi-list"></i>
@@ -325,7 +325,7 @@
                     <div class="section-card-header d-flex flex-column flex-sm-row justify-content-between align-items-start">
                         <span class="section-title">Announcements</span>
                         <!-- Create Announcement Button -->
-                        {% if request.user.is_superuser and request.user.usertype == "Teacher" %}
+                        {% if request.user.is_superuser and request.user.user_type == "Teacher" %}
                             <a href="{% url 'create_announcement' %}" class="btn btn-primary btn-sm mt-2 mt-sm-0">Create Announcement</a>
                         {% endif %}
                     </div>
@@ -355,8 +355,8 @@
         <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="nav-link border-0 bg-transparent"><i class="bi bi-box-arrow-right"></i><br>Logout</button></form>
     </nav>
     
-    <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-    <script nonce="{{ request.csp_nonce }}">
+    <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+    <script nonce="{{ csp_nonce }}">
         document.querySelector('.navbar-toggler').addEventListener('click', function () {
             document.querySelector('#sidebarMenu').classList.toggle('show');
         });

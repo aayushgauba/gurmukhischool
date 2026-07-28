@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{course.Title}} | Sikh Study Circle Gurmukhi School</title>
+    <title>{{course.title}} | Sikh Study Circle Gurmukhi School</title>
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-    <style nonce="{{ request.csp_nonce }}">
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Mukta', sans-serif;
             background-color: #f2f3f4;
@@ -201,7 +201,7 @@
     <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
+                <span class="fs-4 logo">ੴ</span> {{user.user_type}} Portal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
@@ -214,7 +214,7 @@
         <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
                 <span class="fs-4 logo">ੴ</span>
-                <span class="ms-2">{{user.usertype}} Portal</span>
+                <span class="ms-2">{{user.user_type}} Portal</span>
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
@@ -223,7 +223,7 @@
                         <i class="bi bi-book"></i> Courses
                     </a>
                 </li>
-                {% if course.Syllabus %}
+                {% if course.syllabus %}
                 <li class="nav-item">
                     <a href="{% url 'view_syllabus' course.id %}" class="nav-link" target="_blank">
                         <i class="bi bi-file-earmark-text"></i> Syllabus
@@ -240,7 +240,7 @@
                         <i class="bi bi-bar-chart"></i> Grades
                     </a>
                 </li>
-                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+                {%if request.user.is_superuser and request.user.user_type == "Teacher" %}
                 <li class="nav-item">
                     <a href="{% url 'students' course.id %}" class="nav-link">
                         <i class="bi bi-people"></i> Students
@@ -265,8 +265,8 @@
         <!-- Content -->
         <div class="content content-expanded">
             <div class="d-flex justify-content-between mb-3">
-                <h2 class="course-heading">{{course.Title}}</h2>
-                {%if user.is_superuser and user.usertype == 'Teacher' %}
+                <h2 class="course-heading">{{course.title}}</h2>
+                {%if user.is_superuser and user.user_type == 'Teacher' %}
                 <button type="button" class="btn btn-primary create-folder-btn" data-bs-toggle="modal" data-bs-target="#createSectionModal" data-section-id="{{ section.id }}"> Add Section
                 </button>
                     {%endif%}
@@ -275,10 +275,10 @@
                 {% for section in sections %}
                 <div class="card section-card">
                     <div class="card-header section-card-header">
-                        {{ section.Title }}
-                        {%if user.is_superuser and user.usertype == 'Teacher' %}
+                        {{ section.title }}
+                        {%if user.is_superuser and user.user_type == 'Teacher' %}
                         <div class="btn-group">
-                            {%if section.Status == True%}
+                            {%if section.status == True%}
                                 <form method="post" action="{% url 'changeVisibility' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-secondary-custom hide-form-btn"><i class="bi bi-eye-slash"></i> Hide</button></form>
                             {%else%}
                                 <form method="post" action="{% url 'changeVisibility' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-secondary-custom show-form-btn"><i class="bi bi-eye"></i> Show</button></form>
@@ -288,7 +288,7 @@
                             </button>                      
                         </div>
                         {%endif%}
-                        {%if user.is_superuser and user.usertype == 'Teacher' %}
+                        {%if user.is_superuser and user.user_type == 'Teacher' %}
                         <div class="section-buttons">
                             <form method="post" action="{% url 'moveSectionUp' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary up-btn"><i class="bi bi-arrow-up"></i></button></form>
                             <form method="post" action="{% url 'moveSectionDown' section.id %}" class="d-inline">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary down-btn"><i class="bi bi-arrow-down"></i></button></form>
@@ -298,7 +298,7 @@
                         {%endif%}
                     </div>
                     <div class="card-body section-card-body">
-                        {%if section.Folders.all %}
+                        {%if section.folders.all %}
                         <table class="file-system-table">
                             <thead>
                                 <tr>
@@ -307,19 +307,19 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for folder in section.Folders.all %}
+                                {% for folder in section.folders.all %}
                                     <tr class="folder-row">
                                         <td>
                                             <a href="#" class="folder" onclick="toggleFolder(this)">
-                                                <i class="bi bi-folder"></i> {{ folder.Title }}
+                                                <i class="bi bi-folder"></i> {{ folder.title }}
                                             </a>
                                         </td>
                                         <td>
                                             <a href="{% url 'folder' section.id folder.id %}" class="folder">View</a>
                                         </td>
                                     </tr>
-                                    {% if folder.Files.all %}
-                                    {% for file in folder.Files.all %}
+                                    {% if folder.files.all %}
+                                    {% for file in folder.files.all %}
                                             <tr class="file-row hidden">
                                                 <td class="folder-level-1">
                                                     <a href="#" class="file">
@@ -331,8 +331,8 @@
                                             </tr>
                                     {% endfor %}
                                     {%endif%}
-                                    {%if folder.Assignments.all %}
-                                    {%for assignment in folder.Assignments.all %}
+                                    {%if folder.assignments.all %}
+                                    {%for assignment in folder.assignments.all %}
                                     <tr class="file-row hidden">
                                         <td class="folder-level-1">
                                             <a href="#" class="assignment">
@@ -359,7 +359,7 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                <p>Are you sure you want to delete {{section.Title}}?</p>
+                                <p>Are you sure you want to delete {{section.title}}?</p>
                             </div>
                             <div class="modal-footer">
                                 <form id="deleteCourseModal" action="{% url 'deleteSection' section.id %}" method="post">
@@ -376,7 +376,7 @@
         </div>
     </div>
  <!-- Modal -->
- {%if user.is_superuser and user.usertype == 'Teacher' %}
+ {%if user.is_superuser and user.user_type == 'Teacher' %}
  <div class="modal fade" id="createSectionModal" tabindex="-1" aria-labelledby="createSectionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -427,8 +427,8 @@
     </div>
 </div>
 {%endif%}
-<script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-<script nonce="{{ request.csp_nonce }}">
+<script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+<script nonce="{{ csp_nonce }}">
         // JavaScript to set section ID in the hidden input field
 document.querySelectorAll('.create-folder-btn').forEach(button => {
     button.addEventListener('click', () => {

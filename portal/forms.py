@@ -1,6 +1,6 @@
 from django import forms
-from .models import UploadedFile,UploadedAttendance, filestoAssignment
-from .models import Announcement, Courses, CustomUser, CarouselImage, GroupPhotoAttendance, ProfilePhoto
+from .models import UploadedFile,UploadedAttendance, Submission
+from .models import Announcement, Course, CustomUser, CarouselImage, GroupPhotoAttendance, ProfilePhoto
 from django_select2.forms import Select2MultipleWidget
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
@@ -13,7 +13,7 @@ DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg']
 
 def validate_upload_size(upload):
     if upload.size > MAX_UPLOAD_SIZE:
-        raise ValidationError("Files must be 20 MB or smaller.")
+        raise ValidationError("files must be 20 MB or smaller.")
 
 
 def validated_file_field(extensions):
@@ -40,10 +40,10 @@ class UploadedAttendanceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         course = kwargs.pop('course', None)
         super().__init__(*args, **kwargs)
-        students = CustomUser.objects.filter(usertype=CustomUser.STUDENT)
+        students = CustomUser.objects.filter(user_type=CustomUser.STUDENT)
         if course is not None:
             students = students.filter(
-                id__in=course.People.values_list('id', flat=True)
+                id__in=course.people.values_list('id', flat=True)
             )
         self.fields['student'].queryset = students
     
@@ -55,10 +55,10 @@ class CarouselImageForm(forms.ModelForm):
         fields = ['title', 'image', 'description']
 
 class SyllabusUploadForm(forms.ModelForm):
-    Syllabus = validated_file_field(['pdf'])
+    syllabus = validated_file_field(['pdf'])
     class Meta:
-        model = Courses
-        fields = ['Syllabus']  # Only include the Syllabus field
+        model = Course
+        fields = ['syllabus']  # Only include the syllabus field
 
 class ProfilePhotoForm(forms.ModelForm):
     file = forms.ImageField(validators=[validate_upload_size])
@@ -69,7 +69,7 @@ class ProfilePhotoForm(forms.ModelForm):
 class FileUploadForm(forms.ModelForm):
     file = validated_file_field(DOCUMENT_EXTENSIONS)
     class Meta:
-        model = filestoAssignment
+        model = Submission
         fields = ['file']
 
     def __init__(self, *args, **kwargs):
@@ -87,7 +87,7 @@ class GroupPhotoUploadForm(forms.ModelForm):
 
 class AnnouncementForm(forms.ModelForm):
     recipients = forms.ModelMultipleChoiceField(
-        queryset=Courses.objects.all(),
+        queryset=Course.objects.all(),
         widget=Select2MultipleWidget(attrs={'class': 'js-example-basic-multiple'}),
     )
     class Meta:

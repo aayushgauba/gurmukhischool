@@ -8,7 +8,7 @@
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">
-    <style nonce="{{ request.csp_nonce }}">
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Mukta', sans-serif;
             background-color: #f2f3f4;
@@ -253,11 +253,11 @@
     <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
         <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none ps-3">
             <span class="fs-4 logo">ੴ</span>
-            <span class="ms-2">{{user.usertype}} Portal</span>
+            <span class="ms-2">{{user.user_type}} Portal</span>
         </a>
         <hr>
         <ul class="nav nav-pills flex-column mb-auto">
-            {% if request.user.usertype == "Admin" %}
+            {% if request.user.user_type == "Admin" %}
             <li class="nav-item">
                 <a href="{% url 'adminViewHome' %}" class="nav-link active">
                     <i class="bi bi-speedometer2"></i> Dashboard
@@ -336,7 +336,7 @@
     
     <!-- Bottom Navigation -->
     <nav class="bottom-nav d-lg-none">
-        {% if request.user.usertype == "Admin" %}
+        {% if request.user.user_type == "Admin" %}
         <a href="{% url 'adminViewHome' %}" class="nav-link active">
             <i class="bi bi-speedometer2"></i>
             <span>Dashboard</span>
@@ -396,9 +396,9 @@
     </div>
 
     <!-- Scripts -->
-    <script src="{% static 'js/jquery-3.6.0.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-    <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-    <script nonce="{{ request.csp_nonce }}">
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}" nonce="{{ csp_nonce }}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+    <script nonce="{{ csp_nonce }}">
         $(document).ready(function() {
             // Toggle sidebar on mobile
             $('.navbar-toggler').on('click', function() {

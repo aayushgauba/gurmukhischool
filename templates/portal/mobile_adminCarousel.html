@@ -9,7 +9,7 @@
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-    <style nonce="{{ request.csp_nonce }}">
+    <style nonce="{{ csp_nonce }}">
         /* Base styles */
         body {
             font-family: 'Mukta', sans-serif;
@@ -308,7 +308,7 @@
             }
         }
         
-        /* Title section */
+        /* title section */
         .page-title {
             display: flex;
             flex-direction: column;
@@ -487,7 +487,7 @@
 
     <!-- Bottom Navigation -->
     <nav class="bottom-nav d-lg-none">
-        {% if request.user.usertype == "Admin" %}
+        {% if request.user.user_type == "Admin" %}
         <a href="{% url 'adminViewHome' %}" class="nav-link">
             <i class="bi bi-speedometer2"></i>
             <span>Dashboard</span>
@@ -597,8 +597,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-    <script nonce="{{ request.csp_nonce }}">
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+    <script nonce="{{ csp_nonce }}">
         // Script to set image ID and title in delete modal
         const deleteModal = document.getElementById('deleteModal');
         const deleteMainModal = document.getElementById('deleteMainModal');

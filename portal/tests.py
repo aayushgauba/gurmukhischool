@@ -7,9 +7,9 @@ from django.db import IntegrityError, transaction
 
 from .models import (
     Assignment,
-    Courses,
+    Course,
     CustomUser,
-    filestoAssignment,
+    Submission,
     Folder,
     Section,
     WeeklyEmail,
@@ -24,40 +24,40 @@ class PortalSecurityTests(TestCase):
         self.student = CustomUser.objects.create_user(
             username="student@example.com",
             password="a-long-test-password",
-            usertype=CustomUser.STUDENT,
+            user_type=CustomUser.STUDENT,
             approved=True,
         )
         self.other_student = CustomUser.objects.create_user(
             username="other@example.com",
             password="a-long-test-password",
-            usertype=CustomUser.STUDENT,
+            user_type=CustomUser.STUDENT,
             approved=True,
         )
         self.teacher = CustomUser.objects.create_superuser(
             username="teacher@example.com",
             password="a-long-test-password",
-            usertype=CustomUser.TEACHER,
+            user_type=CustomUser.TEACHER,
             approved=True,
         )
         self.sender = CustomUser.objects.create_user(
             username="sender@example.com",
             password="a-long-test-password",
-            usertype=CustomUser.EMAIL_SENDER,
+            user_type=CustomUser.EMAIL_SENDER,
             approved=True,
         )
-        self.course = Courses.objects.create(Title="Course", Description="Test")
-        self.course.People.add(self.student)
+        self.course = Course.objects.create(title="Course", description="Test")
+        self.course.people.add(self.student)
         self.section = Section.objects.create(
-            Title="Section", Course_id=self.course.id, ONum=0
+            title="Section", course_id=self.course.id, order=0
         )
         self.folder = Folder.objects.create(
-            Title="Folder", Course_id=self.course.id
+            title="Folder", course_id=self.course.id
         )
-        self.section.Folders.add(self.folder)
+        self.section.folders.add(self.folder)
         self.assignment = Assignment.objects.create(
             title="Assignment", description="Test", due_date=date.today()
         )
-        self.folder.Assignments.add(self.assignment)
+        self.folder.assignments.add(self.assignment)
 
     def test_anonymous_user_cannot_delete_calendar_event(self):
         event = WeeklyEmail.objects.create(email_type="weekly")
@@ -92,7 +92,7 @@ class PortalSecurityTests(TestCase):
         self.assertEqual(assignment_response.status_code, 403)
 
     def test_student_cannot_delete_another_students_submission(self):
-        submission = filestoAssignment.objects.create(
+        submission = Submission.objects.create(
             file=SimpleUploadedFile("submission.txt", b"work"),
             user_id=self.student.id,
             assignment_id=self.assignment.id,
@@ -106,7 +106,7 @@ class PortalSecurityTests(TestCase):
             {"submission_id": submission.id},
         )
         self.assertEqual(response.status_code, 403)
-        self.assertTrue(filestoAssignment.objects.filter(pk=submission.pk).exists())
+        self.assertTrue(Submission.objects.filter(pk=submission.pk).exists())
 
     def test_reordering_rejects_get(self):
         self.client.force_login(self.teacher)
@@ -114,7 +114,7 @@ class PortalSecurityTests(TestCase):
         self.assertEqual(response.status_code, 405)
 
     def test_submission_download_is_owner_only(self):
-        submission = filestoAssignment.objects.create(
+        submission = Submission.objects.create(
             file=SimpleUploadedFile("private.txt", b"private work"),
             user_id=self.student.id,
             assignment_id=self.assignment.id,
@@ -132,9 +132,9 @@ class PortalSecurityTests(TestCase):
         self.assertRedirects(response, reverse("login"))
 
     def test_attendance_is_scoped_to_course(self):
-        other_course = Courses.objects.create(
-            Title="Other Course",
-            Description="Test",
+        other_course = Course.objects.create(
+            title="Other Course",
+            description="Test",
         )
         first = Attendance.objects.create(
             student=self.student,
@@ -185,7 +185,7 @@ class PortalSecurityTests(TestCase):
         admin = CustomUser.objects.create_user(
             username="admin@example.com",
             password="a-long-test-password",
-            usertype=CustomUser.ADMIN,
+            user_type=CustomUser.ADMIN,
             approved=True,
         )
         self.client.force_login(admin)

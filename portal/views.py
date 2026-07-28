@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from portal.models import CustomUser, Schedule, WeeklyEmail, Courses, Section, Folder, Grade, Announcement, Attendance, CarouselImage
+from portal.models import CustomUser, Schedule, WeeklyEmail, Course, Section, Folder, Grade, Announcement, Attendance, CarouselImage
 from django.http import HttpRequest, JsonResponse, FileResponse, Http404
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -11,7 +11,7 @@ from main.models import BlacklistedIP
 from django.http import HttpResponse
 from django.contrib.auth.tokens import default_token_generator
 from .forms import UploadedFileForm, FileUploadForm, AnnouncementForm,UploadedAttendanceForm,GroupPhotoUploadForm, ProfilePhotoForm, CarouselImageForm, SyllabusUploadForm
-from .models import UploadedFile, Assignment, filestoAssignment
+from .models import UploadedFile, Assignment, Submission
 from main.models import CarouselImage as Carousel
 from main.forms import CarouselImageForm as MainCarouselImageForm
 from django.contrib.auth.decorators import login_required
@@ -21,6 +21,7 @@ from asgiref.sync import sync_to_async
 from pages.models import Contact
 from django.core.exceptions import ValidationError
 from django.core.exceptions import PermissionDenied
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from django.db.models import Avg
@@ -47,13 +48,13 @@ def _parse_grade(value):
 
 
 def _is_teacher(user):
-    return user.is_superuser and user.usertype == CustomUser.TEACHER
+    return user.is_superuser and user.user_type == CustomUser.TEACHER
 
 
 def _can_access_course(user, course):
     return _is_teacher(user) or (
-        user.usertype == CustomUser.STUDENT
-        and course.People.filter(pk=user.pk).exists()
+        user.user_type == CustomUser.STUDENT
+        and course.people.filter(pk=user.pk).exists()
     )
 
 
@@ -65,13 +66,13 @@ def _require_course_access(user, course):
 def _course_graph(section_id=None, folder_id=None, assignment_id=None):
     section = get_object_or_404(Section, pk=section_id) if section_id is not None else None
     folder = get_object_or_404(Folder, pk=folder_id) if folder_id is not None else None
-    if section and folder and not section.Folders.filter(pk=folder.pk).exists():
+    if section and folder and not section.folders.filter(pk=folder.pk).exists():
         raise Http404
     assignment = get_object_or_404(Assignment, pk=assignment_id) if assignment_id is not None else None
-    if folder and assignment and not folder.Assignments.filter(pk=assignment.pk).exists():
+    if folder and assignment and not folder.assignments.filter(pk=assignment.pk).exists():
         raise Http404
-    course_id = folder.Course_id if folder else section.Course_id
-    course = get_object_or_404(Courses, pk=course_id)
+    course_id = folder.course_id if folder else section.course_id
+    course = get_object_or_404(Course, pk=course_id)
     return course, section, folder, assignment
 
 @approved_required
@@ -79,13 +80,13 @@ def _course_graph(section_id=None, folder_id=None, assignment_id=None):
 def course(request: HttpRequest, course_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     user = request.user
-    course = get_object_or_404(Courses, id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     _require_course_access(request.user, course)
-    if request.user.usertype == 'Teacher':
-        sections = Section.objects.filter(Course_id = course.id).order_by("ONum")
-    elif request.user.usertype == 'Student':
-        if course.People.filter(id = request.user.id).exists():
-            sections = Section.objects.filter(Course_id = course.id).order_by("ONum")
+    if request.user.user_type == CustomUser.TEACHER:
+        sections = Section.objects.filter(course_id = course.id).order_by("order")
+    elif request.user.user_type == CustomUser.STUDENT:
+        if course.people.filter(id = request.user.id).exists():
+            sections = Section.objects.filter(course_id = course.id).order_by("order")
         else:
             return redirect("courses")
     user_agent = _user_agent(request)
@@ -100,8 +101,8 @@ def course(request: HttpRequest, course_id):
 @login_required
 def students(request: HttpRequest, course_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    course = Courses.objects.get(id = course_id)
-    students = course.People.all()
+    course = Course.objects.get(id = course_id)
+    students = course.people.all()
     user_agent = _user_agent(request)
     if "mobile" in user_agent:
         return render(request, "portal/mobile_students.html", {"students":students,"profile_photo":profile_photo, "course":course})
@@ -113,11 +114,11 @@ def students(request: HttpRequest, course_id):
 def fileView(request, file_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     file = get_object_or_404(UploadedFile, id=file_id)
-    course_ids = set(Folder.objects.filter(Files=file).values_list('Course_id', flat=True))
+    course_ids = set(Folder.objects.filter(files=file).values_list('course_id', flat=True))
     course_ids.update(Folder.objects.filter(
         Assignments__files=file
-    ).values_list('Course_id', flat=True))
-    courses = Courses.objects.filter(pk__in=course_ids)
+    ).values_list('course_id', flat=True))
+    courses = Course.objects.filter(pk__in=course_ids)
     if not any(_can_access_course(request.user, course) for course in courses):
         raise PermissionDenied
     context = {
@@ -134,10 +135,10 @@ def fileView(request, file_id):
 @require_POST
 def delete_file(request, pk, section_id, folder_id):
     _, _, folder, _ = _course_graph(section_id, folder_id)
-    file = get_object_or_404(folder.Files, pk=pk)
+    file = get_object_or_404(folder.files, pk=pk)
     if request.method == 'POST':
-        folder.Files.remove(file)
-        if not Folder.objects.filter(Files=file).exists() and not Assignment.objects.filter(
+        folder.files.remove(file)
+        if not Folder.objects.filter(files=file).exists() and not Assignment.objects.filter(
             files=file
         ).exists():
             if file.file and os.path.exists(file.file.path):
@@ -353,7 +354,7 @@ def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
 def submitFilesToAssignment(request, section_id, folder_id, assignment_id):
     course, _, _, _ = _course_graph(section_id, folder_id, assignment_id)
     _require_course_access(request.user, course)
-    if request.user.usertype != CustomUser.STUDENT:
+    if request.user.user_type != CustomUser.STUDENT:
         raise PermissionDenied
     if request.method == "POST":
         form = FileUploadForm(request.POST, request.FILES, user_id = request.user.id, assignment_id = assignment_id)
@@ -373,7 +374,7 @@ def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
         assignment = Assignment.objects.get(id = assignment_id)
         file = UploadedFile.objects.get(id = file_id)
         assignment.files.remove(file)
-        used_by_folder = Folder.objects.filter(Files=file).exists()
+        used_by_folder = Folder.objects.filter(files=file).exists()
         used_by_assignment = Assignment.objects.filter(files=file).exists()
         if not used_by_folder and not used_by_assignment:
             if file.file.path and os.path.exists(file.file.path):
@@ -392,12 +393,12 @@ def viewAssignment(request: HttpRequest, section_id, folder_id, assignment_id):
     form = UploadedFileForm()
     context = {}
     studentform = FileUploadForm(user_id = request.user.id, assignment_id = assignment_id)
-    if request.user.usertype == "Student":
-        submissions = filestoAssignment.objects.filter(user_id = request.user.id, assignment_id = assignment_id)
+    if request.user.user_type == CustomUser.STUDENT:
+        submissions = Submission.objects.filter(user_id = request.user.id, assignment_id = assignment_id)
         context = {"submissions":submissions,"course":course, "assignment":assignment, "folder":folder,"form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id}
-    elif request.user.is_superuser and request.user.usertype == "Teacher":
-        submissions = filestoAssignment.objects.filter(assignment_id = assignment_id).distinct()
-        users = CustomUser.objects.filter(id__in=filestoAssignment.objects.filter(assignment_id=assignment.id).values('user_id').distinct())
+    elif _is_teacher(request.user):
+        submissions = Submission.objects.filter(assignment_id = assignment_id).distinct()
+        users = CustomUser.objects.filter(id__in=Submission.objects.filter(assignment_id=assignment.id).values('user_id').distinct())
         context = {"submissions":submissions, "assignment":assignment, "course":course, "users":users, "folder":folder, "form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id}
     files = files.exclude(id__in = assignment.files.values_list('id', flat=True))
     user_agent = _user_agent(request)
@@ -419,7 +420,7 @@ def createAssignment(request, section_id, folder_id):
         due_date = request.POST.get('due_date')
         assignment = Assignment.objects.create(title = title, description = description, due_date = due_date)
         folder = Folder.objects.get(id = folder_id)
-        folder.Assignments.add(assignment)
+        folder.assignments.add(assignment)
         return redirect('folder', section_id, folder_id)
 
 @approved_required
@@ -462,7 +463,7 @@ def deleteSubmission(request, section_id, folder_id, assignment_id):
     if request.method == 'POST':
         submission_id = request.POST.get('submission_id')
         submission = get_object_or_404(
-            filestoAssignment,
+            Submission,
             id=submission_id,
             assignment_id=assignment_id,
             user_id=request.user.id,
@@ -484,7 +485,7 @@ def uploadFile(request, section_id, folder_id):
         if form.is_valid():
             uploaded_file = form.save()
             folder = Folder.objects.get(id = folder_id)
-            folder.Files.add(uploaded_file)
+            folder.files.add(uploaded_file)
             return redirect('folder', section_id, folder_id)
     else:
         form = UploadedFileForm()
@@ -509,12 +510,12 @@ def folder(request: HttpRequest, section_id, folder_id):
 @require_POST
 def moveSectionUp(request, section_id):
     section = Section.objects.get(id = section_id)
-    course_id = section.Course_id
-    if section.ONum >0:
-        section_new = Section.objects.get(ONum = int(section.ONum - 1), Course_id = section.Course_id)
-        section.ONum = section.ONum -1
+    course_id = section.course_id
+    if section.order >0:
+        section_new = Section.objects.get(order = int(section.order - 1), course_id = section.course_id)
+        section.order = section.order -1
         section.save()
-        section_new.ONum = section_new.ONum + 1
+        section_new.order = section_new.order + 1
         section_new.save()
     return redirect("course", course_id)
 
@@ -525,15 +526,15 @@ def moveSectionUp(request, section_id):
 @require_POST
 def moveSectionDown(request, section_id):
     section = Section.objects.get(id = section_id)
-    count = Section.objects.filter(Course_id = section.Course_id).count()
+    count = Section.objects.filter(course_id = section.course_id).count()
     if count is None:
         count = 0
-    course_id = section.Course_id
-    if section.ONum < count - 1:
-        section_new = Section.objects.get(ONum = int(section.ONum + 1), Course_id = section.Course_id)
-        section.ONum = section.ONum +1
+    course_id = section.course_id
+    if section.order < count - 1:
+        section_new = Section.objects.get(order = int(section.order + 1), course_id = section.course_id)
+        section.order = section.order +1
         section.save()
-        section_new.ONum = section_new.ONum - 1
+        section_new.order = section_new.order - 1
         section_new.save()
     return redirect("course", course_id)
 
@@ -544,25 +545,25 @@ def moveSectionDown(request, section_id):
 @require_POST
 def changeVisibility(request, section_id):
     section = Section.objects.get(id = section_id)
-    if section.Status == True:
-        section.Status = False
+    if section.status == True:
+        section.status = False
     else:
-        section.Status = True
+        section.status = True
     section.save()
-    course_id = section.Course_id
+    course_id = section.course_id
     return redirect("course", course_id)
 
 @approved_required
 @login_required
 def view_syllabus(request, course_id):
-    course = get_object_or_404(Courses, id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     _require_course_access(request.user, course)
-    if course.Syllabus:
+    if course.syllabus:
         return FileResponse(
-            course.Syllabus.open('rb'),
+            course.syllabus.open('rb'),
             content_type='application/pdf',
             as_attachment=False,
-            filename=os.path.basename(course.Syllabus.name),
+            filename=os.path.basename(course.syllabus.name),
         )
     else:
         return HttpResponse("No syllabus available.", content_type='text/plain')
@@ -571,13 +572,13 @@ def view_syllabus(request, course_id):
 @login_required
 def viewMobileContentUpload(request, file_id):
     file = get_object_or_404(UploadedFile, id=file_id)
-    course_ids = set(Folder.objects.filter(Files=file).values_list('Course_id', flat=True))
+    course_ids = set(Folder.objects.filter(files=file).values_list('course_id', flat=True))
     course_ids.update(Folder.objects.filter(
         Assignments__files=file
-    ).values_list('Course_id', flat=True))
+    ).values_list('course_id', flat=True))
     if not any(
         _can_access_course(request.user, course)
-        for course in Courses.objects.filter(pk__in=course_ids)
+        for course in Course.objects.filter(pk__in=course_ids)
     ):
         raise PermissionDenied
     return FileResponse(
@@ -590,7 +591,7 @@ def viewMobileContentUpload(request, file_id):
 @approved_required
 @login_required
 def view_submission_file(request, submission_id):
-    submission = get_object_or_404(filestoAssignment, id=submission_id)
+    submission = get_object_or_404(Submission, id=submission_id)
     folders = Folder.objects.filter(Assignments__id=submission.assignment_id)
     if submission.user_id != request.user.id and not (
         _is_teacher(request.user) and folders.exists()
@@ -609,13 +610,13 @@ def courses(request: HttpRequest):
     user = request.user
     form = SyllabusUploadForm()
     courses = None
-    if user.usertype == "Teacher":
-        courses = Courses.objects.all().order_by("id")
-    elif user.usertype == "Student":
-        courses = Courses.objects.filter(People = request.user).order_by("id")
-    elif user.usertype == "Admin" and user.is_superuser:
+    if user.user_type == CustomUser.TEACHER:
+        courses = Course.objects.all().order_by("id")
+    elif user.user_type == CustomUser.STUDENT:
+        courses = Course.objects.filter(people = request.user).order_by("id")
+    elif user.user_type == CustomUser.ADMIN and user.is_superuser:
         return redirect("adminViewHome")
-    elif user.usertype == CustomUser.EMAIL_SENDER:
+    elif user.user_type == CustomUser.EMAIL_SENDER:
         return redirect("calenderNotification")
     else:
         return render(request, "portal/unknown_usertype.html", {"user": user})
@@ -637,10 +638,10 @@ def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_i
         folder_id=folder_id,
         assignment_id=assignment_id,
     )
-    if folder.Course_id != course_id:
+    if folder.course_id != course_id:
         raise Http404
-    course = get_object_or_404(Courses, id=course_id)
-    if not course.People.filter(id=user_id, usertype=CustomUser.STUDENT).exists():
+    course = get_object_or_404(Course, id=course_id)
+    if not course.people.filter(id=user_id, user_type=CustomUser.STUDENT).exists():
         raise Http404
     try:
         new_grade = _parse_grade(request.POST.get("grade"))
@@ -660,10 +661,10 @@ def grades(request: HttpRequest, course_id = None):
     user_agent = _user_agent(request)
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     if course_id is not None:
-        course = get_object_or_404(Courses, id=course_id)
+        course = get_object_or_404(Course, id=course_id)
         _require_course_access(request.user, course)
         grade_array = []
-        if request.user.usertype == CustomUser.STUDENT:
+        if request.user.user_type == CustomUser.STUDENT:
             student_grades = Grade.objects.filter(
                 user_id=request.user.id,
                 course_id=course_id,
@@ -683,7 +684,7 @@ def grades(request: HttpRequest, course_id = None):
                     })
         elif _is_teacher(request.user):
             assignment_ids = Folder.objects.filter(
-                Course_id=course_id
+                course_id=course_id
             ).values_list('Assignments__id', flat=True)
             assignments = Assignment.objects.filter(
                 id__in=assignment_ids
@@ -726,7 +727,7 @@ def grades(request: HttpRequest, course_id = None):
                 course_id=course.id
             ).aggregate(average=Avg("grade"))["average"],
         }
-        for course in Courses.objects.all()
+        for course in Course.objects.all()
     ]
     template = (
         "portal/mobile_grades.html"
@@ -743,11 +744,11 @@ def grades(request: HttpRequest, course_id = None):
 def announcements(request: HttpRequest):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     user_agent = _user_agent(request)
-    if request.user.usertype == "Teacher" and request.user.is_superuser:
+    if _is_teacher(request.user):
         announcements = Announcement.objects.all()
-    elif request.user.usertype == "Student" and not request.user.is_superuser:
+    elif request.user.user_type == CustomUser.STUDENT and not request.user.is_superuser:
         student = CustomUser.objects.get(id=request.user.id)
-        courses = Courses.objects.filter(People=student)
+        courses = Course.objects.filter(people=student)
         announcements = Announcement.objects.filter(recipients__in=courses)
     else:
         announcements = Announcement.objects.none()  # Handle other user types if necessary
@@ -767,7 +768,7 @@ def mark_attendance(request: HttpRequest, course_id, day, month, year):
         selected_month = request.POST.get('month')
         selected_year = request.POST.get('year')
 
-        students = Courses.objects.get(id=course_id).People.all()
+        students = Course.objects.get(id=course_id).people.all()
 
         for student in students:
             status = 'Absent'  # Default to absent
@@ -786,8 +787,8 @@ def mark_attendance(request: HttpRequest, course_id, day, month, year):
 
         return redirect('attendance', course_id=course_id)
     else:
-        all_students = Courses.objects.get(id=course_id).People.all()
-        course = Courses.objects.get(id=course_id)
+        all_students = Course.objects.get(id=course_id).people.all()
+        course = Course.objects.get(id=course_id)
 
         # Query attendance records for the given day, month, and year
         attendance_records = Attendance.objects.filter(
@@ -819,7 +820,7 @@ def mark_attendance(request: HttpRequest, course_id, day, month, year):
 def attendance(request: HttpRequest, course_id, year=None, month=None):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     user_agent = _user_agent(request)
-    course = get_object_or_404(Courses, id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     _require_course_access(request.user, course)
     if not year or not month:
         year = datetime.now().year
@@ -852,7 +853,7 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
     if any(week):
         weeks.append(week)
 
-    if not request.user.is_superuser and request.user.usertype == "Student":
+    if not request.user.is_superuser and request.user.user_type == CustomUser.STUDENT:
         attendance = Attendance.objects.filter(course=course, year = year, month = month, student = request.user, status = "Present").values_list('day', flat=True)
         attendance_days = list(attendance)
         absent = Attendance.objects.filter(course=course, year = year, month = month, student = request.user, status = "Absent").values_list('day', flat=True)
@@ -875,15 +876,15 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
     else:
         photoform = GroupPhotoUploadForm()
         try:
-            schedule = Schedule.objects.get(course = Courses.objects.get(id = course_id))
+            schedule = Schedule.objects.get(course = Course.objects.get(id = course_id))
         except Exception as e:
             schedule = None
         attendanceForm = UploadedAttendanceForm(course=course)
         if schedule:
-            startDate = datetime.strptime(schedule.startDate, "%Y-%m") 
-            endDate = datetime.strptime(schedule.endDate, "%Y-%m") 
+            start_date = datetime.strptime(schedule.start_date, "%Y-%m")
+            end_date = datetime.strptime(schedule.end_date, "%Y-%m")
             currDate = datetime(year, month, 1)
-            if startDate <= currDate and currDate <= endDate:
+            if start_date <= currDate <= end_date:
                 allowed_days = json.loads(schedule.days)
                 allowed_days = list(map(int, allowed_days))
             else:
@@ -917,7 +918,7 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
 @require_POST
 @login_required
 def uploadAttendanceData(request, course_id):
-    course = get_object_or_404(Courses, id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     next_url = request.META.get('HTTP_REFERER', '/')
     form = UploadedAttendanceForm(
         request.POST,
@@ -937,7 +938,7 @@ def uploadAttendanceData(request, course_id):
 @require_POST
 @login_required
 def uploadGroupPhoto(request, course_id):
-    course = get_object_or_404(Courses, id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     next_url = request.META.get('HTTP_REFERER', '/')
     form = GroupPhotoUploadForm(request.POST, request.FILES)
     print("Submitted data:", form)
@@ -955,22 +956,22 @@ def uploadGroupPhoto(request, course_id):
 def scheduleDefine(request, course_id):
     next_url = request.META.get('HTTP_REFERER', '/')
     choices = request.POST.getlist('week')
-    startDate = request.POST.get('startDate')
-    endDate= request.POST.get('endDate')
+    start_date = request.POST.get('startDate')
+    end_date = request.POST.get('endDate')
     try:
-        start = datetime.strptime(startDate or "", "%Y-%m")
-        end = datetime.strptime(endDate or "", "%Y-%m")
+        start = datetime.strptime(start_date or "", "%Y-%m")
+        end = datetime.strptime(end_date or "", "%Y-%m")
         weekdays = [int(choice) for choice in choices]
     except (TypeError, ValueError):
         return JsonResponse({"detail": "Invalid schedule values."}, status=400)
     if start > end or any(day not in range(7) for day in weekdays):
         return JsonResponse({"detail": "Invalid schedule range."}, status=400)
-    course = get_object_or_404(Courses, id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     Schedule.objects.update_or_create(
         course=course,
         defaults={
-            "startDate": startDate,
-            "endDate": endDate,
+            "start_date": start_date,
+            "end_date": end_date,
             "days": json.dumps(weekdays),
         },
     )
@@ -990,7 +991,7 @@ def adminViewHome(request:HttpRequest):
         valid_roles = {value for value, _ in CustomUser.USER_TYPES}
         if user_type not in valid_roles:
             raise ValidationError("Invalid user role.")
-        user.usertype = user_type
+        user.user_type = user_type
         user.is_superuser = user_type in (
             CustomUser.TEACHER,
             CustomUser.ADMIN,
@@ -1008,7 +1009,13 @@ def adminViewHome(request:HttpRequest):
             'token': default_token_generator.make_token(user),
             'protocol': 'https' if request.is_secure() else 'http',
         })
-        send_mail(subject, plain_text_message, 'noreply@stlouisgurudwara.org', [user.email],  html_message=message)
+        send_mail(
+            subject,
+            plain_text_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            html_message=message,
+        )
         return redirect("adminViewHome")
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     users = CustomUser.objects.filter(approved = False)
@@ -1044,9 +1051,9 @@ def delete_user(request):
                 status=400,
             )
         if (
-            user.usertype == CustomUser.ADMIN
+            user.user_type == CustomUser.ADMIN
             and CustomUser.objects.filter(
-                usertype=CustomUser.ADMIN,
+                user_type=CustomUser.ADMIN,
                 approved=True,
                 is_active=True,
             ).count() <= 1
@@ -1072,9 +1079,9 @@ def admit_user(request):
                 status=400,
             )
         if (
-            user.usertype == CustomUser.ADMIN
+            user.user_type == CustomUser.ADMIN
             and CustomUser.objects.filter(
-                usertype=CustomUser.ADMIN,
+                user_type=CustomUser.ADMIN,
                 approved=True,
                 is_active=True,
             ).count() <= 1
@@ -1095,18 +1102,18 @@ def admit_user(request):
 @approved_required
 def deleteCourse(request, course_id):
     if request.method == 'POST':
-        course = get_object_or_404(Courses, id=course_id)
+        course = get_object_or_404(Course, id=course_id)
         with transaction.atomic():
-            sections = list(Section.objects.filter(Course_id=course_id))
+            sections = list(Section.objects.filter(course_id=course_id))
             folders = {
                 folder.id: folder
                 for section in sections
-                for folder in section.Folders.all()
+                for folder in section.folders.all()
             }
             assignments = {
                 assignment.id: assignment
                 for folder in folders.values()
-                for assignment in folder.Assignments.all()
+                for assignment in folder.assignments.all()
             }
             for section in sections:
                 section.delete()
@@ -1127,13 +1134,13 @@ def deleteCourse(request, course_id):
 @approved_required
 def deleteSection(request, section_id):
     section = get_object_or_404(Section, id=section_id)
-    course_id = section.Course_id
-    section_order_num = section.ONum
-    folders = list(section.Folders.all())
+    course_id = section.course_id
+    section_order_num = section.order
+    folders = list(section.folders.all())
     assignments = {
         assignment.id: assignment
         for folder in folders
-        for assignment in folder.Assignments.all()
+        for assignment in folder.assignments.all()
     }
     with transaction.atomic():
         section.delete()
@@ -1143,10 +1150,10 @@ def deleteSection(request, section_id):
         for assignment in assignments.values():
             if not assignment.folder_set.exists():
                 assignment.delete()
-    remaining_sections = Section.objects.filter(Course_id=course_id).order_by('ONum')
+    remaining_sections = Section.objects.filter(course_id=course_id).order_by('order')
     for idx, sec in enumerate(remaining_sections):
-        if sec.ONum > section_order_num:
-            sec.ONum = sec.ONum - 1
+        if sec.order > section_order_num:
+            sec.order = sec.order - 1
             sec.save()
     return redirect("course", course_id)
 
@@ -1191,7 +1198,7 @@ def signout(request):
 def profile(request: HttpRequest, course_id=None):
     user_agent = _user_agent(request)
     if course_id:
-        course = get_object_or_404(Courses, id=course_id)
+        course = get_object_or_404(Course, id=course_id)
         _require_course_access(request.user, course)
     else:
         course = None
@@ -1207,7 +1214,7 @@ def send_announcement_emails(announcement):
     recipients = set()
     all_sent = True
     for course in announcement.recipients.all():
-        students = course.People.filter(usertype=CustomUser.STUDENT).distinct()
+        students = course.people.filter(user_type=CustomUser.STUDENT).distinct()
         for student in students:
             if student.email not in recipients:
                 print(f"Sending email to: {student.email}")
@@ -1216,7 +1223,7 @@ def send_announcement_emails(announcement):
                     send_mail(
                         subject=f'New Announcement: {announcement.title}',
                         message=announcement.content,
-                        from_email='noreply@stlouisgurudwara.org',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[student.email],
                         fail_silently=False,
                     )
@@ -1267,7 +1274,7 @@ def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
         assignment_id=assignment_id,
     )
     course_id = Course.id
-    for people in Course.People.all():
+    for people in Course.people.all():
         try:
             grade = Grade.objects.get(assignment_id = assignment_id, course_id= course_id, user_id = people.id).grade
         except Grade.DoesNotExist:
@@ -1303,13 +1310,13 @@ def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
 @require_POST
 def removeStudentFromCourse(request, course_id):
     id = request.POST.get("student_id")
-    course = get_object_or_404(Courses, id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     student = get_object_or_404(
-        course.People,
+        course.people,
         id=id,
-        usertype=CustomUser.STUDENT,
+        user_type=CustomUser.STUDENT,
     )
-    course.People.remove(student)
+    course.people.remove(student)
     return redirect("students", course.id)
 
 @approved_required
@@ -1323,14 +1330,14 @@ def submissions(request: HttpRequest, folder_id, user_id, assignment_id):
         folder_id=folder_id,
         assignment_id=assignment_id,
     )
-    if not course.People.filter(id=user_id, usertype=CustomUser.STUDENT).exists():
+    if not course.people.filter(id=user_id, user_type=CustomUser.STUDENT).exists():
         raise Http404
     grade = Grade.objects.filter(
         user_id=user_id,
         assignment_id=assignment_id,
         course_id=course.id,
     ).first()
-    submissions = filestoAssignment.objects.filter(user_id =user_id, assignment_id = assignment_id)
+    submissions = Submission.objects.filter(user_id =user_id, assignment_id = assignment_id)
     user = CustomUser.objects.get(id = user_id)
     if "mobile" in user_agent:
         return render(request, "portal/mobile_submissionView.html", context = {"submissions":submissions, "grade":grade, "folder":folder, "user": user, "assignment":assignment, "profile_photo":profile_photo})
@@ -1351,7 +1358,13 @@ def PasswordResetView(request):
                 'token': default_token_generator.make_token(user),
                 'protocol': 'https' if request.is_secure() else 'http',
             })
-            send_mail(subject, '', 'noreply@stlouisgurudwara.org', [user.email],  html_message=message)
+            send_mail(
+                subject,
+                '',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                html_message=message,
+            )
         return redirect('login')
     return render(request, 'portal/passwordResetInitial.html')
 
@@ -1361,11 +1374,11 @@ def PasswordResetView(request):
 @login_required
 @require_POST
 def upload_syllabus(request, course_id):
-    course = get_object_or_404(Courses, id=course_id)
+    course = get_object_or_404(Course, id=course_id)
     form = SyllabusUploadForm(request.POST, request.FILES, instance=course)
     if form.is_valid():
-        if course.Syllabus and os.path.exists(course.Syllabus.path):
-            os.remove(course.Syllabus.path)
+        if course.syllabus and os.path.exists(course.syllabus.path):
+            os.remove(course.syllabus.path)
         form.save()
         return redirect('courses')  
 
@@ -1436,7 +1449,13 @@ def registration(request):
                 'token': default_token_generator.make_token(user),
                 'protocol': 'https' if request.is_secure() else 'http',
             })
-            send_mail(subject, '', 'noreply@stlouisgurudwara.org', [user.email],  html_message=message)
+            send_mail(
+                subject,
+                '',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                html_message=message,
+            )
             return redirect('login')
     return render(request,"registration.html")
 
@@ -1466,7 +1485,7 @@ def activate(request, uidb64, token):
 def courseAdd(request):
     title = request.POST.get('title')
     description = request.POST.get('description')
-    Courses.objects.create(Title = title, Description = description)
+    Course.objects.create(title = title, description = description)
     return redirect("courses")
 
 @teacher_required
@@ -1475,12 +1494,12 @@ def courseAdd(request):
 @require_POST
 def sectionAdd(request, course_id):
     user = request.user
-    course = Courses.objects.get(id = course_id)
+    course = Course.objects.get(id = course_id)
     title = request.POST.get('title')
-    Count = Section.objects.filter(Course_id = course_id).count()
+    Count = Section.objects.filter(course_id = course_id).count()
     if Count is None:
             Count = 0
-    Section.objects.create(Title = title, Course_id = course_id, ONum = Count)
+    Section.objects.create(title = title, course_id = course_id, order = Count)
     return redirect("course", course_id)
 
 @teacher_required
@@ -1488,14 +1507,16 @@ def sectionAdd(request, course_id):
 @login_required
 def addStudents(request: HttpRequest, course_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    course = Courses.objects.get(id=course_id)
-    enrolled_students = course.People.all()
-    all_students = CustomUser.objects.filter(usertype="Student").exclude(id__in=enrolled_students)
+    course = Course.objects.get(id=course_id)
+    enrolled_students = course.people.all()
+    all_students = CustomUser.objects.filter(
+        user_type=CustomUser.STUDENT
+    ).exclude(id__in=enrolled_students)
     if request.method == 'POST':
         selected_students = request.POST.getlist('selected_students')
         for student_id in selected_students:
             student = CustomUser.objects.get(id=student_id)
-            course.People.add(student)
+            course.people.add(student)
         return redirect('students', course.id)
     else:
         context = {
@@ -1543,13 +1564,13 @@ def changeUserInfo(request):
 def folderAdd(request):
     section_id = request.POST.get('section_id')
     section = Section.objects.get(id = section_id)
-    course_id = section.Course_id
+    course_id = section.course_id
     title = request.POST.get('title')
-    Count = Section.objects.filter(Course_id = course_id).count()
+    Count = Section.objects.filter(course_id = course_id).count()
     if Count is None:
         Count = 0
-    folder = Folder.objects.create(Title = title, Course_id = course_id)
-    section.Folders.add(folder)
+    folder = Folder.objects.create(title = title, course_id = course_id)
+    section.folders.add(folder)
     return redirect("course", course_id)
 
 def login(request):

@@ -9,7 +9,7 @@
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-    <style nonce="{{ request.csp_nonce }}">
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Mukta', sans-serif;
             background-color: #f2f3f4;
@@ -201,7 +201,7 @@
     <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
+                <span class="fs-4 logo">ੴ</span> {{user.user_type}} Portal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
@@ -213,7 +213,7 @@
         <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
                 <span class="fs-4 logo">ੴ</span>
-                <span class="ms-2">{{user.usertype}} Portal</span>
+                <span class="ms-2">{{user.user_type}} Portal</span>
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
@@ -222,7 +222,7 @@
                         <i class="bi bi-book"></i> Courses
                     </a>
                 </li>
-                {% if course.Syllabus %}
+                {% if course.syllabus %}
                 <li class="nav-item">
                     <a href="{% url 'view_syllabus' course.id %}" class="nav-link" target="_blank">
                         <i class="bi bi-file-earmark-text"></i> Syllabus
@@ -239,7 +239,7 @@
                         <i class="bi bi-bar-chart"></i> Grades
                     </a>
                 </li>
-                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+                {%if request.user.is_superuser and request.user.user_type == "Teacher" %}
                 <li>
                     <a href="{% url 'students' course.id %}" class="nav-link">
                         <i class="bi bi-people"></i> Students
@@ -284,10 +284,10 @@
     <div class="card section-card">
         <div class="card-header section-card-header">
             <span>{{ assignment.title }}</span>
-            {% if user.usertype == 'Student' %}
+            {% if user.user_type == 'Student' %}
             <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadAssignmentModal" data-assignment-id="{{ assignment.id }}">Upload Assignment</button>
             {% endif %}
-            {% if user.is_superuser and user.usertype == 'Teacher' %}
+            {% if user.is_superuser and user.user_type == 'Teacher' %}
             <div class="btn-group">
                 <a class="btn btn-primary btn-sm" href="{% url 'gradesforAssignment' folder_id assignment.id %}">Assign Grades</a>
                 <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editAssignmentModal" data-assignment-title="{{ assignment.title }}" data-assignment-description="{{ assignment.description }}" data-assignment-due-date="{{ assignment.due_date }}">Edit</button>
@@ -326,7 +326,7 @@
                         <td>{{ file.file.name }}</td>
                         <td>
                             <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#viewFileModal" data-file-url="{% url 'viewMobileContentUpload' file.id %}">View</button>
-                            {% if user.is_superuser and user.usertype == 'Teacher' %}
+                            {% if user.is_superuser and user.user_type == 'Teacher' %}
                             <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteFileModal" data-file-id="{{ file.id }}">Delete</button>
                             {%endif%}
                         </td>
@@ -337,7 +337,7 @@
         </div>
         {%endif%}
 
-        {% if submissions and request.user.usertype == 'Student' and not request.user.is_superuser %}
+        {% if submissions and request.user.user_type == 'Student' and not request.user.is_superuser %}
         <div class="mt-4">
             <h5 class="mb-3">My Submissions</h5>
             <div class="row">
@@ -346,7 +346,7 @@
                     <div class="card">
                         <div class="card-body">
                             <h6 class="card-title">{{ submission.file.name }}</h6>
-                            {% if submission.Date <= assignment.due_date %}
+                            {% if submission.date <= assignment.due_date %}
                             <span class="badge bg-success">On Time</span>
                         {% else %}
                             <span class="badge bg-danger">Late</span>
@@ -413,7 +413,7 @@
         </div>
     </div>
 </div>     
-        {% if user.is_superuser and user.usertype == 'Teacher' %}
+        {% if user.is_superuser and user.user_type == 'Teacher' %}
         <div class="modal fade" id="deleteAssignmentModal" tabindex="-1" aria-labelledby="deleteAssignmentModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -497,7 +497,7 @@
             </div>
         </div>
         
-        {% if user.is_superuser and user.usertype == 'Teacher' %}
+        {% if user.is_superuser and user.user_type == 'Teacher' %}
         <!-- Add Existing File Modal -->
         <div class="modal fade" id="addExistingFileModal" tabindex="-1" aria-labelledby="addExistingFileModalLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -550,8 +550,8 @@
             </div>
         </div>     
         {%endif%}   
-        <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-        <script nonce="{{ request.csp_nonce }}">
+        <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+        <script nonce="{{ csp_nonce }}">
 document.addEventListener('DOMContentLoaded', (event) => {
     const deleteFileModal = document.getElementById('deleteFileModal');
     deleteFileModal.addEventListener('show.bs.modal', function (event) {

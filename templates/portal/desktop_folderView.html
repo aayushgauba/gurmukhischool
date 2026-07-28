@@ -6,11 +6,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{folder.Title}} | Sikh Study Circle Gurmukhi School</title>
+    <title>{{folder.title}} | Sikh Study Circle Gurmukhi School</title>
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-    <style nonce="{{ request.csp_nonce }}">
+    <style nonce="{{ csp_nonce }}">
         body {
             font-family: 'Mukta', sans-serif;
             background-color: #f2f3f4;
@@ -202,7 +202,7 @@
     <nav class="navbar navbar-expand-lg navbar-custom d-lg-none">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">
-                <span class="fs-4 logo">ੴ</span> {{user.usertype}} Portal
+                <span class="fs-4 logo">ੴ</span> {{user.user_type}} Portal
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"><i class="bi bi-list"></i></span>
@@ -214,7 +214,7 @@
         <div class="sidebar-custom collapse d-lg-block" id="sidebarMenu">
             <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
                 <span class="fs-4 logo">ੴ</span>
-                <span class="ms-2">{{user.usertype}} Portal</span>
+                <span class="ms-2">{{user.user_type}} Portal</span>
             </a>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
@@ -223,7 +223,7 @@
                         <i class="bi bi-book"></i> Courses
                     </a>
                 </li>
-                {% if course.Syllabus %}
+                {% if course.syllabus %}
                 <li class="nav-item">
                     <a href="{% url 'view_syllabus' course.id %}" class="nav-link" target="_blank">
                         <i class="bi bi-file-earmark-text"></i> Syllabus
@@ -240,7 +240,7 @@
                         <i class="bi bi-bar-chart"></i> Grades
                     </a>
                 </li>
-                {%if request.user.is_superuser and request.user.usertype == "Teacher" %}
+                {%if request.user.is_superuser and request.user.user_type == "Teacher" %}
                 <li>
                     <a href="{% url 'students' course.id %}" class="nav-link">
                         <i class="bi bi-people"></i> Students
@@ -265,8 +265,8 @@
         <div class="content content-expanded">
             <div class="card section-card">
                 <div class="card-header section-card-header">
-                    {{ folder.Title }}
-                    {% if user.is_superuser and user.usertype == 'Teacher' %}
+                    {{ folder.title }}
+                    {% if user.is_superuser and user.user_type == 'Teacher' %}
                     <div class="btn-group">
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAssignmentModal"><i class="bi bi-clipboard-plus"></i> Add Assignment</button>
                         <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#uploadFileModal"><i class="bi bi-file-earmark-plus"></i> Add File</button>
@@ -282,13 +282,13 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {%if folder.Files.all%}
-                            {% for file in folder.Files.all %}
+                            {%if folder.files.all%}
+                            {% for file in folder.files.all %}
                             <tr class="file-row">
                                 <td class="folder-level-1"><a href="#" class="file"><i class="bi bi-file-earmark"></i> {{file.file}}</a></td>
                                 <td>
                                     <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewFileModal" data-file-url="{% url 'viewMobileContentUpload' file.id %}">View</a>
-                                    {% if user.is_superuser and user.usertype == 'Teacher' %}
+                                    {% if user.is_superuser and user.user_type == 'Teacher' %}
                                     <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteFileModal{{file.id}}">Delete</button>
                                     {%endif%}
                                 </td>
@@ -315,7 +315,7 @@
 
 
 
-{% if user.is_superuser and user.usertype == 'Teacher' %}
+{% if user.is_superuser and user.user_type == 'Teacher' %}
 
                             <!-- Modal for deleting file -->
                             <div class="modal fade" id="deleteFileModal{{file.id}}" tabindex="-1" aria-labelledby="deleteFileModalLabel{{file.id}}" aria-hidden="true">
@@ -341,8 +341,8 @@
 {%endif%}
                             {% endfor %}
                             {% endif %}
-                            {% if folder.Assignments.all %}
-                            {% for assignment in folder.Assignments.all %}
+                            {% if folder.assignments.all %}
+                            {% for assignment in folder.assignments.all %}
                             <tr class="file-row">
                                 <td class="folder-level-1"><a href="" class="assignment"><i class="bi bi-clipboard-check"></i> {{assignment.title}}</a></td>
                                 <td>
@@ -357,7 +357,7 @@
             </div>
         </div>
     </div>
-    {% if user.is_superuser and user.usertype == 'Teacher' %}
+    {% if user.is_superuser and user.user_type == 'Teacher' %}
 
     <!-- Modal for creating assignments -->
     <div class="modal fade" id="createAssignmentModal" tabindex="-1" aria-labelledby="createAssignmentModalLabel" aria-hidden="true">
@@ -411,8 +411,8 @@
         </div>
     </div>
 {%endif%}
-<script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
-<script nonce="{{ request.csp_nonce }}">
+<script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+<script nonce="{{ csp_nonce }}">
         function toggleFolder(folderElement) {
             const folderRow = folderElement.parentElement.parentElement;
             let nextRow = folderRow.nextElementSibling;
