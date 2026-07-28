@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from portal.models import CustomUser, Schedule, WeeklyEmail, Course, Section, Folder, Grade, Announcement, Attendance, CarouselImage
 from django.http import HttpRequest, JsonResponse, FileResponse, Http404
 from django.contrib.auth import authenticate, login as auth_login, logout
+from django.contrib import messages
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
@@ -1185,10 +1186,17 @@ def upload_profile_photo(request, course_id=None):
         user.modified_profile_photo = True
         user.save()
         request.user.profile_photos.add(new_photo)
-        if course_id:
-            return redirect('profile', course_id=course_id)
-        else:
-            return redirect('profile')
+        messages.success(request, "Your profile photo was updated.")
+    else:
+        messages.error(
+            request,
+            "The profile photo could not be uploaded. "
+            + " ".join(str(error) for errors in form.errors.values() for error in errors),
+        )
+
+    if course_id:
+        return redirect('profile', course_id=course_id)
+    return redirect('profile')
 
 @approved_required
 @login_required
@@ -1200,7 +1208,6 @@ def signout(request):
 @approved_required
 @login_required
 def profile(request: HttpRequest, course_id=None):
-    user_agent = _user_agent(request)
     if course_id:
         course = get_object_or_404(Course, id=course_id)
         _require_course_access(request.user, course)
@@ -1209,10 +1216,13 @@ def profile(request: HttpRequest, course_id=None):
     user = request.user
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     form = ProfilePhotoForm()
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_profile.html", {'course': course, 'user': user, 'form': form, "profile_photo":profile_photo})
-    else:
-        return render(request, "portal/desktop_profile.html", {'course': course, 'user': user, 'form': form, "profile_photo":profile_photo})
+    return render(request, "portal/profile.html", {
+        "course": course,
+        "user": user,
+        "form": form,
+        "profile_photo": profile_photo,
+        "active_nav": "profile",
+    })
 
 def send_announcement_emails(announcement):
     recipients = set()

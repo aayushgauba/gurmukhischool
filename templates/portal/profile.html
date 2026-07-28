@@ -1,0 +1,102 @@
+{% extends 'portal/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Profile{% endblock %}
+{% block meta_description %}View your Gurmukhi School account profile.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">{{ user.get_user_type_display|default:user.user_type }} portal</p>
+        <h1 class="portal-page-title">Profile</h1>
+        <p class="portal-page-description">Review your account information and profile photo.</p>
+    </div>
+    {% if course %}
+    <a class="btn btn-outline-secondary" href="{% url 'course' course.id %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        Back to {{ course.title }}
+    </a>
+    {% endif %}
+</header>
+
+<section class="profile-card" aria-labelledby="profileName">
+    <div class="profile-photo-panel">
+        {% if profile_photo %}
+        <img
+            class="profile-photo-large"
+            src="{{ profile_photo.file.url }}"
+            width="144"
+            height="144"
+            alt="Profile photo for {{ user.get_full_name|default:user.username }}"
+        >
+        {% else %}
+        <div class="profile-photo-large profile-photo-placeholder" aria-hidden="true">
+            {{ user.first_name|first|default:user.username|first|upper }}
+        </div>
+        {% endif %}
+        <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#changeProfilePhotoModal">
+            <i class="bi bi-camera me-1" aria-hidden="true"></i>
+            Change photo
+        </button>
+    </div>
+
+    <div class="profile-details">
+        <div class="profile-name-row">
+            <div>
+                <h2 id="profileName">{{ user.get_full_name|default:user.username }}</h2>
+                <span class="profile-role">{{ user.get_user_type_display|default:user.user_type }}</span>
+            </div>
+            {% if user.approved %}
+            <span class="profile-status">
+                <i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i>Approved
+            </span>
+            {% endif %}
+        </div>
+
+        <dl class="profile-data">
+            <div>
+                <dt>Email</dt>
+                <dd>{{ user.email|default:'Not provided' }}</dd>
+            </div>
+            <div>
+                <dt>Username</dt>
+                <dd>{{ user.username }}</dd>
+            </div>
+            <div>
+                <dt>Phone</dt>
+                <dd>{{ user.phone_number|default:'Not provided' }}</dd>
+            </div>
+            <div>
+                <dt>Date of birth</dt>
+                <dd>{% if user.birth_date %}{{ user.birth_date|date:'M j, Y' }}{% else %}Not provided{% endif %}</dd>
+            </div>
+        </dl>
+    </div>
+</section>
+
+<div class="modal fade" id="changeProfilePhotoModal" tabindex="-1" aria-labelledby="changeProfilePhotoTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form
+                method="post"
+                enctype="multipart/form-data"
+                action="{% if course %}{% url 'upload_profile_photo_with_course' course.id %}{% else %}{% url 'upload_profile_photo' %}{% endif %}"
+            >
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="changeProfilePhotoTitle">Change profile photo</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {{ form|crispy }}
+                    <p class="form-text mb-0">Choose a JPG, PNG, GIF, or WebP image up to 20 MB.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-portal-primary">Save photo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
