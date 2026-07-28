@@ -747,19 +747,19 @@ def grades(request: HttpRequest, course_id = None):
 @login_required
 def announcements(request: HttpRequest):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    user_agent = _user_agent(request)
     if _is_teacher(request.user):
         announcements = Announcement.objects.all()
     elif request.user.user_type == CustomUser.STUDENT and not request.user.is_superuser:
-        student = CustomUser.objects.get(id=request.user.id)
-        courses = Course.objects.filter(people=student)
+        courses = Course.objects.filter(people=request.user)
         announcements = Announcement.objects.filter(recipients__in=courses)
     else:
-        announcements = Announcement.objects.none()  # Handle other user types if necessary
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_announcements.html", {"announcements": announcements})
-    else:
-        return render(request, "portal/desktop_announcements.html", {"announcements": announcements, "profile_photo":profile_photo})
+        announcements = Announcement.objects.none()
+
+    return render(request, "portal/announcements.html", {
+        "announcements": announcements.distinct().order_by("-created_at").prefetch_related("recipients"),
+        "profile_photo": profile_photo,
+        "active_nav": "announcements",
+    })
 
 @approved_required
 @teacher_required
