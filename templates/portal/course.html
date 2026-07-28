@@ -1,0 +1,197 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}{{ course.title }}{% endblock %}
+{% block meta_description %}View sections and learning materials for {{ course.title }}.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow"><a href="{% url 'courses' %}">Courses</a> / Course</p>
+        <h1 class="portal-page-title">{{ course.title }}</h1>
+        <p class="portal-page-description">{{ course.description|default:'Course materials and assignments.' }}</p>
+    </div>
+    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#createSectionModal">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add section
+    </button>
+    {% endif %}
+</header>
+
+<nav class="course-tools" aria-label="{{ course.title }} tools">
+    {% if course.syllabus %}
+    <a href="{% url 'view_syllabus' course.id %}" target="_blank" rel="noopener">
+        <i class="bi bi-file-earmark-text" aria-hidden="true"></i><span>Syllabus</span>
+    </a>
+    {% endif %}
+    <a href="{% url 'attendance' course.id %}">
+        <i class="bi bi-calendar-check" aria-hidden="true"></i><span>Attendance</span>
+    </a>
+    <a href="{% url 'grades' course.id %}">
+        <i class="bi bi-bar-chart-line" aria-hidden="true"></i><span>Grades</span>
+    </a>
+    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    <a href="{% url 'students' course.id %}">
+        <i class="bi bi-people" aria-hidden="true"></i><span>Students</span>
+    </a>
+    {% endif %}
+</nav>
+
+{% if sections %}
+<section class="course-sections" aria-label="Course sections">
+    {% for section in sections %}
+    <article class="course-section">
+        <header class="course-section-header">
+            <div>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <h2>{{ section.title }}</h2>
+                    {% if user.is_superuser and user.user_type == user.TEACHER %}
+                    <span class="section-status {% if section.status %}is-visible{% else %}is-hidden{% endif %}">
+                        {% if section.status %}Visible{% else %}Hidden{% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+                <p>{{ section.folders.count }} folder{{ section.folders.count|pluralize }}</p>
+            </div>
+
+            {% if user.is_superuser and user.user_type == user.TEACHER %}
+            <div class="section-actions">
+                <form method="post" action="{% url 'moveSectionUp' section.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-secondary" type="submit" title="Move section up" aria-label="Move {{ section.title }} up">
+                        <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                    </button>
+                </form>
+                <form method="post" action="{% url 'moveSectionDown' section.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-secondary" type="submit" title="Move section down" aria-label="Move {{ section.title }} down">
+                        <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                    </button>
+                </form>
+                <form method="post" action="{% url 'changeVisibility' section.id %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-secondary" type="submit">
+                        <i class="bi {% if section.status %}bi-eye-slash{% else %}bi-eye{% endif %} me-1" aria-hidden="true"></i>
+                        {% if section.status %}Hide{% else %}Show{% endif %}
+                    </button>
+                </form>
+                <button class="btn btn-sm btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#createFolderModal{{ section.id }}">
+                    <i class="bi bi-folder-plus me-1" aria-hidden="true"></i>Add folder
+                </button>
+                <button class="btn btn-sm btn-outline-danger" type="button" data-bs-toggle="modal" data-bs-target="#deleteSectionModal{{ section.id }}">
+                    <i class="bi bi-trash" aria-hidden="true"></i><span class="visually-hidden">Delete {{ section.title }}</span>
+                </button>
+            </div>
+            {% endif %}
+        </header>
+
+        <div class="folder-grid">
+            {% for folder in section.folders.all %}
+            <a class="folder-card" href="{% url 'folder' section.id folder.id %}">
+                <span class="folder-card-icon"><i class="bi bi-folder-fill" aria-hidden="true"></i></span>
+                <span class="folder-card-details">
+                    <strong>{{ folder.title }}</strong>
+                    <small>
+                        {{ folder.files.count }} file{{ folder.files.count|pluralize }}
+                        <span aria-hidden="true">·</span>
+                        {{ folder.assignments.count }} assignment{{ folder.assignments.count|pluralize }}
+                    </small>
+                </span>
+                <i class="bi bi-chevron-right folder-card-arrow" aria-hidden="true"></i>
+            </a>
+            {% empty %}
+            <p class="section-empty">
+                {% if user.is_superuser and user.user_type == user.TEACHER %}
+                This section has no folders. Add one to organize its materials.
+                {% else %}
+                No materials have been added to this section yet.
+                {% endif %}
+            </p>
+            {% endfor %}
+        </div>
+    </article>
+
+    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    <div class="modal fade" id="createFolderModal{{ section.id }}" tabindex="-1" aria-labelledby="createFolderTitle{{ section.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{% url 'folderAdd' %}" method="post">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="createFolderTitle{{ section.id }}">Add folder to {{ section.title }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label" for="folderTitle{{ section.id }}">Folder name</label>
+                        <input class="form-control" id="folderTitle{{ section.id }}" name="title" maxlength="200" required>
+                        <input name="section_id" type="hidden" value="{{ section.id }}">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-portal-primary">Add folder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteSectionModal{{ section.id }}" tabindex="-1" aria-labelledby="deleteSectionTitle{{ section.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{% url 'deleteSection' section.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h2 class="modal-title fs-5" id="deleteSectionTitle{{ section.id }}">Delete {{ section.title }}?</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">This permanently removes the section and its relationship to course folders.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete section</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</section>
+{% else %}
+<section class="portal-empty-state" aria-labelledby="emptySectionsTitle">
+    <i class="bi bi-collection" aria-hidden="true"></i>
+    <h2 class="fs-4" id="emptySectionsTitle">No sections available</h2>
+    <p class="text-secondary mb-0">
+        {% if user.is_superuser and user.user_type == user.TEACHER %}
+        Add the first section to begin organizing this course.
+        {% else %}
+        Course materials will appear here when they are published.
+        {% endif %}
+    </p>
+</section>
+{% endif %}
+
+{% if user.is_superuser and user.user_type == user.TEACHER %}
+<div class="modal fade" id="createSectionModal" tabindex="-1" aria-labelledby="createSectionTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{% url 'sectionAdd' course.id %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="createSectionTitle">Add section</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" for="sectionTitle">Section name</label>
+                    <input class="form-control" id="sectionTitle" name="title" maxlength="200" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-portal-primary">Add section</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

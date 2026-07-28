@@ -83,18 +83,21 @@ def course(request: HttpRequest, course_id):
     user = request.user
     course = get_object_or_404(Course, id=course_id)
     _require_course_access(request.user, course)
-    if request.user.user_type == CustomUser.TEACHER:
-        sections = Section.objects.filter(course_id = course.id).order_by("order")
-    elif request.user.user_type == CustomUser.STUDENT:
-        if course.people.filter(id = request.user.id).exists():
-            sections = Section.objects.filter(course_id = course.id).order_by("order")
-        else:
-            return redirect("courses")
-    user_agent = _user_agent(request)
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_course.html", {"course":course,"profile_photo":profile_photo, "user":user, "sections":sections})
-    else:   
-        return render(request, "portal/desktop_course.html", {"course":course,"profile_photo":profile_photo, "user":user, "sections":sections})
+    sections = Section.objects.filter(course_id=course.id)
+    if not _is_teacher(request.user):
+        sections = sections.filter(status=True)
+    sections = sections.order_by("order").prefetch_related(
+        "folders",
+        "folders__files",
+        "folders__assignments",
+    )
+    return render(request, "portal/course.html", {
+        "course": course,
+        "profile_photo": profile_photo,
+        "user": user,
+        "sections": sections,
+        "active_nav": "courses",
+    })
 
 @approved_required
 @teacher_required
