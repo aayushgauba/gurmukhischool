@@ -1,0 +1,73 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Announcements{% endblock %}
+{% block meta_description %}Read the latest Gurmukhi School announcements.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">{{ user.get_user_type_display|default:user.user_type }} portal</p>
+        <h1 class="portal-page-title">Announcements</h1>
+        <p class="portal-page-description">
+            School updates, course notices, and important information in one place.
+        </p>
+    </div>
+    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    <a class="btn btn-portal-primary" href="{% url 'create_announcement' %}">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        New announcement
+    </a>
+    {% endif %}
+</header>
+
+{% if announcements %}
+<section class="announcement-list" aria-label="Latest announcements">
+    {% for announcement in announcements %}
+    <article class="announcement-card">
+        <div class="announcement-icon" aria-hidden="true">
+            <i class="bi bi-megaphone"></i>
+        </div>
+        <div class="announcement-content">
+            <div class="announcement-heading">
+                <h2>{{ announcement.title }}</h2>
+                <time datetime="{{ announcement.created_at|date:'c' }}">
+                    {{ announcement.created_at|date:'M j, Y' }}
+                </time>
+            </div>
+            <div class="announcement-message">
+                {{ announcement.content|linebreaks }}
+            </div>
+            {% if user.is_superuser and user.user_type == user.TEACHER %}
+            <div class="announcement-meta">
+                <span>
+                    <i class="bi bi-people me-1" aria-hidden="true"></i>
+                    {% for course in announcement.recipients.all %}
+                        {{ course.title }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        No recipients
+                    {% endfor %}
+                </span>
+                <span>
+                    <i class="bi {% if announcement.sent %}bi-check-circle{% else %}bi-exclamation-circle{% endif %} me-1" aria-hidden="true"></i>
+                    {% if announcement.sent %}Email sent{% else %}Email not sent{% endif %}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </article>
+    {% endfor %}
+</section>
+{% else %}
+<section class="portal-empty-state" aria-labelledby="emptyAnnouncementsTitle">
+    <i class="bi bi-megaphone" aria-hidden="true"></i>
+    <h2 class="fs-4" id="emptyAnnouncementsTitle">No announcements yet</h2>
+    <p class="text-secondary mb-0">
+        {% if user.is_superuser and user.user_type == user.TEACHER %}
+        Create the first announcement to share an update.
+        {% else %}
+        New school and course updates will appear here.
+        {% endif %}
+    </p>
+</section>
+{% endif %}
+{% endblock %}

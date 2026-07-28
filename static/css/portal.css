@@ -251,6 +251,73 @@ body.portal-body {
     font-size: 2.5rem;
 }
 
+.announcement-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.announcement-card {
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    gap: 1rem;
+    padding: 1.25rem;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.announcement-icon {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border-radius: 0.7rem;
+    background: #fff4cc;
+    color: #795b00;
+    font-size: 1.2rem;
+}
+
+.announcement-heading {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.announcement-heading h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.announcement-heading time {
+    color: var(--portal-muted);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.announcement-message {
+    margin-top: 0.65rem;
+    color: #344054;
+}
+
+.announcement-message > :last-child {
+    margin-bottom: 0;
+}
+
+.announcement-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.25rem;
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--portal-border);
+    color: var(--portal-muted);
+    font-size: 0.88rem;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;
@@ -318,6 +385,17 @@ body.portal-body {
 
     .portal-sidebar {
         width: min(88vw, 20rem);
+    }
+
+    .announcement-card {
+        grid-template-columns: 2.4rem minmax(0, 1fr);
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .announcement-icon {
+        width: 2.4rem;
+        height: 2.4rem;
     }
 }
 
