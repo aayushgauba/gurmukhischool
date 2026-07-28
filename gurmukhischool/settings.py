@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'django_select2',
+    'aiwaf.django',
 ]
 
 TINYMCE_DEFAULT_CONFIG = {
@@ -106,6 +107,7 @@ MIDDLEWARE = [
     'django.middleware.csp.ContentSecurityPolicyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    "aiwaf.django.middleware.all",
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -238,7 +240,22 @@ SECURE_SSL_REDIRECT = not DEBUG and env_bool(
     'DJANGO_SECURE_SSL_REDIRECT',
     True,
 )
-SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
-SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
-SECURE_HSTS_PRELOAD = not DEBUG
+if env_bool('DJANGO_TRUST_X_FORWARDED_PROTO', False):
+    # Enable only when the application is behind a trusted TLS-terminating
+    # proxy that sets and sanitizes X-Forwarded-Proto.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+SECURE_HSTS_SECONDS = (
+    env_int('DJANGO_HSTS_SECONDS', 300)
+    if not DEBUG
+    else 0
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = (
+    not DEBUG
+    and env_bool('DJANGO_HSTS_INCLUDE_SUBDOMAINS', False)
+)
+SECURE_HSTS_PRELOAD = (
+    not DEBUG
+    and env_bool('DJANGO_HSTS_PRELOAD', False)
+)
 X_FRAME_OPTIONS = 'DENY'
