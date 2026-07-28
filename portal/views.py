@@ -32,6 +32,7 @@ import asyncio
 import calendar
 from datetime import datetime
 import json
+import mimetypes
 
 
 def _user_agent(request):
@@ -62,6 +63,27 @@ def _can_access_course(user, course):
 def _require_course_access(user, course):
     if not _can_access_course(user, course):
         raise PermissionDenied
+
+
+def _stored_file_response(field_file, *, content_type=None):
+    if not field_file or not field_file.name:
+        raise Http404("File not found.")
+    try:
+        if not field_file.storage.exists(field_file.name):
+            raise Http404("File not found.")
+        file_handle = field_file.open("rb")
+    except Http404:
+        raise
+    except (OSError, ValueError) as exc:
+        raise Http404("File not found.") from exc
+
+    detected_type = content_type or mimetypes.guess_type(field_file.name)[0]
+    return FileResponse(
+        file_handle,
+        content_type=detected_type or "application/octet-stream",
+        as_attachment=False,
+        filename=os.path.basename(field_file.name),
+    )
 
 
 def _course_graph(section_id=None, folder_id=None, assignment_id=None):
@@ -575,12 +597,7 @@ def view_syllabus(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     _require_course_access(request.user, course)
     if course.syllabus:
-        return FileResponse(
-            course.syllabus.open('rb'),
-            content_type='application/pdf',
-            as_attachment=False,
-            filename=os.path.basename(course.syllabus.name),
-        )
+        return _stored_file_response(course.syllabus, content_type="application/pdf")
     else:
         return HttpResponse("No syllabus available.", content_type='text/plain')
     
@@ -597,11 +614,7 @@ def viewMobileContentUpload(request, file_id):
         for course in Course.objects.filter(pk__in=course_ids)
     ):
         raise PermissionDenied
-    return FileResponse(
-        file.file.open('rb'),
-        as_attachment=False,
-        filename=os.path.basename(file.file.name),
-    )
+    return _stored_file_response(file.file)
 
 
 @approved_required
@@ -613,11 +626,7 @@ def view_submission_file(request, submission_id):
         _is_teacher(request.user) and folders.exists()
     ):
         raise PermissionDenied
-    return FileResponse(
-        submission.file.open('rb'),
-        as_attachment=False,
-        filename=os.path.basename(submission.file.name),
-    )
+    return _stored_file_response(submission.file)
 
 @approved_required
 @login_required
