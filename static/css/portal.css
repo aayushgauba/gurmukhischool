@@ -568,6 +568,123 @@ body.portal-body {
     text-align: center;
 }
 
+.folder-content-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.resource-panel {
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.resource-panel-header {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    background: #fff9e6;
+}
+
+.resource-panel-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.resource-panel-header p {
+    margin: 0.15rem 0 0;
+    color: var(--portal-muted);
+    font-size: 0.88rem;
+}
+
+.resource-panel-header > i {
+    color: var(--portal-accent-dark);
+    font-size: 1.35rem;
+}
+
+.resource-list {
+    display: grid;
+}
+
+.resource-row {
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--portal-border);
+}
+
+.resource-row:last-child {
+    border-bottom: 0;
+}
+
+.resource-icon {
+    display: grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    place-items: center;
+    border-radius: 0.55rem;
+}
+
+.file-resource-icon {
+    background: #edf4ff;
+    color: #2456a6;
+}
+
+.assignment-resource-icon {
+    background: #fff4cc;
+    color: #795b00;
+}
+
+.resource-details {
+    min-width: 0;
+}
+
+.resource-details h3 {
+    overflow: hidden;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.resource-details span {
+    color: var(--portal-muted);
+    font-size: 0.85rem;
+}
+
+.resource-actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.resource-empty {
+    padding: 2.5rem 1rem;
+    color: var(--portal-muted);
+    text-align: center;
+}
+
+.resource-empty i {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.8rem;
+}
+
+.resource-empty p {
+    margin: 0;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;
@@ -667,6 +784,20 @@ body.portal-body {
 
     .section-actions {
         width: 100%;
+    }
+
+    .folder-content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .resource-row {
+        grid-template-columns: 2.4rem minmax(0, 1fr);
+    }
+
+    .resource-actions {
+        grid-column: 2;
     }
 }
 

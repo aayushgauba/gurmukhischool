@@ -1,6 +1,11 @@
 from django import template
+from pathlib import PurePath
 
 register = template.Library()
+
+@register.filter
+def basename(value):
+    return PurePath(str(value)).name
 
 @register.filter
 def is_pdf(file_url):

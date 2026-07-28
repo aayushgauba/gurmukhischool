@@ -484,28 +484,40 @@ def deleteSubmission(request, section_id, folder_id, assignment_id):
 @login_required
 def uploadFile(request, section_id, folder_id):
     _course_graph(section_id, folder_id)
-    if request.method == 'POST':
-        form = UploadedFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            uploaded_file = form.save()
-            folder = Folder.objects.get(id = folder_id)
-            folder.files.add(uploaded_file)
-            return redirect('folder', section_id, folder_id)
+    form = UploadedFileForm(request.POST, request.FILES)
+    if form.is_valid():
+        uploaded_file = form.save()
+        folder = Folder.objects.get(id=folder_id)
+        folder.files.add(uploaded_file)
+        messages.success(request, "The file was uploaded.")
     else:
-        form = UploadedFileForm()
+        messages.error(
+            request,
+            "The file could not be uploaded. "
+            + " ".join(str(error) for errors in form.errors.values() for error in errors),
+        )
+    return redirect("folder", section_id, folder_id)
 
 @approved_required
 @login_required
 def folder(request: HttpRequest, section_id, folder_id):
     user = request.user
     form = UploadedFileForm()
-    course, _, folder, _ = _course_graph(section_id, folder_id)
+    course, section, folder, _ = _course_graph(section_id, folder_id)
     _require_course_access(request.user, course)
-    user_agent = _user_agent(request)
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_folderView.html", {"course":course, "user":user, "form":form, "folder":folder, "section_id":section_id})
-    else:
-        return render(request, "portal/desktop_folderView.html", {"course":course, "user":user, "form":form, "folder":folder, "section_id":section_id})
+    if not _is_teacher(request.user) and not section.status:
+        raise PermissionDenied
+    profile_photo = request.user.profile_photos.order_by("-uploaded_at").first()
+    return render(request, "portal/folder.html", {
+        "course": course,
+        "section": section,
+        "user": user,
+        "form": form,
+        "folder": folder,
+        "section_id": section_id,
+        "profile_photo": profile_photo,
+        "active_nav": "courses",
+    })
 
 @approved_required
 @teacher_required
