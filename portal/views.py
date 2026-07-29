@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils import timezone
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives, send_mail
 from main.models import BlacklistedIP
 from django.http import HttpResponse
 from django.contrib.auth.tokens import default_token_generator
@@ -19,12 +19,15 @@ from main.forms import CarouselImageForm as MainCarouselImageForm
 from django.contrib.auth.decorators import login_required
 from .decorators import superuser_required, teacher_required, admin_required, approved_required, emailSender_required
 from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+from django.views.decorators.debug import sensitive_post_parameters
 from asgiref.sync import sync_to_async
 from pages.models import Contact
 from django.core.exceptions import ValidationError
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.db.models import Avg, Q
 import re
@@ -34,6 +37,26 @@ import calendar
 from datetime import datetime
 import json
 import mimetypes
+import secrets
+
+
+TWO_FACTOR_USER_SESSION_KEY = "two_factor_user_id"
+TWO_FACTOR_HASH_SESSION_KEY = "two_factor_code_hash"
+TWO_FACTOR_EXPIRES_SESSION_KEY = "two_factor_code_expires"
+TWO_FACTOR_ATTEMPTS_SESSION_KEY = "two_factor_attempts"
+TWO_FACTOR_BACKEND_SESSION_KEY = "two_factor_backend"
+TWO_FACTOR_SENT_SESSION_KEY = "two_factor_last_sent"
+TWO_FACTOR_SESSION_KEYS = (
+    TWO_FACTOR_USER_SESSION_KEY,
+    TWO_FACTOR_HASH_SESSION_KEY,
+    TWO_FACTOR_EXPIRES_SESSION_KEY,
+    TWO_FACTOR_ATTEMPTS_SESSION_KEY,
+    TWO_FACTOR_BACKEND_SESSION_KEY,
+    TWO_FACTOR_SENT_SESSION_KEY,
+)
+TWO_FACTOR_CODE_LIFETIME_SECONDS = 10 * 60
+TWO_FACTOR_RESEND_COOLDOWN_SECONDS = 60
+TWO_FACTOR_MAX_ATTEMPTS = 5
 
 
 def _user_agent(request):
@@ -1854,18 +1877,207 @@ def folderAdd(request):
     section.folders.add(folder)
     return redirect("course", course_id)
 
+
+def _clear_two_factor_session(request):
+    for key in TWO_FACTOR_SESSION_KEYS:
+        request.session.pop(key, None)
+
+
+def _portal_home_for_user(user):
+    if user.user_type == CustomUser.ADMIN:
+        return "adminViewHome"
+    if user.user_type == CustomUser.EMAIL_SENDER:
+        return "calenderNotification"
+    return "courses"
+
+
+def _send_two_factor_code(request, user, backend=None):
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    html_message = render_to_string(
+        "email/twoFactorCode.html",
+        {
+            "user": user,
+            "code": code,
+            "expires_minutes": TWO_FACTOR_CODE_LIFETIME_SECONDS // 60,
+        },
+    )
+    email = EmailMultiAlternatives(
+        subject="Your Gurmukhi School verification code",
+        body=(
+            f"Your Gurmukhi School verification code is {code}. "
+            f"It expires in {TWO_FACTOR_CODE_LIFETIME_SECONDS // 60} minutes."
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[user.email],
+    )
+    email.attach_alternative(html_message, "text/html")
+    try:
+        email.send(fail_silently=False)
+    except Exception:
+        return False
+
+    now_timestamp = int(timezone.now().timestamp())
+    request.session[TWO_FACTOR_USER_SESSION_KEY] = user.pk
+    request.session[TWO_FACTOR_HASH_SESSION_KEY] = make_password(code)
+    request.session[TWO_FACTOR_EXPIRES_SESSION_KEY] = (
+        now_timestamp + TWO_FACTOR_CODE_LIFETIME_SECONDS
+    )
+    request.session[TWO_FACTOR_ATTEMPTS_SESSION_KEY] = 0
+    request.session[TWO_FACTOR_SENT_SESSION_KEY] = now_timestamp
+    if backend:
+        request.session[TWO_FACTOR_BACKEND_SESSION_KEY] = backend
+    request.session.modified = True
+    return True
+
+
+@sensitive_post_parameters("password")
+@never_cache
 def login(request):
+    if request.user.is_authenticated:
+        return redirect(_portal_home_for_user(request.user))
     if request.method == 'POST':
-        email = request.POST.get('email')
-        password = request.POST.get('password')
+        _clear_two_factor_session(request)
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '')
         if email and password:
             user = authenticate(username=email, password=password)
             if user:
+                if user.two_factor_enabled:
+                    if not user.email:
+                        messages.error(
+                            request,
+                            "Two-factor authentication is enabled, but this account has no email address. Contact an administrator.",
+                        )
+                        return redirect("login")
+                    if _send_two_factor_code(
+                        request,
+                        user,
+                        getattr(user, "backend", None),
+                    ):
+                        return redirect("two_factor_verify")
+                    messages.error(
+                        request,
+                        "Your password was correct, but the verification email could not be sent. Try again.",
+                    )
+                    return redirect("login")
                 auth_login(request, user)
-                return redirect("courses")
-            else:
-                return redirect("login")
+                return redirect(_portal_home_for_user(user))
+        messages.error(request, "The email address or password is incorrect.")
     return render(request, "login.html")
+
+
+@sensitive_post_parameters("code")
+@never_cache
+def two_factor_verify(request):
+    if request.user.is_authenticated:
+        return redirect(_portal_home_for_user(request.user))
+    user_id = request.session.get(TWO_FACTOR_USER_SESSION_KEY)
+    code_hash = request.session.get(TWO_FACTOR_HASH_SESSION_KEY)
+    expires_at = request.session.get(TWO_FACTOR_EXPIRES_SESSION_KEY)
+    if not user_id or not code_hash or not expires_at:
+        messages.error(request, "Start a new login to request a verification code.")
+        return redirect("login")
+    user = CustomUser.objects.filter(pk=user_id).first()
+    if user is None:
+        _clear_two_factor_session(request)
+        messages.error(request, "This verification request is no longer valid.")
+        return redirect("login")
+    if not user.is_active or not user.approved or not user.two_factor_enabled:
+        _clear_two_factor_session(request)
+        messages.error(request, "This verification request is no longer valid.")
+        return redirect("login")
+    if int(timezone.now().timestamp()) > int(expires_at):
+        _clear_two_factor_session(request)
+        messages.error(request, "The verification code expired. Sign in again.")
+        return redirect("login")
+
+    if request.method == "POST":
+        attempts = int(
+            request.session.get(TWO_FACTOR_ATTEMPTS_SESSION_KEY, 0)
+        ) + 1
+        request.session[TWO_FACTOR_ATTEMPTS_SESSION_KEY] = attempts
+        submitted_code = request.POST.get("code", "").strip().replace(" ", "")
+        if (
+            len(submitted_code) == 6
+            and submitted_code.isdigit()
+            and check_password(submitted_code, code_hash)
+        ):
+            backend = request.session.get(TWO_FACTOR_BACKEND_SESSION_KEY)
+            _clear_two_factor_session(request)
+            auth_login(request, user, backend=backend)
+            messages.success(request, "Your sign-in was verified.")
+            return redirect(_portal_home_for_user(user))
+        if attempts >= TWO_FACTOR_MAX_ATTEMPTS:
+            _clear_two_factor_session(request)
+            messages.error(request, "Too many incorrect codes. Sign in again.")
+            return redirect("login")
+        remaining = TWO_FACTOR_MAX_ATTEMPTS - attempts
+        messages.error(
+            request,
+            f"The verification code is incorrect. {remaining} attempt{'s' if remaining != 1 else ''} remaining.",
+        )
+    masked_email = (
+        f"{user.email[:2]}***@{user.email.split('@', 1)[1]}"
+        if "@" in user.email
+        else "your account email"
+    )
+    return render(request, "portal/two_factor_verify.html", {
+        "masked_email": masked_email,
+        "resend_cooldown": TWO_FACTOR_RESEND_COOLDOWN_SECONDS,
+    })
+
+
+@require_POST
+def two_factor_resend(request):
+    if request.user.is_authenticated:
+        return redirect(_portal_home_for_user(request.user))
+    user_id = request.session.get(TWO_FACTOR_USER_SESSION_KEY)
+    if not user_id:
+        messages.error(request, "Start a new login to request a code.")
+        return redirect("login")
+    user = CustomUser.objects.filter(
+        pk=user_id,
+        is_active=True,
+        approved=True,
+        two_factor_enabled=True,
+    ).first()
+    if user is None:
+        _clear_two_factor_session(request)
+        messages.error(request, "This verification request is no longer valid.")
+        return redirect("login")
+    now_timestamp = int(timezone.now().timestamp())
+    last_sent = int(request.session.get(TWO_FACTOR_SENT_SESSION_KEY, 0))
+    if now_timestamp - last_sent < TWO_FACTOR_RESEND_COOLDOWN_SECONDS:
+        messages.info(request, "Please wait before requesting another code.")
+        return redirect("two_factor_verify")
+    backend = request.session.get(TWO_FACTOR_BACKEND_SESSION_KEY)
+    if _send_two_factor_code(request, user, backend):
+        messages.success(request, "A new verification code was sent.")
+    else:
+        messages.error(request, "The verification email could not be sent.")
+    return redirect("two_factor_verify")
+
+
+@require_POST
+@login_required
+@approved_required
+@sensitive_post_parameters("password")
+def change_two_factor_setting(request):
+    password = request.POST.get("password", "")
+    enable = request.POST.get("enabled") == "true"
+    if not request.user.check_password(password):
+        messages.error(request, "Enter your current password to change two-factor authentication.")
+        return redirect("profile")
+    if enable and not request.user.email:
+        messages.error(request, "Add an email address before enabling two-factor authentication.")
+        return redirect("profile")
+    request.user.two_factor_enabled = enable
+    request.user.save(update_fields=["two_factor_enabled"])
+    if enable:
+        messages.success(request, "Email two-factor authentication is now enabled.")
+    else:
+        messages.success(request, "Email two-factor authentication is now disabled.")
+    return redirect("profile")
 
 @approved_required
 @emailSender_required

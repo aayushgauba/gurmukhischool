@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Your verification code</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial, sans-serif;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%; border-collapse:collapse; background-color:#f4f4f4;">
+        <tr>
+            <td style="padding:20px 12px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="width:100%; max-width:600px; margin:0 auto; border-collapse:collapse; overflow:hidden; border-radius:8px; background:#ffffff;">
+                    <tr>
+                        <td style="padding:20px; background:#333333; text-align:center;">
+                            <div style="margin-bottom:6px; color:#ffc107; font-size:36px; font-weight:bold;">ੴ</div>
+                            <h1 style="margin:0; color:#ffffff; font-size:24px;">Gurmukhi School</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:36px 30px; text-align:center;">
+                            <h2 style="margin:0 0 14px; color:#333333; font-size:22px;">Verify your sign-in</h2>
+                            <p style="margin:0 0 24px; color:#666666; font-size:16px; line-height:1.6;">
+                                Hello {{ user.first_name|default:user.username }}, use this one-time code to finish signing in:
+                            </p>
+                            <div style="display:inline-block; padding:16px 22px; border-left:4px solid #ffc107; border-radius:5px; background:#fff3cd; color:#222222; font-family:monospace; font-size:32px; font-weight:bold; letter-spacing:8px;">{{ code }}</div>
+                            <p style="margin:24px 0 0; color:#666666; font-size:14px; line-height:1.6;">
+                                This code expires in {{ expires_minutes }} minutes. If you did not attempt to sign in, you can ignore this email and consider changing your password.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:20px; background:#333333; color:#aaaaaa; font-size:12px; text-align:center;">
+                            Sikh Study Circle of St. Louis · 116 Willis Dr · Saint Peters, MO 63376
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Verify your Gurmukhi School portal sign-in.">
+    <title>Verify sign-in | Gurmukhi School</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
+    <style nonce="{{ csp_nonce }}">
+        body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 1rem; background: #f4f4f4; color: #212529; font-family: 'Mukta', Arial, sans-serif; }
+        .verification-card { width: min(100%, 28rem); padding: 2rem; border-radius: 1rem; background: #fff; box-shadow: 0 0.75rem 2rem rgba(0,0,0,.1); }
+        .verification-logo { color: #ffc107; font-size: 2.5rem; line-height: 1; text-align: center; }
+        .verification-code { font-size: 1.5rem; font-weight: 700; letter-spacing: .45rem; text-align: center; }
+        .btn-primary { border-color: #ffc107; background: #ffc107; color: #111; }
+        .btn-primary:hover { border-color: #e0a800; background: #e0a800; color: #111; }
+    </style>
+</head>
+<body>
+    <main class="verification-card">
+        <div class="verification-logo" aria-hidden="true">ੴ</div>
+        <h1 class="h3 mt-2 text-center">Verify your sign-in</h1>
+        <p class="text-secondary text-center">Enter the six-digit code sent to {{ masked_email }}. It expires in 10 minutes.</p>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" action="{% url 'two_factor_verify' %}">
+            {% csrf_token %}
+            <label class="form-label" for="verificationCode">Verification code</label>
+            <input class="form-control verification-code" id="verificationCode" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" autofocus required>
+            <button class="btn btn-primary w-100 mt-3" type="submit">Verify and sign in</button>
+        </form>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <form method="post" action="{% url 'two_factor_resend' %}">
+                {% csrf_token %}
+                <button class="btn btn-link p-0" type="submit">Send a new code</button>
+            </form>
+            <a href="{% url 'login' %}">Cancel</a>
+        </div>
+    </main>
+</body>
+</html>

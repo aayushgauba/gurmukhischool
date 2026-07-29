@@ -39,6 +39,10 @@ class CustomUser(AbstractUser):
         default=False,
         help_text="Send this user an email when a public contact message arrives.",
     )
+    two_factor_enabled = models.BooleanField(
+        default=False,
+        help_text="Require an emailed verification code after password login.",
+    )
     embedding = models.JSONField(blank=True, null=True)
     modified_profile_photo = models.BooleanField(default=True)
     def __str__(self):

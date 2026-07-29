@@ -126,6 +126,11 @@
   <div class="content" style="margin-top: 80px;">
     <div class="login-container">
       <h2 class="text-center mb-4">Login</h2>
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
       <form method="post" action="{% url 'login' %}">
         {% csrf_token %}
         <div class="mb-3">

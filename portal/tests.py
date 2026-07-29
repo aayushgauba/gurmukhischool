@@ -1,7 +1,9 @@
 from datetime import date
+import re
 
+from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.db import IntegrityError, transaction
 
@@ -23,6 +25,7 @@ class PortalSecurityTests(TestCase):
     def setUp(self):
         self.student = CustomUser.objects.create_user(
             username="student@example.com",
+            email="student@example.com",
             password="a-long-test-password",
             user_type=CustomUser.STUDENT,
             approved=True,
@@ -193,5 +196,81 @@ class PortalSecurityTests(TestCase):
             reverse("delete_user"),
             {"user_id": admin.id},
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertRedirects(response, reverse("adminUsers"))
         self.assertTrue(CustomUser.objects.filter(id=admin.id).exists())
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+)
+class TwoFactorAuthenticationTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="two-factor@example.com",
+            email="two-factor@example.com",
+            password="a-long-test-password",
+            user_type=CustomUser.STUDENT,
+            approved=True,
+            is_active=True,
+            two_factor_enabled=True,
+        )
+
+    def test_password_does_not_authenticate_until_code_is_verified(self):
+        response = self.client.post(
+            reverse("login"),
+            {
+                "email": self.user.username,
+                "password": "a-long-test-password",
+            },
+        )
+        self.assertRedirects(response, reverse("two_factor_verify"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertEqual(len(mail.outbox), 1)
+
+        match = re.search(r"\b(\d{6})\b", mail.outbox[0].body)
+        self.assertIsNotNone(match)
+        response = self.client.post(
+            reverse("two_factor_verify"),
+            {"code": match.group(1)},
+        )
+        self.assertRedirects(response, reverse("courses"))
+        self.assertEqual(
+            int(self.client.session["_auth_user_id"]),
+            self.user.pk,
+        )
+
+    def test_verified_code_cannot_be_reused(self):
+        self.client.post(
+            reverse("login"),
+            {
+                "email": self.user.username,
+                "password": "a-long-test-password",
+            },
+        )
+        code = re.search(r"\b(\d{6})\b", mail.outbox[0].body).group(1)
+        self.client.post(reverse("two_factor_verify"), {"code": code})
+        self.client.logout()
+
+        response = self.client.post(
+            reverse("two_factor_verify"),
+            {"code": code},
+        )
+        self.assertRedirects(response, reverse("login"))
+
+    def test_incorrect_codes_are_bounded(self):
+        self.client.post(
+            reverse("login"),
+            {
+                "email": self.user.username,
+                "password": "a-long-test-password",
+            },
+        )
+        actual_code = re.search(r"\b(\d{6})\b", mail.outbox[0].body).group(1)
+        incorrect_code = "000000" if actual_code != "000000" else "111111"
+        for _ in range(5):
+            response = self.client.post(
+                reverse("two_factor_verify"),
+                {"code": incorrect_code},
+            )
+        self.assertRedirects(response, reverse("login"))
+        self.assertNotIn("two_factor_user_id", self.client.session)

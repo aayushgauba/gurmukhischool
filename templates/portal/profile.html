@@ -74,6 +74,31 @@
     </div>
 </section>
 
+<section class="profile-security-card" aria-labelledby="twoFactorTitle">
+    <div>
+        <p class="portal-eyebrow">Account security</p>
+        <h2 id="twoFactorTitle">Email two-factor authentication</h2>
+        <p>
+            After your password is accepted, require a one-time verification code sent to
+            {{ user.email|default:'your account email' }}.
+        </p>
+    </div>
+    <span class="portal-status-badge{% if user.two_factor_enabled %} success{% endif %}">
+        {% if user.two_factor_enabled %}Enabled{% else %}Disabled{% endif %}
+    </span>
+    <form method="post" action="{% url 'change_two_factor_setting' %}">
+        {% csrf_token %}
+        <input name="enabled" type="hidden" value="{% if user.two_factor_enabled %}false{% else %}true{% endif %}">
+        <div>
+            <label class="form-label" for="twoFactorPassword">Current password</label>
+            <input class="form-control" id="twoFactorPassword" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn {% if user.two_factor_enabled %}btn-outline-danger{% else %}btn-portal-primary{% endif %}" type="submit"{% if not user.email and not user.two_factor_enabled %} disabled{% endif %}>
+            {% if user.two_factor_enabled %}Disable two-factor authentication{% else %}Enable two-factor authentication{% endif %}
+        </button>
+    </form>
+</section>
+
 <div class="modal fade" id="changeProfilePhotoModal" tabindex="-1" aria-labelledby="changeProfilePhotoTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
