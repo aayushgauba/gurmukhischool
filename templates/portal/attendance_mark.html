@@ -1,0 +1,67 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Mark attendance – {{ course.title }}{% endblock %}
+{% block meta_description %}Record student attendance for {{ course.title }}.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow"><a href="{% url 'attendance' course.id year month %}">Attendance</a> / Mark attendance</p>
+        <h1 class="portal-page-title">{{ attendance_date|date:'F j, Y' }}</h1>
+        <p class="portal-page-description">{{ course.title }} · Select every student who was present.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'attendance' course.id year month %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to calendar
+    </a>
+</header>
+
+<form method="post">
+    {% csrf_token %}
+    <section class="attendance-roster" aria-labelledby="rosterTitle">
+        <header class="attendance-roster-header">
+            <div>
+                <h2 id="rosterTitle">Class roster</h2>
+                <p>{{ all_students.count }} enrolled student{{ all_students.count|pluralize }}</p>
+            </div>
+            <span class="attendance-roster-help"><i class="bi bi-check2-square me-1" aria-hidden="true"></i>Checked means present</span>
+        </header>
+        <div class="attendance-student-list">
+            {% for student in all_students %}
+            <label class="attendance-student">
+                <span class="attendance-student-avatar" aria-hidden="true">
+                    {{ student.first_name|first|default:student.username|first|upper }}
+                </span>
+                <span class="attendance-student-details">
+                    <strong>{{ student.get_full_name|default:student.username }}</strong>
+                    <small>{{ student.email }}</small>
+                </span>
+                <span class="form-check form-switch m-0">
+                    <input
+                        class="form-check-input"
+                        name="attendance_status_{{ student.id }}"
+                        type="checkbox"
+                        value="Present"
+                        aria-label="Mark {{ student.get_full_name|default:student.username }} present"
+                        {% if student.id in attendance_dict %}checked{% endif %}
+                    >
+                </span>
+            </label>
+            {% empty %}
+            <div class="resource-empty">
+                <i class="bi bi-people" aria-hidden="true"></i>
+                <p>No students are enrolled in this course.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if all_students %}
+    <div class="attendance-save-bar">
+        <p><strong>Reminder:</strong> unchecked students will be recorded as absent.</p>
+        <button class="btn btn-portal-primary" type="submit">
+            <i class="bi bi-check-lg me-1" aria-hidden="true"></i>Save attendance
+        </button>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}

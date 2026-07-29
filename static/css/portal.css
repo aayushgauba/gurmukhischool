@@ -962,6 +962,124 @@ body.portal-body {
     align-items: center;
 }
 
+.attendance-roster {
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.attendance-roster-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    background: #fff9e6;
+}
+
+.attendance-roster-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.attendance-roster-header p {
+    margin: 0.15rem 0 0;
+    color: var(--portal-muted);
+    font-size: 0.88rem;
+}
+
+.attendance-roster-help {
+    color: var(--portal-muted);
+    font-size: 0.88rem;
+}
+
+.attendance-student-list {
+    display: grid;
+}
+
+.attendance-student {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    gap: 0.8rem;
+    align-items: center;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    cursor: pointer;
+}
+
+.attendance-student:last-child {
+    border-bottom: 0;
+}
+
+.attendance-student:hover {
+    background: #fffdf7;
+}
+
+.attendance-student-avatar {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff4cc;
+    color: #624a00;
+    font-weight: 700;
+}
+
+.attendance-student-details {
+    display: grid;
+    min-width: 0;
+}
+
+.attendance-student-details strong,
+.attendance-student-details small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attendance-student-details small {
+    color: var(--portal-muted);
+}
+
+.attendance-student .form-check-input {
+    width: 2.5rem;
+    height: 1.3rem;
+    cursor: pointer;
+}
+
+.attendance-student .form-check-input:checked {
+    border-color: #258046;
+    background-color: #258046;
+}
+
+.attendance-save-bar {
+    position: sticky;
+    bottom: 1rem;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 96%);
+    box-shadow: 0 8px 24px rgb(16 24 40 / 12%);
+}
+
+.attendance-save-bar p {
+    margin: 0;
+    color: var(--portal-muted);
+    font-size: 0.9rem;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;

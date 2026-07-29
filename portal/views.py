@@ -820,57 +820,51 @@ def announcements(request: HttpRequest):
 @login_required
 def mark_attendance(request: HttpRequest, course_id, day, month, year):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
+    course = get_object_or_404(Course, id=course_id)
+    try:
+        attendance_date = datetime(year, month, day)
+    except ValueError:
+        raise Http404
+    students = course.people.filter(
+        user_type=CustomUser.STUDENT,
+    ).order_by("last_name", "first_name", "username")
     if request.method == 'POST':
-        selected_day = request.POST.get('day')
-        selected_month = request.POST.get('month')
-        selected_year = request.POST.get('year')
+        with transaction.atomic():
+            for student in students:
+                status = (
+                    "Present"
+                    if f"attendance_status_{student.id}" in request.POST
+                    else "Absent"
+                )
+                Attendance.objects.update_or_create(
+                    student=student,
+                    course=course,
+                    day=day,
+                    month=month,
+                    year=year,
+                    defaults={"status": status},
+                )
+        messages.success(request, f"Attendance for {attendance_date:%B %d, %Y} was saved.")
+        return redirect("attendance", course_id, year, month)
 
-        students = Course.objects.get(id=course_id).people.all()
-
-        for student in students:
-            status = 'Absent'  # Default to absent
-            if f'attendance_status_{student.id}' in request.POST:
-                status = 'Present'
-
-            # Update or create the attendance record
-            Attendance.objects.update_or_create(
-                student=student,
-                course_id=course_id,
-                day=selected_day,
-                month=selected_month,
-                year=selected_year,
-                defaults={'status': status}
-            )
-
-        return redirect('attendance', course_id=course_id)
-    else:
-        all_students = Course.objects.get(id=course_id).people.all()
-        course = Course.objects.get(id=course_id)
-
-        # Query attendance records for the given day, month, and year
-        attendance_records = Attendance.objects.filter(
-            course_id=course_id, day=day, month=month, year=year
-        )
-
-        attendanceArray =[]
-        # Create a dictionary to easily check if a student was present or absent
-        for record in attendance_records:
-            if record.status == "Present":
-                attendanceArray.append(record.student_id)
-        context = {
-            'course': course,
-            'all_students': all_students,
-            'day': day,
-            'month': month,
-            'year': year,
-            'attendance_dict': attendanceArray,
-            "profile_photo":profile_photo,
-        }
-        user_agent = _user_agent(request)
-        if "mobile" in user_agent:
-            return render(request, 'portal/mobile_attendanceAdd.html', context)
-        else:
-            return render(request, 'portal/desktop_attendanceAdd.html', context)
+    present_student_ids = set(Attendance.objects.filter(
+        course=course,
+        day=day,
+        month=month,
+        year=year,
+        status="Present",
+    ).values_list("student_id", flat=True))
+    return render(request, "portal/attendance_mark.html", {
+        "course": course,
+        "all_students": students,
+        "day": day,
+        "month": month,
+        "year": year,
+        "attendance_date": attendance_date,
+        "attendance_dict": present_student_ids,
+        "profile_photo": profile_photo,
+        "active_nav": "courses",
+    })
 
 @approved_required
 @login_required
