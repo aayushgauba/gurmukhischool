@@ -735,6 +735,103 @@ body.portal-body {
     font-size: 1.05rem;
 }
 
+.grade-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.grade-summary > div {
+    display: grid;
+    gap: 0.15rem;
+    padding: 1rem 1.25rem;
+    border-right: 1px solid var(--portal-border);
+}
+
+.grade-summary > div:last-child {
+    border-right: 0;
+}
+
+.grade-summary span {
+    color: var(--portal-muted);
+    font-size: 0.85rem;
+}
+
+.grade-summary strong {
+    font-size: 1.5rem;
+}
+
+.grade-panel {
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.grade-panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    background: #fff9e6;
+}
+
+.grade-panel-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.grade-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.grade-table th,
+.grade-table td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    text-align: left;
+}
+
+.grade-table thead th {
+    color: var(--portal-muted);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.grade-table th:last-child,
+.grade-table td:last-child {
+    text-align: right;
+}
+
+.grade-table tbody tr:hover {
+    background: #fffdf7;
+}
+
+.grade-table tfoot {
+    background: #fff9e6;
+}
+
+.grade-table tfoot th,
+.grade-table tfoot td {
+    border-bottom: 0;
+}
+
+.grade-value {
+    display: inline-block;
+    min-width: 4rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: #fff4cc;
+    color: #624a00;
+    font-weight: 700;
+    text-align: center;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;
@@ -850,6 +947,19 @@ body.portal-body {
     }
 
     .submission-summary > div:last-child {
+        border-bottom: 0;
+    }
+
+    .grade-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .grade-summary > div {
+        border-right: 0;
+        border-bottom: 1px solid var(--portal-border);
+    }
+
+    .grade-summary > div:last-child {
         border-bottom: 0;
     }
 }

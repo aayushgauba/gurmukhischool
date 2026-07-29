@@ -1,0 +1,97 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Grades{% if course %} – {{ course.title }}{% endif %}{% endblock %}
+{% block meta_description %}View Gurmukhi School grades and assignment averages.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">
+            {% if course %}<a href="{% url 'course' course.id %}">{{ course.title }}</a> /{% endif %}
+            Grades
+        </p>
+        <h1 class="portal-page-title">
+            {% if course %}{{ course.title }} grades{% else %}Course averages{% endif %}
+        </h1>
+        <p class="portal-page-description">
+            {% if user.user_type == user.STUDENT %}
+            Your posted assignment grades and current average.
+            {% elif course %}
+            Posted assignment averages across enrolled students.
+            {% else %}
+            Average of all recorded grades within each course.
+            {% endif %}
+        </p>
+    </div>
+    {% if course %}
+    <a class="btn btn-outline-secondary" href="{% url 'course' course.id %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to course
+    </a>
+    {% endif %}
+</header>
+
+{% if grades %}
+<section class="grade-summary" aria-label="Grade summary">
+    <div>
+        <span>{% if course %}Graded assignments{% else %}Courses with grades{% endif %}</span>
+        <strong>{{ grades|length }}</strong>
+    </div>
+    <div>
+        <span>{% if course %}Current average{% else %}Overall course average{% endif %}</span>
+        <strong>{{ final|floatformat:'1' }}%</strong>
+    </div>
+</section>
+
+<section class="grade-panel mt-3" aria-labelledby="gradeTableTitle">
+    <div class="grade-panel-header">
+        <h2 id="gradeTableTitle">
+            {% if course %}Assignment grades{% else %}Course averages{% endif %}
+        </h2>
+    </div>
+    <div class="table-responsive">
+        <table class="grade-table">
+            <thead>
+                <tr>
+                    <th scope="col">{% if course %}Assignment{% else %}Course{% endif %}</th>
+                    <th scope="col">{% if user.user_type == user.STUDENT %}Grade{% else %}Average{% endif %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for grade in grades %}
+                <tr>
+                    <td>
+                        {% if not course %}
+                        <a href="{% url 'grades' grade.id %}">{{ grade.title }}</a>
+                        {% else %}
+                        {{ grade.title }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="grade-value">{{ grade.grade|floatformat:'1' }}%</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th scope="row">{% if course %}Current average{% else %}Overall average{% endif %}</th>
+                    <td><strong>{{ final|floatformat:'1' }}%</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</section>
+{% else %}
+<section class="portal-empty-state" aria-labelledby="emptyGradesTitle">
+    <i class="bi bi-bar-chart" aria-hidden="true"></i>
+    <h2 class="fs-4" id="emptyGradesTitle">No grades posted</h2>
+    <p class="text-secondary mb-0">
+        {% if user.user_type == user.STUDENT %}
+        Your grades will appear after your teacher posts them.
+        {% else %}
+        Grade averages will appear after student work is graded.
+        {% endif %}
+    </p>
+</section>
+{% endif %}
+{% endblock %}

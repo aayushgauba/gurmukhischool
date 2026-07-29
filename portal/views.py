@@ -720,7 +720,6 @@ def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_i
 @approved_required
 @login_required
 def grades(request: HttpRequest, course_id = None):
-    user_agent = _user_agent(request)
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     if course_id is not None:
         course = get_object_or_404(Course, id=course_id)
@@ -760,45 +759,41 @@ def grades(request: HttpRequest, course_id = None):
             }
             grade_array = [
                 {"title": assignment.title, "grade": averages[assignment.id]}
-                for assignment in assignments
+                for assignment in assignments.order_by("title")
                 if assignment.id in averages
             ]
 
+        grade_array.sort(key=lambda item: item["title"].casefold())
         final = (
             sum(item["grade"] for item in grade_array) / len(grade_array)
             if grade_array else None
         )
-        template = (
-            "portal/mobile_grades.html"
-            if "mobile" in user_agent
-            else "portal/desktop_grades.html"
-        )
-        return render(request, template, {
+        return render(request, "portal/grades.html", {
             "grades": grade_array,
             "course": course,
             "final": final,
             "profile_photo": profile_photo,
+            "active_nav": "courses",
         })
 
     if not _is_teacher(request.user):
         return redirect("courses")
     average_array = [
-        {
-            "id": course.id,
-            "grade": Grade.objects.filter(
-                course_id=course.id
-            ).aggregate(average=Avg("grade"))["average"],
-        }
-        for course in Course.objects.all()
+        {"id": item.id, "title": item.title, "grade": item.average_grade}
+        for item in Course.objects.annotate(
+            average_grade=Avg("grades__grade"),
+        ).order_by("title")
+        if item.average_grade is not None
     ]
-    template = (
-        "portal/mobile_grades.html"
-        if "mobile" in user_agent
-        else "portal/desktop_grades.html"
+    overall = (
+        sum(item["grade"] for item in average_array) / len(average_array)
+        if average_array else None
     )
-    return render(request, template, {
+    return render(request, "portal/grades.html", {
         "grades": average_array,
+        "final": overall,
         "profile_photo": profile_photo,
+        "active_nav": "courses",
     })
 
 @approved_required
