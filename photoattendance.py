@@ -2,12 +2,12 @@ import os
 import sys
 import datetime
 import logging
-import time
 import json
 import numpy as np
 from scipy.spatial.distance import cosine, euclidean
 
 import django
+from django.utils import timezone
 
 # Configure logging
 logging.basicConfig(
@@ -66,7 +66,7 @@ def calculate_user_embedding(user, detector_backend="retinaface", align=True):
         # Average across all valid embeddings
         composite_embedding = np.mean(user_embeddings, axis=0).tolist()
         # Store as JSON in the 'embedding' field
-        user.embedding = json.dumps(composite_embedding)
+        user.embedding = composite_embedding
         user.modified_profile_photo = False  # Reset since we've updated now
         user.save()
         logging.info(f"Successfully stored embeddings for user {user}")
@@ -102,7 +102,11 @@ def get_stored_embeddings():
     stored_embeddings = []
     for user in students_with_embeddings:
         try:
-            embedding_list = json.loads(user.embedding)  # stored as JSON
+            embedding_list = (
+                json.loads(user.embedding)
+                if isinstance(user.embedding, str)
+                else user.embedding
+            )
             embedding_array = np.array(embedding_list)
             stored_embeddings.append((user, embedding_array))
         except Exception as e:
@@ -195,6 +199,7 @@ def scan_group_photos():
     for group_photo in GroupPhotoAttendance.objects.all():
         group_photo_path = group_photo.file.path
         attendance_list = compare_with_group_photo(group_photo_path, stored_embeddings)
+        attendance_date = timezone.localdate()
 
         # Step 4: Mark attendance
         for user, status in attendance_list:
@@ -206,39 +211,21 @@ def scan_group_photos():
             Attendance.objects.update_or_create(
                 student=user,
                 course=group_photo.course,
-                day=datetime.datetime.today().day,
-                month=datetime.datetime.today().month,
-                year=datetime.datetime.today().year,
+                day=attendance_date.day,
+                month=attendance_date.month,
+                year=attendance_date.year,
                 defaults={'status': status},
             )
 
         # Remove processed file & delete DB record
-        if os.path.exists(group_photo_path):
-            os.remove(group_photo_path)
+        file_name = group_photo.file.name
+        storage = group_photo.file.storage
         group_photo.delete()
+        if file_name:
+            storage.delete(file_name)
 
     logging.info("Finished scanning all group photos.")
 
 
-def main_loop():
-    """
-    Example main loop that runs indefinitely.
-    Periodically checks for group photos, processes them, and sleeps.
-    Adjust to your scheduling or environment needs (e.g., cron job).
-    """
-    while True:
-        has_group_photos = GroupPhotoAttendance.objects.exists()
-        user = CustomUser.objects.filter(modified_profile_photo = True, profile_photos__isnull=False).distinct()
-        print(user)
-        if user:
-            update_embeddings_for_all_students()
-        if has_group_photos:
-            logging.info("Group photos detected. Starting processing...")
-            scan_group_photos()
-        else:
-            logging.info("No group photos detected. Sleeping for 5 minutes.")
-            time.sleep(300)  # 5 minutes
-
-
 if __name__ == "__main__":
-    main_loop()
+    scan_group_photos()
