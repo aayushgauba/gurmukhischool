@@ -1,0 +1,46 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}{{ email.subject|default:'Calendar event' }}{% endblock %}
+{% block meta_description %}Review a scheduled community notification.{% endblock %}
+
+{% block content %}
+<a class="portal-back-link" href="{% url 'calenderNotification' email.date_scheduled.year email.date_scheduled.month %}">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i>Back to calendar
+</a>
+
+<article class="calendar-event-detail">
+    <header>
+        <div>
+            <p class="portal-eyebrow">Scheduled notification</p>
+            <h1>{{ email.subject|default:'Calendar event' }}</h1>
+            <p>{{ day }}, {{ email.date_scheduled|date:'F j, Y' }}</p>
+        </div>
+        <span class="portal-status-badge{% if email.sent %} success{% endif %}">
+            {% if email.sent %}Sent{% else %}Scheduled{% endif %}
+        </span>
+    </header>
+
+    <dl>
+        <div><dt>Organizer</dt><dd>{{ email.organizer|default:'Not provided' }}</dd></div>
+        <div><dt>Notification type</dt><dd>{{ email.email_type|title }}</dd></div>
+        <div><dt>Created</dt><dd>{{ email.date_created|date:'F j, Y' }}</dd></div>
+        {% if email.date_sent %}<div><dt>Sent</dt><dd>{{ email.date_sent|date:'F j, Y' }}</dd></div>{% endif %}
+    </dl>
+
+    <section>
+        <h2>Weekly Kirtan invitation</h2>
+        <p>The community is invited to the weekly Kirtan hosted by {{ email.organizer|default:'the listed organizer' }} and family.</p>
+    </section>
+
+    <details class="calendar-event-delete">
+        <summary class="btn btn-outline-danger">Delete event</summary>
+        <div>
+            <p>This permanently removes the scheduled event.</p>
+            <form method="post" action="{% url 'delete_email' email.id %}">
+                {% csrf_token %}
+                <button class="btn btn-danger" type="submit">Confirm deletion</button>
+            </form>
+        </div>
+    </details>
+</article>
+{% endblock %}

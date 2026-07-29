@@ -1,0 +1,93 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Notification calendar{% endblock %}
+{% block meta_description %}Manage scheduled Gurmukhi School community notifications.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">Communications</p>
+        <h1 class="portal-page-title">Notification calendar</h1>
+        <p class="portal-page-description">Schedule and review community email events.</p>
+    </div>
+    <details class="calendar-add-event">
+        <summary class="btn btn-portal-primary"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Add event</summary>
+        <form method="post" action="{% url 'addKirtan' %}">
+            {% csrf_token %}
+            <div>
+                <label class="form-label" for="kirtanDate">Date</label>
+                <input class="form-control" id="kirtanDate" name="kirtanDate" type="date" required>
+            </div>
+            <div>
+                <label class="form-label" for="hostingFamily">Hosting family or organizer</label>
+                <input class="form-control" id="hostingFamily" name="hostingFamily" type="text" maxlength="500" required>
+            </div>
+            <button class="btn btn-portal-primary" type="submit">Schedule Kirtan</button>
+        </form>
+    </details>
+</header>
+
+<nav class="calendar-month-navigation" aria-label="Calendar month">
+    <a class="btn btn-outline-secondary" href="{% url 'calenderNotification' prev_year prev_month %}" aria-label="Previous month">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i><span>Previous</span>
+    </a>
+    <h2>{{ month_name }} {{ year }}</h2>
+    <a class="btn btn-outline-secondary" href="{% url 'calenderNotification' next_year next_month %}" aria-label="Next month">
+        <span>Next</span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </a>
+</nav>
+
+<div class="calendar-table-wrap">
+    <table class="notification-calendar">
+        <thead>
+            <tr>
+                <th scope="col">Mon</th><th scope="col">Tue</th><th scope="col">Wed</th>
+                <th scope="col">Thu</th><th scope="col">Fri</th><th scope="col">Sat</th><th scope="col">Sun</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for week in weeks %}
+            <tr>
+                {% for date_cell in week %}
+                {% if date_cell %}
+                <td{% if date_cell.day == today %} class="today"{% endif %}>
+                    <span class="calendar-day-number">{{ date_cell.day }}</span>
+                    {% for event in date_cell.events %}
+                    <a class="calendar-event-link" href="{% url 'calendarEventView' event.id %}">
+                        {{ event.subject|default:'Scheduled event' }}
+                    </a>
+                    {% endfor %}
+                </td>
+                {% else %}
+                <td class="outside-month" aria-hidden="true"></td>
+                {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<section class="calendar-agenda" aria-labelledby="monthAgendaTitle">
+    <h2 id="monthAgendaTitle">{{ month_name }} events</h2>
+    {% if events %}
+    <div>
+        {% for event in events %}
+        <a href="{% url 'calendarEventView' event.id %}">
+            <time datetime="{{ event.date_scheduled|date:'Y-m-d' }}">
+                <strong>{{ event.date_scheduled|date:'M j' }}</strong>
+                <span>{{ event.date_scheduled|date:'D' }}</span>
+            </time>
+            <span>
+                <strong>{{ event.subject|default:'Scheduled event' }}</strong>
+                <small>{{ event.organizer|default:'No organizer provided' }}</small>
+            </span>
+            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-secondary mb-0">No events are scheduled for this month.</p>
+    {% endif %}
+</section>
+{% endblock %}

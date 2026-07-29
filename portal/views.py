@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
+from django.utils import timezone
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from main.models import BlacklistedIP
@@ -1761,10 +1762,33 @@ def account_activation_sent(request):
 @approved_required
 @emailSender_required
 def addKirtan(request):
-    date = datetime.strptime(request.POST.get("kirtanDate"), "%Y-%m-%d")
-    hostingFamily = request.POST.get("hostingFamily")
-    WeeklyEmail.objects.create(email_type = "weekly", organizer = hostingFamily, date_created = datetime.today(), date_scheduled= date,  sent=False, subject ="Weekly Kirtan")
-    return redirect("calenderNotification")
+    date_value = request.POST.get("kirtanDate", "").strip()
+    hosting_family = request.POST.get("hostingFamily", "").strip()
+    try:
+        scheduled_date = datetime.strptime(date_value, "%Y-%m-%d").date()
+    except ValueError:
+        messages.error(request, "Select a valid event date.")
+        return redirect("calenderNotification")
+    if not hosting_family:
+        messages.error(request, "Enter the hosting family or organizer.")
+        return redirect(
+            "calenderNotification",
+            scheduled_date.year,
+            scheduled_date.month,
+        )
+    WeeklyEmail.objects.create(
+        email_type="weekly",
+        organizer=hosting_family,
+        date_scheduled=scheduled_date,
+        sent=False,
+        subject="Weekly Kirtan",
+    )
+    messages.success(request, "The weekly Kirtan event was scheduled.")
+    return redirect(
+        "calenderNotification",
+        scheduled_date.year,
+        scheduled_date.month,
+    )
 
 @login_required
 @admin_required
@@ -1821,32 +1845,37 @@ def login(request):
 @login_required
 def calenderNotification(request: HttpRequest, year=None, month=None):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    user_agent = _user_agent(request)
-    
-    # Default to current year and month if not provided
+    local_today = timezone.localdate()
     if not year or not month:
-        now = datetime.now()
-        year = now.year
-        month = now.month
-    
-    # Fetch WeeklyEmail events for the given month/year
+        year = local_today.year
+        month = local_today.month
+    if not 1 <= month <= 12 or not 1900 <= year <= 2100:
+        raise Http404("Invalid calendar month.")
+
     weekly_emails = WeeklyEmail.objects.filter(
         date_scheduled__year=year,
-        date_scheduled__month=month
-    )
-    
-    # Group events by day (using the day of the month)
+        date_scheduled__month=month,
+    ).order_by("date_scheduled", "id")
+
     events_by_day = {}
     for event in weekly_emails:
         day = event.date_scheduled.day
         events_by_day.setdefault(day, []).append(event)
-    
-    # Create a Calendar instance and get (day, weekday) tuples
-    cal = calendar.Calendar()
-    month_days = list(cal.itermonthdays2(year, month))
-    today = datetime.now().day if year == datetime.now().year and month == datetime.now().month else None
-    print(today)
-    # Calculate previous and next month/year for navigation
+
+    cal = calendar.Calendar(firstweekday=0)
+    weeks = [
+        [
+            {"day": day, "events": events_by_day.get(day, [])} if day else None
+            for day in week
+        ]
+        for week in cal.monthdayscalendar(year, month)
+    ]
+    today = (
+        local_today.day
+        if year == local_today.year and month == local_today.month
+        else None
+    )
+
     prev_month = month - 1
     next_month = month + 1
     prev_year = year
@@ -1857,34 +1886,21 @@ def calenderNotification(request: HttpRequest, year=None, month=None):
     if next_month == 13:
         next_month = 1
         next_year += 1
-    weeks = []
-    week = [None] * 7
-    for day, weekday in month_days:
-        if day != 0:
-            week[weekday] = {'day': day, 'events': events_by_day.get(day, [])}
-        if weekday == 6:
-            weeks.append(week)
-            week = [None] * 7
-    if any(cell is not None for cell in week):
-        weeks.append(week)
-    
     context = {
-        'year': year,
-        'month': month,
-        'month_days': month_days,  # raw (day, weekday) tuples, if needed
-        'today': today,
-        'prev_year': prev_year,
-        'prev_month': prev_month,
-        'next_year': next_year,
-        'next_month': next_month,
-        'weeks': weeks,  # List of weeks, each week is a list of 7 cells (None or dict with day and events)
-        'profile_photo': profile_photo,
+        "year": year,
+        "month": month,
+        "month_name": calendar.month_name[month],
+        "today": today,
+        "prev_year": prev_year,
+        "prev_month": prev_month,
+        "next_year": next_year,
+        "next_month": next_month,
+        "weeks": weeks,
+        "events": weekly_emails,
+        "profile_photo": profile_photo,
+        "active_nav": "calendar",
     }
-    
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_adminCalender.html", context)
-    else:   
-        return render(request, "portal/desktop_adminCalender.html", context)
+    return render(request, "portal/admin_calendar.html", context)
 
 @require_POST
 @login_required
@@ -1892,23 +1908,29 @@ def calenderNotification(request: HttpRequest, year=None, month=None):
 @emailSender_required
 def delete_email(request, email_id):
     email = get_object_or_404(WeeklyEmail, id=email_id)
+    scheduled_date = email.date_scheduled
     email.delete()
-    return redirect('calenderNotification')
+    messages.success(request, "The scheduled event was deleted.")
+    if scheduled_date:
+        return redirect(
+            "calenderNotification",
+            scheduled_date.year,
+            scheduled_date.month,
+        )
+    return redirect("calenderNotification")
 
 @login_required
 @approved_required
 @emailSender_required
 def calendarEventView(request: HttpRequest, email_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    user_agent = _user_agent(request)
-    email = WeeklyEmail.objects.get(id = email_id)
-    date = email.date_scheduled
-    day = date.strftime("%A")
-    date = date.strftime("%B %d, %Y")
-    if email.email_type == "weekly":
-        if "mobile" in user_agent:
-            return render(request, "portal/mobile_adminCalenderView.html", {"email":email, "day":day, 'profile_photo':profile_photo})
-        else:   
-            return render(request, "portal/desktop_adminCalenderView.html", {"email":email, "day":day, 'profile_photo':profile_photo})
-    else:
+    email = get_object_or_404(WeeklyEmail, id=email_id)
+    if not email.date_scheduled:
+        messages.error(request, "This event does not have a scheduled date.")
         return redirect("calenderNotification")
+    return render(request, "portal/admin_calendar_event.html", {
+        "email": email,
+        "day": email.date_scheduled.strftime("%A"),
+        "profile_photo": profile_photo,
+        "active_nav": "calendar",
+    })
