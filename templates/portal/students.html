@@ -1,0 +1,86 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Students – {{ course.title }}{% endblock %}
+{% block meta_description %}Manage enrolled students for {{ course.title }}.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow"><a href="{% url 'course' course.id %}">{{ course.title }}</a> / Students</p>
+        <h1 class="portal-page-title">Students</h1>
+        <p class="portal-page-description">{{ students.count }} student{{ students.count|pluralize }} enrolled in {{ course.title }}.</p>
+    </div>
+    <a class="btn btn-portal-primary" href="{% url 'addStudents' course.id %}">
+        <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Add students
+    </a>
+</header>
+
+{% if students %}
+<section class="student-panel" aria-labelledby="studentRosterTitle">
+    <div class="student-panel-header">
+        <h2 id="studentRosterTitle">Course roster</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="student-table">
+            <thead>
+                <tr>
+                    <th scope="col">Student</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Phone</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>
+                        <div class="student-identity">
+                            <span class="student-initial" aria-hidden="true">{{ student.first_name|first|default:student.username|first|upper }}</span>
+                            <div>
+                                <strong>{{ student.get_full_name|default:student.username }}</strong>
+                                <small>@{{ student.username }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{% if student.email %}<a href="mailto:{{ student.email }}">{{ student.email }}</a>{% else %}Not provided{% endif %}</td>
+                    <td>{{ student.phone_number|default:'Not provided' }}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger" type="button" data-bs-toggle="modal" data-bs-target="#removeStudentModal{{ student.id }}">
+                            Remove
+                        </button>
+                        <div class="modal fade text-start" id="removeStudentModal{{ student.id }}" tabindex="-1" aria-labelledby="removeStudentTitle{{ student.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <form method="post" action="{% url 'removeStudentFromCourse' course.id %}">
+                                        {% csrf_token %}
+                                        <input name="student_id" type="hidden" value="{{ student.id }}">
+                                        <div class="modal-header">
+                                            <h2 class="modal-title fs-5" id="removeStudentTitle{{ student.id }}">Remove student?</h2>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="mb-0">Remove {{ student.get_full_name|default:student.username }} from {{ course.title }}? Their account will not be deleted.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-danger">Remove student</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% else %}
+<section class="portal-empty-state" aria-labelledby="emptyStudentsTitle">
+    <i class="bi bi-people" aria-hidden="true"></i>
+    <h2 class="fs-4" id="emptyStudentsTitle">No students enrolled</h2>
+    <p class="text-secondary mb-0">Add students to build the course roster.</p>
+</section>
+{% endif %}
+{% endblock %}

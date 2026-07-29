@@ -1080,6 +1080,88 @@ body.portal-body {
     font-size: 0.9rem;
 }
 
+.student-panel {
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.student-panel-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    background: #fff9e6;
+}
+
+.student-panel-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.student-table {
+    width: 100%;
+    min-width: 44rem;
+    border-collapse: collapse;
+}
+
+.student-table th,
+.student-table td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--portal-border);
+    text-align: left;
+    vertical-align: middle;
+}
+
+.student-table thead th {
+    color: var(--portal-muted);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.student-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.student-table tbody tr:hover {
+    background: #fffdf7;
+}
+
+.student-identity {
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: center;
+}
+
+.student-identity > div {
+    display: grid;
+    min-width: 0;
+}
+
+.student-identity strong,
+.student-identity small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.student-identity small {
+    color: var(--portal-muted);
+}
+
+.student-initial {
+    display: grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff4cc;
+    color: #624a00;
+    font-weight: 700;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;

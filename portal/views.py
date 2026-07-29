@@ -127,13 +127,16 @@ def course(request: HttpRequest, course_id):
 @login_required
 def students(request: HttpRequest, course_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    course = Course.objects.get(id = course_id)
-    students = course.people.all()
-    user_agent = _user_agent(request)
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_students.html", {"students":students,"profile_photo":profile_photo, "course":course})
-    else:
-        return render(request, "portal/desktop_students.html", {"students":students, "profile_photo":profile_photo, "course":course})
+    course = get_object_or_404(Course, id=course_id)
+    students = course.people.filter(
+        user_type=CustomUser.STUDENT,
+    ).order_by("last_name", "first_name", "username")
+    return render(request, "portal/students.html", {
+        "students": students,
+        "profile_photo": profile_photo,
+        "course": course,
+        "active_nav": "courses",
+    })
 
 @approved_required
 @login_required
@@ -1389,6 +1392,10 @@ def removeStudentFromCourse(request, course_id):
         user_type=CustomUser.STUDENT,
     )
     course.people.remove(student)
+    messages.success(
+        request,
+        f"{student.get_full_name() or student.username} was removed from {course.title}.",
+    )
     return redirect("students", course.id)
 
 @approved_required
