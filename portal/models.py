@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.functional import cached_property
 
 class ProfilePhoto(models.Model):
     file = models.FileField(upload_to="profile_photos/")
@@ -24,6 +25,9 @@ class CustomUser(AbstractUser):
         (PARENT, 'Parent'),
         (EMAIL_SENDER, 'Email Sender'),
     ]
+    ROLE_VALUES = frozenset(
+        (WEB_MANAGER, ADMIN, TEACHER, STUDENT, PARENT, EMAIL_SENDER)
+    )
 
     profile_photo = models.FileField(upload_to='profile_photos/', blank=True, null=True)
     profile_photos = models.ManyToManyField(
@@ -45,8 +49,51 @@ class CustomUser(AbstractUser):
     )
     embedding = models.JSONField(blank=True, null=True)
     modified_profile_photo = models.BooleanField(default=True)
+
+    @cached_property
+    def role_names(self):
+        roles = set(
+            self.groups.filter(name__in=self.ROLE_VALUES).values_list("name", flat=True)
+        )
+        # Keep legacy accounts functional until every deployment has run the
+        # group backfill migration.
+        if self.user_type in self.ROLE_VALUES:
+            roles.add(self.user_type)
+        return roles
+
+    def has_role(self, *roles):
+        return bool(self.role_names.intersection(roles))
+
+    @property
+    def is_admin(self):
+        return self.has_role(self.ADMIN)
+
+    @property
+    def is_teacher(self):
+        return self.has_role(self.TEACHER)
+
+    @property
+    def is_student(self):
+        return self.has_role(self.STUDENT)
+
+    @property
+    def is_web_manager(self):
+        return self.has_role(self.WEB_MANAGER)
+
+    @property
+    def is_email_sender(self):
+        return self.has_role(self.EMAIL_SENDER)
+
+    @property
+    def role_display(self):
+        labels = dict(self.USER_TYPES)
+        ordered_roles = [
+            labels[value] for value, _label in self.USER_TYPES if value in self.role_names
+        ]
+        return ", ".join(ordered_roles) or "No role assigned"
+
     def __str__(self):
-        return self.first_name +" "+ self.last_name
+        return self.get_full_name() or self.username
 
 class CarouselImage(models.Model):
     title = models.CharField(max_length=100)

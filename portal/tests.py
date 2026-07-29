@@ -2,8 +2,11 @@ from datetime import date
 import re
 
 from django.core import mail
+from django.contrib.auth.models import Group
+from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 from django.db import IntegrityError, transaction
 
@@ -19,6 +22,8 @@ from .models import (
     Grade,
 )
 from .forms import UploadedFileForm
+from .decorators import admin_required, teacher_required, web_manager_required
+from .views import _set_user_roles
 
 
 class PortalSecurityTests(TestCase):
@@ -198,6 +203,66 @@ class PortalSecurityTests(TestCase):
         )
         self.assertRedirects(response, reverse("adminUsers"))
         self.assertTrue(CustomUser.objects.filter(id=admin.id).exists())
+
+
+class MultipleRoleTests(TestCase):
+    def setUp(self):
+        self.teacher_group = Group.objects.get(name=CustomUser.TEACHER)
+        self.web_manager_group = Group.objects.get(name=CustomUser.WEB_MANAGER)
+        self.admin_group = Group.objects.get(name=CustomUser.ADMIN)
+        self.user = CustomUser.objects.create_user(
+            username="teacher-web@example.com",
+            password="a-long-test-password",
+            user_type=CustomUser.TEACHER,
+            approved=True,
+        )
+        self.user.groups.add(self.teacher_group, self.web_manager_group)
+        self.factory = RequestFactory()
+
+    def _request_for(self, user):
+        request = self.factory.get("/")
+        request.user = user
+        return request
+
+    def test_combined_roles_can_open_teacher_and_website_areas(self):
+        view = lambda request: HttpResponse("ok")
+        self.assertEqual(
+            teacher_required(view)(self._request_for(self.user)).status_code,
+            200,
+        )
+        self.assertEqual(
+            web_manager_required(view)(self._request_for(self.user)).status_code,
+            200,
+        )
+
+    def test_combined_roles_cannot_modify_roles(self):
+        view = admin_required(lambda request: HttpResponse("ok"))
+        with self.assertRaises(PermissionDenied):
+            view(self._request_for(self.user))
+
+    def test_admin_can_assign_multiple_roles(self):
+        admin = CustomUser.objects.create_user(
+            username="admin-roles@example.com",
+            password="a-long-test-password",
+            user_type=CustomUser.ADMIN,
+            approved=True,
+        )
+        admin.groups.add(self.admin_group)
+        self.assertEqual(
+            admin_required(lambda request: HttpResponse("ok"))(
+                self._request_for(admin)
+            ).status_code,
+            200,
+        )
+        _set_user_roles(
+            self.user,
+            {CustomUser.TEACHER, CustomUser.WEB_MANAGER},
+        )
+        self.user.save(update_fields=["user_type", "is_superuser", "is_staff"])
+        self.assertSetEqual(
+            set(self.user.groups.values_list("name", flat=True)),
+            {CustomUser.TEACHER, CustomUser.WEB_MANAGER},
+        )
 
 
 @override_settings(

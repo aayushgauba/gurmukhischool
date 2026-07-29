@@ -3,6 +3,7 @@ import datetime
 import io
 
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
 from django.tasks import task
@@ -102,14 +103,16 @@ def transfer_legacy_profile_photos():
 @task
 def normalize_user_permissions():
     updated = 0
+    role_groups = {
+        role: Group.objects.get_or_create(name=role)[0]
+        for role in CustomUser.ROLE_VALUES
+    }
     for user in CustomUser.objects.all().iterator():
-        should_be_superuser = user.user_type in {
-            CustomUser.TEACHER,
-            CustomUser.ADMIN,
-        }
-        if user.is_superuser != should_be_superuser:
-            user.is_superuser = should_be_superuser
-            user.save(update_fields=["is_superuser"])
+        if (
+            user.user_type in role_groups
+            and not user.groups.filter(name=user.user_type).exists()
+        ):
+            user.groups.add(role_groups[user.user_type])
             updated += 1
     return {"updated": updated}
 

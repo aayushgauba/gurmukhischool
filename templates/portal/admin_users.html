@@ -44,7 +44,7 @@
             <div class="admin-waitlist-identity">
                 <strong>{{ managed_user.get_full_name|default:managed_user.username }}</strong>
                 <span>{{ managed_user.email|default:'No email provided' }}</span>
-                <small>@{{ managed_user.username }} · {{ managed_user.get_user_type_display|default:'No role assigned' }}</small>
+                <small>@{{ managed_user.username }} · {{ managed_user.role_display }}</small>
             </div>
             {% if managed_user == request.user %}
             <span class="portal-status-badge">Your account</span>
@@ -68,10 +68,30 @@
             </form>
         </details>
 
+        {% if managed_user != request.user %}
+        <details class="admin-user-editor">
+            <summary><i class="bi bi-shield-check me-1" aria-hidden="true"></i>Edit roles</summary>
+            <form method="post" action="{% url 'change_user_roles' %}">
+                {% csrf_token %}
+                <input name="user_id" type="hidden" value="{{ managed_user.id }}">
+                <fieldset>
+                    <legend class="form-label">Portal roles</legend>
+                    {% for role_value, role_label in user_roles %}
+                    <div class="form-check">
+                        <input class="form-check-input" id="managedRole{{ managed_user.id }}{{ forloop.counter }}" name="roles" type="checkbox" value="{{ role_value }}"{% if role_value in managed_user.role_names %} checked{% endif %}>
+                        <label class="form-check-label" for="managedRole{{ managed_user.id }}{{ forloop.counter }}">{{ role_label }}</label>
+                    </div>
+                    {% endfor %}
+                </fieldset>
+                <button class="btn btn-portal-primary" type="submit">Save roles</button>
+            </form>
+        </details>
+        {% endif %}
+
         <div class="admin-notification-setting">
             <div>
                 <strong>Contact message emails</strong>
-                {% if managed_user.user_type == managed_user.ADMIN %}
+                {% if managed_user.is_admin %}
                 <span>Enabled automatically for administrators.</span>
                 {% elif not managed_user.email %}
                 <span>Add an email address before enabling notifications.</span>
@@ -81,7 +101,7 @@
                 <span>This user does not receive contact messages.</span>
                 {% endif %}
             </div>
-            {% if managed_user.user_type == managed_user.ADMIN %}
+            {% if managed_user.is_admin %}
             <span class="portal-status-badge">Always on</span>
             {% else %}
             <form method="post" action="{% url 'changeContactNotifications' %}">

@@ -15,6 +15,7 @@ urlpatterns = [
     path('admin/users', views.adminUsers, name = 'adminUsers'),
     path('admin/kirtan/add', views.addKirtan, name = 'addKirtan'),
     path('admin/users/edit', views.changeUserInfo, name = 'changeUserInfo'),
+    path('admin/users/roles', views.change_user_roles, name='change_user_roles'),
     path('admin/users/contact-notifications', views.changeContactNotifications, name='changeContactNotifications'),
     path('admin/contact', views.adminContactView, name = 'adminContactView'),
     path('courses/syllabus/add/<int:course_id>', views.upload_syllabus, name = 'upload_syllabus'),

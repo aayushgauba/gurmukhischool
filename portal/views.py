@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from portal.models import CustomUser, Schedule, WeeklyEmail, Course, Section, Folder, Grade, Announcement, Attendance, CarouselImage
 from django.http import HttpRequest, JsonResponse, FileResponse, Http404
 from django.contrib.auth import authenticate, login as auth_login, logout
+from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
@@ -17,7 +18,13 @@ from .models import UploadedFile, Assignment, Submission
 from main.models import CarouselImage as Carousel
 from main.forms import CarouselImageForm as MainCarouselImageForm
 from django.contrib.auth.decorators import login_required
-from .decorators import superuser_required, teacher_required, admin_required, approved_required, emailSender_required
+from .decorators import (
+    teacher_required,
+    admin_required,
+    approved_required,
+    emailSender_required,
+    web_manager_required,
+)
 from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
@@ -78,12 +85,19 @@ def _parse_grade(value):
 
 
 def _is_teacher(user):
-    return user.is_superuser and user.user_type == CustomUser.TEACHER
+    return user.is_teacher
+
+
+def _students(queryset=None):
+    queryset = queryset if queryset is not None else CustomUser.objects.all()
+    return queryset.filter(
+        Q(user_type=CustomUser.STUDENT) | Q(groups__name=CustomUser.STUDENT)
+    ).distinct()
 
 
 def _can_access_course(user, course):
     return _is_teacher(user) or (
-        user.user_type == CustomUser.STUDENT
+        user.is_student
         and course.people.filter(pk=user.pk).exists()
     )
 
@@ -151,14 +165,13 @@ def course(request: HttpRequest, course_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 def students(request: HttpRequest, course_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     course = get_object_or_404(Course, id=course_id)
-    students = course.people.filter(
-        user_type=CustomUser.STUDENT,
-    ).order_by("last_name", "first_name", "username")
+    students = _students(course.people.all()).order_by(
+        "last_name", "first_name", "username"
+    )
     return render(request, "portal/students.html", {
         "students": students,
         "profile_photo": profile_photo,
@@ -187,7 +200,6 @@ def fileView(request, file_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def delete_file(request, pk, section_id, folder_id):
@@ -205,7 +217,6 @@ def delete_file(request, pk, section_id, folder_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
@@ -219,7 +230,7 @@ def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
 
 @login_required
 @approved_required
-@admin_required
+@web_manager_required
 def carousel_management(request: HttpRequest):
     images = CarouselImage.objects.order_by("order", "id")
     mainImages = Carousel.objects.order_by("order", "id")
@@ -237,7 +248,7 @@ def carousel_management(request: HttpRequest):
 
 @login_required
 @approved_required
-@admin_required
+@web_manager_required
 @require_POST
 def mainCarouselImageUpload(request):
     form = MainCarouselImageForm(request.POST, request.FILES)
@@ -258,7 +269,7 @@ def mainCarouselImageUpload(request):
 
 @login_required
 @approved_required
-@admin_required
+@web_manager_required
 @require_POST
 def gurmukhiSchoolImageUpload(request):
     form = CarouselImageForm(request.POST, request.FILES)
@@ -309,7 +320,7 @@ def _move_carousel_image(model, image_id, offset):
 
 @login_required
 @approved_required
-@admin_required
+@web_manager_required
 @require_POST
 def moveMainCarouselImageUp(request, image_id):
     _move_carousel_image(Carousel, image_id, -1)
@@ -317,7 +328,7 @@ def moveMainCarouselImageUp(request, image_id):
 
 @login_required
 @approved_required
-@admin_required
+@web_manager_required
 @require_POST
 def moveMainCarouselImageDown(request, image_id):
     _move_carousel_image(Carousel, image_id, 1)
@@ -325,7 +336,7 @@ def moveMainCarouselImageDown(request, image_id):
 
 @login_required
 @approved_required
-@admin_required
+@web_manager_required
 @require_POST
 def moveCarouselImageUp(request, image_id):
     _move_carousel_image(CarouselImage, image_id, -1)
@@ -333,7 +344,7 @@ def moveCarouselImageUp(request, image_id):
 
 @login_required
 @approved_required
-@admin_required
+@web_manager_required
 @require_POST
 def moveCarouselImageDown(request, image_id):
     _move_carousel_image(CarouselImage, image_id, 1)
@@ -374,7 +385,7 @@ def contactDelete(request, contact_id):
 @require_POST
 @login_required
 @approved_required
-@admin_required
+@web_manager_required
 def delete_carousel_image(request):
     image = get_object_or_404(CarouselImage, id=request.POST.get('image_id'))
     title = image.title
@@ -398,7 +409,7 @@ def delete_carousel_image(request):
 @require_POST
 @login_required
 @approved_required
-@admin_required
+@web_manager_required
 def delete_main_carousel_image(request):
     image = get_object_or_404(Carousel, id=request.POST.get('main_image_id'))
     title = image.title
@@ -421,7 +432,6 @@ def delete_main_carousel_image(request):
 
 @approved_required
 @teacher_required
-@superuser_required
 @require_POST
 @login_required
 def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
@@ -446,7 +456,7 @@ def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
 def submitFilesToAssignment(request, section_id, folder_id, assignment_id):
     course, _, _, _ = _course_graph(section_id, folder_id, assignment_id)
     _require_course_access(request.user, course)
-    if request.user.user_type != CustomUser.STUDENT:
+    if not request.user.is_student or request.user.is_teacher:
         raise PermissionDenied
     form = FileUploadForm(
         request.POST,
@@ -467,7 +477,6 @@ def submitFilesToAssignment(request, section_id, folder_id, assignment_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @require_POST
 @login_required
 def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
@@ -513,7 +522,7 @@ def viewAssignment(request: HttpRequest, section_id, folder_id, assignment_id):
         "profile_photo": profile_photo,
         "active_nav": "courses",
     }
-    if request.user.user_type == CustomUser.STUDENT:
+    if request.user.is_student and not request.user.is_teacher:
         context["submissions"] = Submission.objects.filter(
             user_id=request.user.id,
             assignment_id=assignment_id,
@@ -528,7 +537,6 @@ def viewAssignment(request: HttpRequest, section_id, folder_id, assignment_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @require_POST
 @login_required
 def createAssignment(request, section_id, folder_id):
@@ -544,7 +552,6 @@ def createAssignment(request, section_id, folder_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @require_POST
 @login_required
 def editAssignment(request, section_id, folder_id, assignment_id):
@@ -563,7 +570,6 @@ def editAssignment(request, section_id, folder_id, assignment_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @require_POST
 @login_required
 def deleteAssignment(request, section_id, folder_id, assignment_id):
@@ -594,7 +600,6 @@ def deleteSubmission(request, section_id, folder_id, assignment_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @require_POST
 @login_required
 def uploadFile(request, section_id, folder_id):
@@ -636,7 +641,6 @@ def folder(request: HttpRequest, section_id, folder_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def moveSectionUp(request, section_id):
@@ -652,7 +656,6 @@ def moveSectionUp(request, section_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def moveSectionDown(request, section_id):
@@ -671,7 +674,6 @@ def moveSectionDown(request, section_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def changeVisibility(request, section_id):
@@ -727,13 +729,13 @@ def courses(request: HttpRequest):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     user = request.user
     courses = None
-    if user.user_type == CustomUser.TEACHER:
+    if user.is_teacher:
         courses = Course.objects.all().order_by("title")
-    elif user.user_type == CustomUser.STUDENT:
+    elif user.is_student:
         courses = Course.objects.filter(people=request.user).order_by("title")
-    elif user.user_type == CustomUser.ADMIN and user.is_superuser:
+    elif user.is_admin:
         return redirect("adminViewHome")
-    elif user.user_type == CustomUser.EMAIL_SENDER:
+    elif user.is_email_sender:
         return redirect("calenderNotification")
     else:
         return render(request, "portal/unknown_usertype.html", {"user": user})
@@ -752,7 +754,6 @@ def courses(request: HttpRequest):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_id):
@@ -763,7 +764,7 @@ def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_i
     if folder.course_id != course_id:
         raise Http404
     course = get_object_or_404(Course, id=course_id)
-    if not course.people.filter(id=user_id, user_type=CustomUser.STUDENT).exists():
+    if not _students(course.people.filter(id=user_id)).exists():
         raise Http404
     try:
         new_grade = _parse_grade(request.POST.get("grade"))
@@ -787,7 +788,7 @@ def grades(request: HttpRequest, course_id = None):
         course = get_object_or_404(Course, id=course_id)
         _require_course_access(request.user, course)
         grade_array = []
-        if request.user.user_type == CustomUser.STUDENT:
+        if request.user.is_student and not request.user.is_teacher:
             student_grades = Grade.objects.filter(
                 user_id=request.user.id,
                 course_id=course_id,
@@ -864,7 +865,7 @@ def announcements(request: HttpRequest):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     if _is_teacher(request.user):
         announcements = Announcement.objects.all()
-    elif request.user.user_type == CustomUser.STUDENT and not request.user.is_superuser:
+    elif request.user.is_student:
         courses = Course.objects.filter(people=request.user)
         announcements = Announcement.objects.filter(recipients__in=courses)
     else:
@@ -878,7 +879,6 @@ def announcements(request: HttpRequest):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 def mark_attendance(request: HttpRequest, course_id, day, month, year):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
@@ -887,9 +887,9 @@ def mark_attendance(request: HttpRequest, course_id, day, month, year):
         attendance_date = datetime(year, month, day)
     except ValueError:
         raise Http404
-    students = course.people.filter(
-        user_type=CustomUser.STUDENT,
-    ).order_by("last_name", "first_name", "username")
+    students = _students(course.people.all()).order_by(
+        "last_name", "first_name", "username"
+    )
     if request.method == 'POST':
         with transaction.atomic():
             for student in students:
@@ -966,7 +966,7 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
     if any(week):
         weeks.append(week)
 
-    if not request.user.is_superuser and request.user.user_type == CustomUser.STUDENT:
+    if request.user.is_student and not request.user.is_teacher:
         attendance = Attendance.objects.filter(course=course, year = year, month = month, student = request.user, status = "Present").values_list('day', flat=True)
         attendance_days = list(attendance)
         absent = Attendance.objects.filter(course=course, year = year, month = month, student = request.user, status = "Absent").values_list('day', flat=True)
@@ -1024,7 +1024,6 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
 
 @approved_required
 @teacher_required
-@superuser_required
 @require_POST
 @login_required
 def uploadAttendanceData(request, course_id):
@@ -1050,7 +1049,6 @@ def uploadAttendanceData(request, course_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @require_POST
 @login_required
 def uploadGroupPhoto(request, course_id):
@@ -1072,7 +1070,6 @@ def uploadGroupPhoto(request, course_id):
 
 @approved_required    
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def scheduleDefine(request, course_id):
@@ -1104,23 +1101,58 @@ def scheduleDefine(request, course_id):
 
 
 
+ROLE_PRIMARY_PRIORITY = (
+    CustomUser.TEACHER,
+    CustomUser.STUDENT,
+    CustomUser.ADMIN,
+    CustomUser.EMAIL_SENDER,
+    CustomUser.WEB_MANAGER,
+    CustomUser.PARENT,
+)
+
+
+def _validated_roles(request):
+    roles = set(request.POST.getlist("roles"))
+    # Accept the legacy single-select field during a rolling deployment.
+    legacy_role = request.POST.get("user_type")
+    if legacy_role:
+        roles.add(legacy_role)
+    if not roles or not roles.issubset(CustomUser.ROLE_VALUES):
+        return None
+    return roles
+
+
+def _set_user_roles(user, roles):
+    role_groups = {
+        group.name: group
+        for group in Group.objects.filter(name__in=CustomUser.ROLE_VALUES)
+    }
+    missing = CustomUser.ROLE_VALUES.difference(role_groups)
+    for role in missing:
+        role_groups[role] = Group.objects.create(name=role)
+    existing_role_groups = user.groups.filter(name__in=CustomUser.ROLE_VALUES)
+    user.groups.remove(*existing_role_groups)
+    user.groups.add(*(role_groups[role] for role in roles))
+    user.user_type = next(role for role in ROLE_PRIMARY_PRIORITY if role in roles)
+    if CustomUser.ADMIN not in roles:
+        user.is_superuser = False
+        user.is_staff = False
+    user.__dict__.pop("role_names", None)
+
+
 @login_required
 @admin_required
 @approved_required
 def adminViewHome(request:HttpRequest):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
-        user_type = request.POST.get('user_type')
         user = get_object_or_404(CustomUser, id=user_id, approved=False)
-        valid_roles = {value for value, _ in CustomUser.USER_TYPES}
-        if user_type not in valid_roles:
-            messages.error(request, "Select a valid user role.")
+        roles = _validated_roles(request)
+        if roles is None:
+            messages.error(request, "Select at least one valid user role.")
             return redirect("adminViewHome")
-        user.user_type = user_type
-        user.is_superuser = user_type in (
-            CustomUser.TEACHER,
-            CustomUser.ADMIN,
-        )
+        _set_user_roles(user, roles)
+        user.is_superuser = False
         user.is_active = True
         user.approved = True
         user.save()
@@ -1167,7 +1199,7 @@ def adminViewHome(request:HttpRequest):
 @approved_required
 def adminUsers(request:HttpRequest):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    users = CustomUser.objects.filter(approved=True).order_by(
+    users = CustomUser.objects.filter(approved=True).prefetch_related("groups").order_by(
         "user_type",
         "last_name",
         "first_name",
@@ -1184,7 +1216,9 @@ def adminUsers(request:HttpRequest):
         )
     valid_roles = {value for value, _ in CustomUser.USER_TYPES}
     if selected_role in valid_roles:
-        users = users.filter(user_type=selected_role)
+        users = users.filter(
+            Q(groups__name=selected_role) | Q(user_type=selected_role)
+        ).distinct()
     else:
         selected_role = ""
     return render(request, "portal/admin_users.html", {
@@ -1201,19 +1235,53 @@ def adminUsers(request:HttpRequest):
 @login_required
 @admin_required
 @approved_required
+def change_user_roles(request):
+    user = get_object_or_404(
+        CustomUser,
+        id=request.POST.get("user_id"),
+        approved=True,
+    )
+    if user == request.user:
+        messages.error(request, "You cannot change your own roles.")
+        return redirect("adminUsers")
+    roles = _validated_roles(request)
+    if roles is None:
+        messages.error(request, "Select at least one valid user role.")
+        return redirect("adminUsers")
+    if user.is_admin and CustomUser.objects.filter(
+        approved=True,
+        is_active=True,
+        groups__name=CustomUser.ADMIN,
+    ).exclude(pk=user.pk).count() == 0 and CustomUser.ADMIN not in roles:
+        messages.error(request, "The last active administrator must keep the Admin role.")
+        return redirect("adminUsers")
+    _set_user_roles(user, roles)
+    user.save(update_fields=["user_type", "is_superuser", "is_staff"])
+    messages.success(
+        request,
+        f"Roles for {user.get_full_name() or user.username} were updated.",
+    )
+    return redirect("adminUsers")
+
+
+@require_POST
+@login_required
+@admin_required
+@approved_required
 def delete_user(request):
     user = get_object_or_404(CustomUser, id=request.POST.get('user_id'))
     if user == request.user:
         messages.error(request, "You cannot delete your own account.")
         return redirect("adminUsers")
     if (
-        user.user_type == CustomUser.ADMIN
+        user.is_admin
         and user.is_active
         and CustomUser.objects.filter(
-            user_type=CustomUser.ADMIN,
             approved=True,
             is_active=True,
-        ).count() <= 1
+        ).filter(
+            Q(groups__name=CustomUser.ADMIN) | Q(user_type=CustomUser.ADMIN)
+        ).distinct().count() <= 1
     ):
         messages.error(request, "The last active administrator cannot be deleted.")
         return redirect("adminUsers")
@@ -1236,13 +1304,14 @@ def admit_user(request):
         messages.error(request, "You cannot move your own account to the waitlist.")
         return redirect("adminUsers")
     if (
-        user.user_type == CustomUser.ADMIN
+        user.is_admin
         and user.is_active
         and CustomUser.objects.filter(
-            user_type=CustomUser.ADMIN,
             approved=True,
             is_active=True,
-        ).count() <= 1
+        ).filter(
+            Q(groups__name=CustomUser.ADMIN) | Q(user_type=CustomUser.ADMIN)
+        ).distinct().count() <= 1
     ):
         messages.error(request, "The last active administrator cannot be moved to the waitlist.")
         return redirect("adminUsers")
@@ -1256,7 +1325,6 @@ def admit_user(request):
 
 @require_POST
 @teacher_required
-@superuser_required
 @login_required
 @approved_required
 def deleteCourse(request, course_id):
@@ -1288,7 +1356,6 @@ def deleteCourse(request, course_id):
 
 @require_POST
 @teacher_required
-@superuser_required
 @login_required
 @approved_required
 def deleteSection(request, section_id):
@@ -1409,9 +1476,7 @@ def send_announcement_emails(announcement):
     recipients = set()
     all_sent = True
     for course in announcement.recipients.all():
-        students = course.people.filter(
-            user_type=CustomUser.STUDENT,
-        ).exclude(email="").distinct()
+        students = _students(course.people.all()).exclude(email="")
         for student in students:
             if student.email not in recipients:
                 recipients.add(student.email)
@@ -1430,7 +1495,6 @@ def send_announcement_emails(announcement):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 def create_announcement(request: HttpRequest):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()    
@@ -1454,7 +1518,6 @@ def create_announcement(request: HttpRequest):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
@@ -1465,9 +1528,9 @@ def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
     section = Section.objects.filter(folders=folder).order_by("order", "id").first()
     if section is None:
         raise Http404
-    students = course.people.filter(
-        user_type=CustomUser.STUDENT,
-    ).order_by("last_name", "first_name", "username")
+    students = _students(course.people.all()).order_by(
+        "last_name", "first_name", "username"
+    )
     existing_grades = {
         grade.user_id: grade.grade
         for grade in Grade.objects.filter(
@@ -1526,17 +1589,12 @@ def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def removeStudentFromCourse(request, course_id):
     id = request.POST.get("student_id")
     course = get_object_or_404(Course, id=course_id)
-    student = get_object_or_404(
-        course.people,
-        id=id,
-        user_type=CustomUser.STUDENT,
-    )
+    student = get_object_or_404(_students(course.people.all()), id=id)
     course.people.remove(student)
     messages.success(
         request,
@@ -1546,7 +1604,6 @@ def removeStudentFromCourse(request, course_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 def submissions(request: HttpRequest, folder_id, user_id, assignment_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
@@ -1557,7 +1614,7 @@ def submissions(request: HttpRequest, folder_id, user_id, assignment_id):
     section = Section.objects.filter(folders=folder).order_by("order", "id").first()
     if section is None:
         raise Http404
-    if not course.people.filter(id=user_id, user_type=CustomUser.STUDENT).exists():
+    if not _students(course.people.filter(id=user_id)).exists():
         raise Http404
     grade = Grade.objects.filter(
         user_id=user_id,
@@ -1607,7 +1664,6 @@ def PasswordResetView(request):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def upload_syllabus(request, course_id):
@@ -1716,7 +1772,6 @@ def activate(request, uidb64, token):
         return render(request, 'portal/invalidAccountActivation.html')
 
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def courseAdd(request):
@@ -1726,7 +1781,6 @@ def courseAdd(request):
     return redirect("courses")
 
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def sectionAdd(request, course_id):
@@ -1741,17 +1795,12 @@ def sectionAdd(request, course_id):
 
 @approved_required
 @teacher_required
-@superuser_required
 @login_required
 def addStudents(request: HttpRequest, course_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     course = get_object_or_404(Course, id=course_id)
-    enrolled_student_ids = course.people.filter(
-        user_type=CustomUser.STUDENT,
-    ).values_list("id", flat=True)
-    all_students = CustomUser.objects.filter(
-        user_type=CustomUser.STUDENT,
-    ).exclude(id__in=enrolled_student_ids).order_by(
+    enrolled_student_ids = _students(course.people.all()).values_list("id", flat=True)
+    all_students = _students().exclude(id__in=enrolled_student_ids).order_by(
         "last_name",
         "first_name",
         "username",
@@ -1850,7 +1899,7 @@ def changeContactNotifications(request):
         approved=True,
     )
     display_name = user.get_full_name() or user.username
-    if user.user_type == CustomUser.ADMIN:
+    if user.is_admin:
         messages.info(
             request,
             f"{display_name} is an administrator and already receives contact notifications.",
@@ -1866,7 +1915,6 @@ def changeContactNotifications(request):
     return redirect("adminUsers")
 
 @teacher_required
-@superuser_required
 @login_required
 @require_POST
 def folderAdd(request):
@@ -1888,11 +1936,15 @@ def _clear_two_factor_session(request):
 
 
 def _portal_home_for_user(user):
-    if user.user_type == CustomUser.ADMIN:
+    if user.is_teacher or user.is_student:
+        return "courses"
+    if user.is_admin:
         return "adminViewHome"
-    if user.user_type == CustomUser.EMAIL_SENDER:
+    if user.is_email_sender:
         return "calenderNotification"
-    return "courses"
+    if user.is_web_manager:
+        return "carousel_management"
+    return "profile"
 
 
 def _send_two_factor_code(request, user, backend=None):

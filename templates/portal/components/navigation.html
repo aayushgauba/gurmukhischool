@@ -1,48 +1,20 @@
 <nav class="nav nav-pills flex-column" aria-label="Portal navigation">
-    {% if user.user_type == user.ADMIN %}
-    <a href="{% url 'adminViewHome' %}" class="nav-link{% if active_nav == 'admin_dashboard' %} active{% endif %}">
-        <i class="bi bi-speedometer2" aria-hidden="true"></i><span>Dashboard</span>
-    </a>
-    <a href="{% url 'adminUsers' %}" class="nav-link{% if active_nav == 'admin_users' %} active{% endif %}">
-        <i class="bi bi-people" aria-hidden="true"></i><span>Users</span>
-    </a>
-    <a href="{% url 'carousel_management' %}" class="nav-link{% if active_nav == 'carousel' %} active{% endif %}">
-        <i class="bi bi-images" aria-hidden="true"></i><span>Carousel</span>
-    </a>
-    <a href="{% url 'adminContactView' %}" class="nav-link{% if active_nav == 'admin_contact' %} active{% endif %}">
-        <i class="bi bi-envelope" aria-hidden="true"></i><span>Contact</span>
-    </a>
-    <a href="{% url 'calenderNotification' %}" class="nav-link{% if active_nav == 'calendar' %} active{% endif %}">
-        <i class="bi bi-calendar3" aria-hidden="true"></i><span>Calendar</span>
-    </a>
-    {% elif user.user_type == user.EMAIL_SENDER %}
-    <a href="{% url 'calenderNotification' %}" class="nav-link{% if active_nav == 'calendar' %} active{% endif %}">
-        <i class="bi bi-calendar3" aria-hidden="true"></i><span>Calendar</span>
-    </a>
-    {% else %}
-    <a
-        href="{% url 'courses' %}"
-        class="nav-link{% if active_nav == 'courses' %} active{% endif %}"
-        {% if active_nav == 'courses' %}aria-current="page"{% endif %}
-    >
-        <i class="bi bi-book" aria-hidden="true"></i>
-        <span>Courses</span>
-    </a>
-    <a
-        href="{% url 'announcements' %}"
-        class="nav-link{% if active_nav == 'announcements' %} active{% endif %}"
-        {% if active_nav == 'announcements' %}aria-current="page"{% endif %}
-    >
-        <i class="bi bi-megaphone" aria-hidden="true"></i>
-        <span>Announcements</span>
-    </a>
-    <a
-        href="{% url 'profile' %}"
-        class="nav-link{% if active_nav == 'profile' %} active{% endif %}"
-        {% if active_nav == 'profile' %}aria-current="page"{% endif %}
-    >
-        <i class="bi bi-person-circle" aria-hidden="true"></i>
-        <span>Profile</span>
-    </a>
+    {% if user.is_admin %}
+    <a href="{% url 'adminViewHome' %}" class="nav-link{% if active_nav == 'admin_dashboard' %} active{% endif %}"><i class="bi bi-speedometer2" aria-hidden="true"></i><span>Dashboard</span></a>
+    <a href="{% url 'adminUsers' %}" class="nav-link{% if active_nav == 'admin_users' %} active{% endif %}"><i class="bi bi-people" aria-hidden="true"></i><span>Users</span></a>
+    <a href="{% url 'carousel_management' %}" class="nav-link{% if active_nav == 'carousel' %} active{% endif %}"><i class="bi bi-images" aria-hidden="true"></i><span>Carousel</span></a>
+    <a href="{% url 'adminContactView' %}" class="nav-link{% if active_nav == 'admin_contact' %} active{% endif %}"><i class="bi bi-envelope" aria-hidden="true"></i><span>Contact</span></a>
+    <a href="{% url 'calenderNotification' %}" class="nav-link{% if active_nav == 'calendar' %} active{% endif %}"><i class="bi bi-calendar3" aria-hidden="true"></i><span>Calendar</span></a>
     {% endif %}
+    {% if user.is_web_manager and not user.is_admin %}
+    <a href="{% url 'carousel_management' %}" class="nav-link{% if active_nav == 'carousel' %} active{% endif %}"><i class="bi bi-images" aria-hidden="true"></i><span>Carousel</span></a>
+    {% endif %}
+    {% if user.is_email_sender and not user.is_admin %}
+    <a href="{% url 'calenderNotification' %}" class="nav-link{% if active_nav == 'calendar' %} active{% endif %}"><i class="bi bi-calendar3" aria-hidden="true"></i><span>Calendar</span></a>
+    {% endif %}
+    {% if user.is_teacher or user.is_student %}
+    <a href="{% url 'courses' %}" class="nav-link{% if active_nav == 'courses' %} active{% endif %}"><i class="bi bi-book" aria-hidden="true"></i><span>Courses</span></a>
+    <a href="{% url 'announcements' %}" class="nav-link{% if active_nav == 'announcements' %} active{% endif %}"><i class="bi bi-megaphone" aria-hidden="true"></i><span>Announcements</span></a>
+    {% endif %}
+    <a href="{% url 'profile' %}" class="nav-link{% if active_nav == 'profile' %} active{% endif %}"><i class="bi bi-person-circle" aria-hidden="true"></i><span>Profile</span></a>
 </nav>

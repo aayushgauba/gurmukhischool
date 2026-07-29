@@ -14,7 +14,7 @@
             {% if course %}{{ course.title }} grades{% else %}Course averages{% endif %}
         </h1>
         <p class="portal-page-description">
-            {% if user.user_type == user.STUDENT %}
+            {% if user.is_student %}
             Your posted assignment grades and current average.
             {% elif course %}
             Posted assignment averages across enrolled students.
@@ -53,7 +53,7 @@
             <thead>
                 <tr>
                     <th scope="col">{% if course %}Assignment{% else %}Course{% endif %}</th>
-                    <th scope="col">{% if user.user_type == user.STUDENT %}Grade{% else %}Average{% endif %}</th>
+                    <th scope="col">{% if user.is_student %}Grade{% else %}Average{% endif %}</th>
                 </tr>
             </thead>
             <tbody>
@@ -86,7 +86,7 @@
     <i class="bi bi-bar-chart" aria-hidden="true"></i>
     <h2 class="fs-4" id="emptyGradesTitle">No grades posted</h2>
     <p class="text-secondary mb-0">
-        {% if user.user_type == user.STUDENT %}
+        {% if user.is_student %}
         Your grades will appear after your teacher posts them.
         {% else %}
         Grade averages will appear after student work is graded.

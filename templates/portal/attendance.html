@@ -11,10 +11,10 @@
         <p class="portal-eyebrow"><a href="{% url 'course' course.id %}">{{ course.title }}</a> / Attendance</p>
         <h1 class="portal-page-title">Attendance</h1>
         <p class="portal-page-description">
-            {% if user.user_type == user.STUDENT %}Review your recorded attendance.{% else %}Select a scheduled class day to record attendance.{% endif %}
+            {% if user.is_student %}Review your recorded attendance.{% else %}Select a scheduled class day to record attendance.{% endif %}
         </p>
     </div>
-    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    {% if user.is_teacher %}
     <div class="d-flex flex-wrap gap-2">
         <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#scheduleModal"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Schedule</button>
         <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#uploadAttendanceModal"><i class="bi bi-upload me-1" aria-hidden="true"></i>Upload</button>
@@ -23,7 +23,7 @@
     {% endif %}
 </header>
 
-{% if user.user_type == user.STUDENT %}
+{% if user.is_student %}
 <div class="attendance-legend" aria-label="Attendance legend">
     <span><i class="attendance-dot is-present" aria-hidden="true"></i>Present</span>
     <span><i class="attendance-dot is-absent" aria-hidden="true"></i>Absent</span>
@@ -45,11 +45,11 @@
                 <tr>
                     {% for day in week %}
                     {% if day %}
-                        {% if user.is_superuser and user.user_type == user.TEACHER and forloop.counter0|is_allowed_day:allowed_days %}
+                        {% if user.is_teacher and forloop.counter0|is_allowed_day:allowed_days %}
                         <td class="{% if day == today %}is-today{% endif %} is-scheduled">
                             <a href="{% url 'mark_attendance' course.id day month year %}" aria-label="Mark attendance for {{ month_name }} {{ day }}">{{ day }}</a>
                         </td>
-                        {% elif user.user_type == user.STUDENT %}
+                        {% elif user.is_student %}
                         <td class="{% if day == today %}is-today{% elif day in attendance %}is-present{% elif day in absent %}is-absent{% endif %}">{{ day }}</td>
                         {% else %}
                         <td class="{% if day == today %}is-today{% endif %}">{{ day }}</td>
@@ -65,7 +65,7 @@
     </div>
 </section>
 
-{% if user.is_superuser and user.user_type == user.TEACHER %}
+{% if user.is_teacher %}
 <div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
         <form method="post" action="{% url 'scheduleDefine' course.id %}">

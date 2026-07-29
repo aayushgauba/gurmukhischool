@@ -1,8 +1,21 @@
 from django.shortcuts import redirect, render
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
-from aiwaf.django.decorators import aiwaf_exempt
 from functools import wraps
+
+
+def role_required(*roles):
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if not request.user.is_authenticated:
+                return redirect("login")
+            if not request.user.has_role(*roles):
+                raise PermissionDenied("You do not have permission to access this page.")
+            return view_func(request, *args, **kwargs)
+
+        return _wrapped_view
+
+    return decorator
 
 def superuser_required(view_func):
     """
@@ -19,43 +32,17 @@ def superuser_required(view_func):
     return _wrapped_view
 
 def teacher_required(view_func):
-    """
-    Decorator for views that checks that the user is logged in and is a superuser,
-    returning a 403 Forbidden response if necessary.
-    """
-    @wraps(view_func)
-    def _wrapped_view(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect('login')
-        if request.user.user_type != request.user.TEACHER:
-            raise PermissionDenied("You do not have permission to access this page.")
-        return view_func(request, *args, **kwargs)
-    return _wrapped_view
+    return role_required("Teacher")(view_func)
 
 def admin_required(view_func):
-    """
-    Decorator for views that checks that the user is logged in and is a superuser,
-    returning a 403 Forbidden response if necessary.
-    """
-    @wraps(view_func)
-    def _wrapped_view(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect('login')
-        if request.user.user_type != request.user.ADMIN:
-            raise PermissionDenied("You do not have permission to access this page.")
-        return view_func(request, *args, **kwargs)
-    return _wrapped_view
+    return role_required("Admin")(view_func)
+
+
+def web_manager_required(view_func):
+    return role_required("WebManager", "Admin")(view_func)
 
 def emailSender_required(view_func):
-    @wraps(view_func)
-    def _wrapped_view(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect('login')
-        # Allow if user_type is either "Admin" or "EmailSender"
-        if request.user.user_type not in (request.user.ADMIN, request.user.EMAIL_SENDER):
-            raise PermissionDenied("You do not have permission to access this page.")
-        return view_func(request, *args, **kwargs)
-    return _wrapped_view
+    return role_required("Admin", "EmailSender")(view_func)
 
 def approved_required(view_func):
     @wraps(view_func)

@@ -17,11 +17,11 @@
             Due <time datetime="{{ assignment.due_date|date:'Y-m-d' }}">{{ assignment.due_date|date:'F j, Y' }}</time>
         </p>
     </div>
-    {% if user.user_type == user.STUDENT %}
+    {% if user.is_student %}
     <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#uploadSubmissionModal">
         <i class="bi bi-cloud-arrow-up me-1" aria-hidden="true"></i>Submit work
     </button>
-    {% elif user.is_superuser and user.user_type == user.TEACHER %}
+    {% elif user.is_teacher %}
     <div class="d-flex flex-wrap gap-2">
         <a class="btn btn-outline-secondary" href="{% url 'gradesforAssignment' folder.id assignment.id %}">Grades</a>
         <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#editAssignmentModal">Edit</button>
@@ -43,7 +43,7 @@
                 <h2 id="assignmentFilesTitle">Assignment files</h2>
                 <p>{{ assignment.files.count }} file{{ assignment.files.count|pluralize }}</p>
             </div>
-            {% if user.is_superuser and user.user_type == user.TEACHER and files %}
+            {% if user.is_teacher and files %}
             <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#addExistingFileModal">Attach existing</button>
             {% endif %}
         </header>
@@ -57,7 +57,7 @@
                 </div>
                 <div class="resource-actions">
                     <a class="btn btn-sm btn-portal-primary" href="{% url 'viewMobileContentUpload' file.id %}" target="_blank" rel="noopener">View</a>
-                    {% if user.is_superuser and user.user_type == user.TEACHER %}
+                    {% if user.is_teacher %}
                     <form method="post" action="{% url 'deleteFilesFromAssignment' section.id folder.id assignment.id %}">
                         {% csrf_token %}
                         <input name="file_id" type="hidden" value="{{ file.id }}">
@@ -74,7 +74,7 @@
         </div>
     </section>
 
-    {% if user.user_type == user.STUDENT %}
+    {% if user.is_student %}
     <section class="resource-panel" aria-labelledby="mySubmissionsTitle">
         <header class="resource-panel-header">
             <div>
@@ -107,7 +107,7 @@
             {% endfor %}
         </div>
     </section>
-    {% elif user.is_superuser and user.user_type == user.TEACHER %}
+    {% elif user.is_teacher %}
     <section class="resource-panel" aria-labelledby="studentSubmissionsTitle">
         <header class="resource-panel-header">
             <div>
@@ -133,7 +133,7 @@
     {% endif %}
 </div>
 
-{% if user.user_type == user.STUDENT %}
+{% if user.is_student %}
 <div class="modal fade" id="uploadSubmissionModal" tabindex="-1" aria-labelledby="uploadSubmissionTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
         <form method="post" action="{% url 'submitFilesToAssignment' section.id folder.id assignment.id %}" enctype="multipart/form-data">
@@ -146,7 +146,7 @@
 </div>
 {% endif %}
 
-{% if user.is_superuser and user.user_type == user.TEACHER %}
+{% if user.is_teacher %}
 <div class="modal fade" id="editAssignmentModal" tabindex="-1" aria-labelledby="editAssignmentTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
         <form method="post" action="{% url 'editAssignment' section.id folder.id assignment.id %}">

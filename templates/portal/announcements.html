@@ -6,13 +6,13 @@
 {% block content %}
 <header class="portal-page-header">
     <div>
-        <p class="portal-eyebrow">{{ user.get_user_type_display|default:user.user_type }} portal</p>
+        <p class="portal-eyebrow">{{ user.role_display }} portal</p>
         <h1 class="portal-page-title">Announcements</h1>
         <p class="portal-page-description">
             School updates, course notices, and important information in one place.
         </p>
     </div>
-    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    {% if user.is_teacher %}
     <a class="btn btn-portal-primary" href="{% url 'create_announcement' %}">
         <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
         New announcement
@@ -37,7 +37,7 @@
             <div class="announcement-message">
                 {{ announcement.content|linebreaks }}
             </div>
-            {% if user.is_superuser and user.user_type == user.TEACHER %}
+            {% if user.is_teacher %}
             <div class="announcement-meta">
                 <span>
                     <i class="bi bi-people me-1" aria-hidden="true"></i>
@@ -62,7 +62,7 @@
     <i class="bi bi-megaphone" aria-hidden="true"></i>
     <h2 class="fs-4" id="emptyAnnouncementsTitle">No announcements yet</h2>
     <p class="text-secondary mb-0">
-        {% if user.is_superuser and user.user_type == user.TEACHER %}
+        {% if user.is_teacher %}
         Create the first announcement to share an update.
         {% else %}
         New school and course updates will appear here.

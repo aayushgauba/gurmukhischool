@@ -6,6 +6,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
+from django.db.models import Q
 
 MAX_UPLOAD_SIZE = 20 * 1024 * 1024
 DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'png', 'jpg', 'jpeg']
@@ -40,7 +41,10 @@ class UploadedAttendanceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         course = kwargs.pop('course', None)
         super().__init__(*args, **kwargs)
-        students = CustomUser.objects.filter(user_type=CustomUser.STUDENT)
+        students = CustomUser.objects.filter(
+            Q(user_type=CustomUser.STUDENT)
+            | Q(groups__name=CustomUser.STUDENT)
+        ).distinct()
         if course is not None:
             students = students.filter(
                 id__in=course.people.values_list('id', flat=True)

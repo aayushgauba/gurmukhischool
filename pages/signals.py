@@ -52,6 +52,7 @@ def send_contact_notification(contact_id):
             )
             .filter(
                 Q(user_type=CustomUser.ADMIN)
+                | Q(groups__name=CustomUser.ADMIN)
                 | Q(contact_notifications_enabled=True)
             )
             .exclude(email="")

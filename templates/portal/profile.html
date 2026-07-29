@@ -7,7 +7,7 @@
 {% block content %}
 <header class="portal-page-header">
     <div>
-        <p class="portal-eyebrow">{{ user.get_user_type_display|default:user.user_type }} portal</p>
+        <p class="portal-eyebrow">{{ user.role_display }} portal</p>
         <h1 class="portal-page-title">Profile</h1>
         <p class="portal-page-description">Review your account information and profile photo.</p>
     </div>
@@ -44,7 +44,7 @@
         <div class="profile-name-row">
             <div>
                 <h2 id="profileName">{{ user.get_full_name|default:user.username }}</h2>
-                <span class="profile-role">{{ user.get_user_type_display|default:user.user_type }}</span>
+                <span class="profile-role">{{ user.role_display }}</span>
             </div>
             {% if user.approved %}
             <span class="profile-status">

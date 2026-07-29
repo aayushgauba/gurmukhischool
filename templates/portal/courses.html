@@ -6,17 +6,17 @@
 {% block content %}
 <header class="portal-page-header">
     <div>
-        <p class="portal-eyebrow">{{ user.get_user_type_display|default:user.user_type }} portal</p>
+        <p class="portal-eyebrow">{{ user.role_display }} portal</p>
         <h1 class="portal-page-title">Courses</h1>
         <p class="portal-page-description">
-            {% if user.is_superuser and user.user_type == user.TEACHER %}
+            {% if user.is_teacher %}
             Create courses, manage syllabi, and open course materials.
             {% else %}
             Open a course to view its sections, files, and assignments.
             {% endif %}
         </p>
     </div>
-    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    {% if user.is_teacher %}
     <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#createCourseModal">
         <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
         Add course
@@ -49,7 +49,7 @@
                     View syllabus
                 </a>
                 {% endif %}
-                {% if user.is_superuser and user.user_type == user.TEACHER %}
+                {% if user.is_teacher %}
                 <button
                     class="btn btn-outline-secondary"
                     type="button"
@@ -71,7 +71,7 @@
         </div>
     </article>
 
-    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    {% if user.is_teacher %}
     <div class="modal fade" id="uploadSyllabusModal{{ course.id }}" tabindex="-1" aria-labelledby="uploadSyllabusTitle{{ course.id }}" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -123,7 +123,7 @@
     <i class="bi bi-journal-bookmark" aria-hidden="true"></i>
     <h2 class="fs-4" id="emptyCoursesTitle">No courses available</h2>
     <p class="text-secondary mb-0">
-        {% if user.is_superuser and user.user_type == user.TEACHER %}
+        {% if user.is_teacher %}
         Add the first course to get started.
         {% else %}
         You have not been enrolled in a course yet.
@@ -132,7 +132,7 @@
 </section>
 {% endif %}
 
-{% if user.is_superuser and user.user_type == user.TEACHER %}
+{% if user.is_teacher %}
 <div class="modal fade" id="createCourseModal" tabindex="-1" aria-labelledby="createCourseTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

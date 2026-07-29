@@ -10,7 +10,7 @@
         <h1 class="portal-page-title">{{ course.title }}</h1>
         <p class="portal-page-description">{{ course.description|default:'Course materials and assignments.' }}</p>
     </div>
-    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    {% if user.is_teacher %}
     <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#createSectionModal">
         <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add section
     </button>
@@ -29,7 +29,7 @@
     <a href="{% url 'grades' course.id %}">
         <i class="bi bi-bar-chart-line" aria-hidden="true"></i><span>Grades</span>
     </a>
-    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    {% if user.is_teacher %}
     <a href="{% url 'students' course.id %}">
         <i class="bi bi-people" aria-hidden="true"></i><span>Students</span>
     </a>
@@ -44,7 +44,7 @@
             <div>
                 <div class="d-flex flex-wrap align-items-center gap-2">
                     <h2>{{ section.title }}</h2>
-                    {% if user.is_superuser and user.user_type == user.TEACHER %}
+                    {% if user.is_teacher %}
                     <span class="section-status {% if section.status %}is-visible{% else %}is-hidden{% endif %}">
                         {% if section.status %}Visible{% else %}Hidden{% endif %}
                     </span>
@@ -53,7 +53,7 @@
                 <p>{{ section.folders.count }} folder{{ section.folders.count|pluralize }}</p>
             </div>
 
-            {% if user.is_superuser and user.user_type == user.TEACHER %}
+            {% if user.is_teacher %}
             <div class="section-actions">
                 <form method="post" action="{% url 'moveSectionUp' section.id %}">
                     {% csrf_token %}
@@ -100,7 +100,7 @@
             </a>
             {% empty %}
             <p class="section-empty">
-                {% if user.is_superuser and user.user_type == user.TEACHER %}
+                {% if user.is_teacher %}
                 This section has no folders. Add one to organize its materials.
                 {% else %}
                 No materials have been added to this section yet.
@@ -110,7 +110,7 @@
         </div>
     </article>
 
-    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    {% if user.is_teacher %}
     <div class="modal fade" id="createFolderModal{{ section.id }}" tabindex="-1" aria-labelledby="createFolderTitle{{ section.id }}" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -162,7 +162,7 @@
     <i class="bi bi-collection" aria-hidden="true"></i>
     <h2 class="fs-4" id="emptySectionsTitle">No sections available</h2>
     <p class="text-secondary mb-0">
-        {% if user.is_superuser and user.user_type == user.TEACHER %}
+        {% if user.is_teacher %}
         Add the first section to begin organizing this course.
         {% else %}
         Course materials will appear here when they are published.
@@ -171,7 +171,7 @@
 </section>
 {% endif %}
 
-{% if user.is_superuser and user.user_type == user.TEACHER %}
+{% if user.is_teacher %}
 <div class="modal fade" id="createSectionModal" tabindex="-1" aria-labelledby="createSectionTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">

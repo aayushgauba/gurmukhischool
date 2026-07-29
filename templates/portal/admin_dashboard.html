@@ -33,13 +33,15 @@
             <form class="admin-approval-form" method="post" action="{% url 'adminViewHome' %}">
                 {% csrf_token %}
                 <input name="user_id" type="hidden" value="{{ pending_user.id }}">
-                <label class="visually-hidden" for="role{{ pending_user.id }}">Role for {{ pending_user.get_full_name|default:pending_user.username }}</label>
-                <select class="form-select form-select-sm" id="role{{ pending_user.id }}" name="user_type" required>
-                    <option value="">Choose role</option>
+                <fieldset>
+                    <legend class="visually-hidden">Roles for {{ pending_user.get_full_name|default:pending_user.username }}</legend>
                     {% for role_value, role_label in user_roles %}
-                    <option value="{{ role_value }}">{{ role_label }}</option>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" id="role{{ pending_user.id }}{{ forloop.counter }}" name="roles" type="checkbox" value="{{ role_value }}">
+                        <label class="form-check-label" for="role{{ pending_user.id }}{{ forloop.counter }}">{{ role_label }}</label>
+                    </div>
                     {% endfor %}
-                </select>
+                </fieldset>
                 <button class="btn btn-sm btn-portal-primary" type="submit"><i class="bi bi-person-check me-1" aria-hidden="true"></i>Approve</button>
             </form>
         </article>
