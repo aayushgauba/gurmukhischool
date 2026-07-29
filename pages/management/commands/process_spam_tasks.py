@@ -2,6 +2,7 @@ import json
 
 from django.core.management.base import BaseCommand, CommandError
 
+from pages.models import Contact, MailboxMessage
 from pages.tasks import classify_spam_messages
 
 
@@ -17,8 +18,45 @@ class Command(BaseCommand):
             action="store_true",
             help="Submit spam classification to Django's configured task backend.",
         )
+        parser.add_argument(
+            "--restore-automatic",
+            action="store_true",
+            help=(
+                "Restore messages classified automatically while preserving "
+                "administrator-reviewed spam labels."
+            ),
+        )
 
     def handle(self, *args, **options):
+        if options["restore_automatic"]:
+            if options["enqueue"]:
+                raise CommandError(
+                    "--restore-automatic cannot be combined with --enqueue."
+                )
+            contacts = Contact.objects.filter(
+                is_spam=True,
+                spam_reviewed=False,
+            ).update(is_spam=False)
+            emails = MailboxMessage.objects.filter(
+                is_spam=True,
+                spam_reviewed=False,
+            ).update(is_spam=False)
+            self.stdout.write(
+                json.dumps(
+                    {
+                        "contacts_restored": contacts,
+                        "emails_restored": emails,
+                    },
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Automatic spam classifications were restored."
+                )
+            )
+            return
         if options["enqueue"]:
             result = classify_spam_messages.enqueue()
             if result.errors:

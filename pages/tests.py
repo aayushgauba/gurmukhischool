@@ -127,6 +127,13 @@ class CombinedSpamClassifierTests(TestCase):
             message="Question about the school class schedule",
             spam_reviewed=True,
         )
+        for index in range(4):
+            Contact.objects.create(
+                name=f"Family {index}",
+                email=f"family{index}@example.com",
+                message=f"Normal school attendance question {index}",
+                spam_reviewed=True,
+            )
 
     def test_task_classifies_contact_forms_and_mailbox_email(self):
         contact = Contact.objects.create(
@@ -178,7 +185,14 @@ class SpamLearningThresholdTests(SimpleTestCase):
             for index in range(65)
         ]
 
-        learned_terms = learn_spam_terms(spam_messages, [])
+        legitimate_messages = [
+            f"School class schedule question {index}"
+            for index in range(5)
+        ]
+        learned_terms = learn_spam_terms(
+            spam_messages,
+            legitimate_messages,
+        )
         likely_spam, matches = match_spam_terms(
             "A new crypto jackpot opportunity",
             learned_terms,
@@ -188,6 +202,14 @@ class SpamLearningThresholdTests(SimpleTestCase):
         self.assertIn("jackpot", learned_terms)
         self.assertTrue(likely_spam)
         self.assertEqual(matches, ["crypto", "jackpot"])
+
+    def test_classifier_does_not_train_without_legitimate_examples(self):
+        learned_terms = learn_spam_terms(
+            ["crypto jackpot offer"] * 65,
+            [],
+        )
+
+        self.assertEqual(learned_terms, {})
 
 
 @override_settings(

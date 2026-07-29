@@ -14,6 +14,7 @@ STOP_WORDS = {
     "who", "will", "with", "would", "you", "your",
 }
 MINIMUM_SPAM_MESSAGES = 3
+MINIMUM_LEGITIMATE_MESSAGES = 5
 MINIMUM_TERM_DOCUMENT_RATIO = 0.05
 
 
@@ -28,7 +29,10 @@ def tokenize(message):
 def learn_spam_terms(spam_messages, legitimate_messages):
     spam_documents = [tokenize(message) for message in spam_messages]
     legitimate_documents = [tokenize(message) for message in legitimate_messages]
-    if len(spam_documents) < MINIMUM_SPAM_MESSAGES:
+    if (
+        len(spam_documents) < MINIMUM_SPAM_MESSAGES
+        or len(legitimate_documents) < MINIMUM_LEGITIMATE_MESSAGES
+    ):
         return {}
 
     spam_frequency = Counter(

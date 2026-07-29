@@ -22,6 +22,8 @@ from .models import (
     TwoFactorEmailDelivery,
 )
 from .spam_classifier import (
+    MINIMUM_LEGITIMATE_MESSAGES,
+    MINIMUM_SPAM_MESSAGES,
     MINIMUM_TERM_DOCUMENT_RATIO,
     is_likely_spam,
     learn_spam_terms,
@@ -213,6 +215,10 @@ def classify_spam_messages():
     )
 
     learned_terms = learn_spam_terms(spam_messages, legitimate_messages)
+    training_ready = (
+        len(spam_messages) >= MINIMUM_SPAM_MESSAGES
+        and len(legitimate_messages) >= MINIMUM_LEGITIMATE_MESSAGES
+    )
     contact_spam_ids = []
     for contact in Contact.objects.filter(
         is_spam=False,
@@ -242,6 +248,7 @@ def classify_spam_messages():
     return {
         "reviewed_spam_messages": len(spam_messages),
         "legitimate_messages": len(legitimate_messages),
+        "training_ready": training_ready,
         "minimum_spam_term_occurrences": (
             max(
                 2,
@@ -253,9 +260,9 @@ def classify_spam_messages():
             else None
         ),
         "training_warning": (
-            "Restore several legitimate messages so the classifier can reduce "
-            "false positives."
-            if not legitimate_messages
+            f"Classification was skipped. Restore at least "
+            f"{MINIMUM_LEGITIMATE_MESSAGES} legitimate messages first."
+            if len(legitimate_messages) < MINIMUM_LEGITIMATE_MESSAGES
             else None
         ),
         "contacts_classified_as_spam": len(contact_spam_ids),
