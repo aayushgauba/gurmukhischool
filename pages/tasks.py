@@ -1,4 +1,6 @@
 import logging
+import hashlib
+import hmac
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -10,11 +12,20 @@ from django.utils import timezone
 from portal.models import CustomUser
 
 from .mailbox import mailbox_is_configured, send_admin_email, sync_inbox
-from .models import Contact, MailDraft, MailboxMessage
+from .models import Contact, MailDraft, MailboxMessage, TwoFactorEmailDelivery
 from .spam_classifier import is_likely_spam, learn_spam_terms
 
 
 logger = logging.getLogger(__name__)
+
+
+def two_factor_code_for_nonce(nonce):
+    digest = hmac.new(
+        settings.SECRET_KEY.encode(),
+        nonce.encode(),
+        hashlib.sha256,
+    ).digest()
+    return f"{int.from_bytes(digest[:8], 'big') % 1_000_000:06d}"
 
 
 def _mailbox_text(message):
@@ -124,10 +135,50 @@ def send_two_factor_code_email(user_id, code, expires_minutes):
 
 @task
 def check_two_factor_delivery_stage():
-    # Verification-code tasks run immediately during login so users are never
-    # left waiting for a scheduled worker. This stage intentionally runs first
-    # in the general mail pipeline to preserve that ordering.
-    return {"checked": True, "delivery": "event-driven"}
+    sent = 0
+    failed = 0
+    expired = TwoFactorEmailDelivery.objects.filter(
+        expires_at__lte=timezone.now(),
+    ).delete()[0]
+    delivery_ids = list(
+        TwoFactorEmailDelivery.objects.filter(
+            status=TwoFactorEmailDelivery.QUEUED,
+            expires_at__gt=timezone.now(),
+        ).values_list("id", flat=True)
+    )
+    for delivery_id in delivery_ids:
+        try:
+            with transaction.atomic():
+                delivery = (
+                    TwoFactorEmailDelivery.objects.select_for_update()
+                    .select_related("user")
+                    .get(pk=delivery_id)
+                )
+                if delivery.status != TwoFactorEmailDelivery.QUEUED:
+                    continue
+                send_two_factor_code_email.call(
+                    delivery.user_id,
+                    two_factor_code_for_nonce(delivery.nonce),
+                    max(
+                        1,
+                        int(
+                            (delivery.expires_at - timezone.now()).total_seconds()
+                            // 60
+                        ),
+                    ),
+                )
+                delivery.status = TwoFactorEmailDelivery.SENT
+                delivery.sent_at = timezone.now()
+                delivery.save(update_fields=["status", "sent_at"])
+        except Exception:
+            logger.exception(
+                "Queued two-factor email %s failed to send.",
+                delivery_id,
+            )
+            failed += 1
+        else:
+            sent += 1
+    return {"sent": sent, "failed": failed, "expired": expired}
 
 
 @task

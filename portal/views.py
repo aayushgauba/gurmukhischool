@@ -31,8 +31,13 @@ from django.views.decorators.debug import sensitive_post_parameters
 from asgiref.sync import sync_to_async
 from pages.forms import MailComposeForm
 from pages.mailbox import mailbox_is_configured
-from pages.models import Contact, MailboxMessage, MailDraft
-from pages.tasks import process_email_pipeline, send_two_factor_code_email
+from pages.models import (
+    Contact,
+    MailboxMessage,
+    MailDraft,
+    TwoFactorEmailDelivery,
+)
+from pages.tasks import two_factor_code_for_nonce
 from django.core.exceptions import ValidationError
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
@@ -44,7 +49,7 @@ import re
 import os
 import asyncio
 import calendar
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import logging
 import mimetypes
@@ -1496,17 +1501,10 @@ def adminContactView(request:HttpRequest):
 @admin_required
 @approved_required
 def adminMailboxSync(request):
-    result = process_email_pipeline.call()
-    sync_result = result["sync"]
-    if sync_result.get("error"):
-        logger.error("Mailbox synchronization failed: %s", sync_result["error"])
-        messages.error(request, "The mailbox could not be synchronized. Check the IMAP configuration.")
-    else:
-        messages.success(
-            request,
-            f"Email tasks completed. {result['responses']['sent']} responses sent and "
-            f"{sync_result['synced']} messages synchronized.",
-        )
+    messages.success(
+        request,
+        "Mailbox synchronization has been requested and will run with the next background email task.",
+    )
     return redirect("adminContactView")
 
 
@@ -1559,19 +1557,11 @@ def adminMailboxCompose(request):
         if action == "send":
             mail_record.status = MailDraft.QUEUED
             mail_record.save()
-            result = process_email_pipeline.call()
-            mail_record.refresh_from_db()
-            if mail_record.status != MailDraft.SENT:
-                messages.error(
-                    request,
-                    "The email could not be sent. It remains queued for the next email-task run.",
-                )
-            else:
-                messages.success(
-                    request,
-                    f"Email sent from {settings.DEFAULT_FROM_EMAIL}.",
-                )
-                return redirect("adminContactView")
+            messages.success(
+                request,
+                f"Email queued to send from {settings.DEFAULT_FROM_EMAIL}.",
+            )
+            return redirect("adminContactView")
 
     profile_photo = request.user.profile_photos.order_by("-uploaded_at").first()
     return render(
@@ -2115,21 +2105,30 @@ def _portal_home_for_user(user):
 
 
 def _send_two_factor_code(request, user, backend=None):
-    code = f"{secrets.randbelow(1_000_000):06d}"
+    nonce = secrets.token_urlsafe(32)
+    code = two_factor_code_for_nonce(nonce)
+    now_timestamp = int(timezone.now().timestamp())
+    expires_at = timezone.now() + timedelta(
+        seconds=TWO_FACTOR_CODE_LIFETIME_SECONDS
+    )
     try:
-        send_two_factor_code_email.call(
-            user.pk,
-            code,
-            TWO_FACTOR_CODE_LIFETIME_SECONDS // 60,
-        )
+        with transaction.atomic():
+            TwoFactorEmailDelivery.objects.filter(
+                user=user,
+                status=TwoFactorEmailDelivery.QUEUED,
+            ).delete()
+            TwoFactorEmailDelivery.objects.create(
+                user=user,
+                nonce=nonce,
+                expires_at=expires_at,
+            )
     except Exception:
         logger.exception(
-            "Two-factor verification email failed for user_id=%s.",
+            "Two-factor verification email could not be queued for user_id=%s.",
             user.pk,
         )
         return False
 
-    now_timestamp = int(timezone.now().timestamp())
     request.session[TWO_FACTOR_USER_SESSION_KEY] = user.pk
     request.session[TWO_FACTOR_HASH_SESSION_KEY] = make_password(code)
     request.session[TWO_FACTOR_EXPIRES_SESSION_KEY] = (
@@ -2170,7 +2169,7 @@ def login(request):
                         return redirect("two_factor_verify")
                     messages.error(
                         request,
-                        "Your password was correct, but the verification email could not be sent. Try again.",
+                        "Your password was correct, but the verification email could not be queued. Try again.",
                     )
                     return redirect("login")
                 auth_login(request, user)

@@ -87,3 +87,30 @@ class MailDraft(models.Model):
 
     def __str__(self):
         return self.subject
+
+
+class TwoFactorEmailDelivery(models.Model):
+    QUEUED = "queued"
+    SENT = "sent"
+    STATUS_CHOICES = [
+        (QUEUED, "Queued"),
+        (SENT, "Sent"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="two_factor_email_deliveries",
+    )
+    nonce = models.CharField(max_length=64, unique=True)
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default=QUEUED,
+    )
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]

@@ -1,13 +1,22 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from .mailbox import send_admin_email
-from .models import Contact, MailDraft, MailboxMessage
+from .models import (
+    Contact,
+    MailDraft,
+    MailboxMessage,
+    TwoFactorEmailDelivery,
+)
 from .tasks import (
     classify_spam_messages,
     process_email_pipeline,
     send_two_factor_code_email,
+    two_factor_code_for_nonce,
 )
 
 
@@ -56,6 +65,13 @@ class AdminMailboxTests(TestCase):
 
     @override_settings(EMAIL_IMAP_HOST="")
     def test_pipeline_processes_stages_in_required_order(self):
+        self.user.email = "admin@example.com"
+        self.user.save(update_fields=["email"])
+        delivery = TwoFactorEmailDelivery.objects.create(
+            user=self.user,
+            nonce="queued-test-nonce",
+            expires_at=timezone.now() + timedelta(minutes=10),
+        )
         draft = MailDraft.objects.create(
             recipient="visitor@example.com",
             subject="Response",
@@ -70,7 +86,10 @@ class AdminMailboxTests(TestCase):
             list(result),
             ["two_factor", "responses", "sync"],
         )
-        self.assertTrue(result["two_factor"]["checked"])
+        delivery.refresh_from_db()
+        self.assertEqual(result["two_factor"]["sent"], 1)
+        self.assertEqual(delivery.status, TwoFactorEmailDelivery.SENT)
+        self.assertIn(two_factor_code_for_nonce(delivery.nonce), mail.outbox[0].body)
         self.assertEqual(result["responses"]["sent"], 1)
         self.assertEqual(draft.status, MailDraft.SENT)
         self.assertFalse(result["sync"]["configured"])
