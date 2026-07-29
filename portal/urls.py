@@ -72,6 +72,7 @@ urlpatterns = [
     path('profile', views.profile, name='profile'),
     path('profile/upload/photo/<int:course_id>', views.upload_profile_photo, name='upload_profile_photo_with_course'),
     path('profile/upload/photo', views.upload_profile_photo, name='upload_profile_photo'),
+    path('profile/username', views.change_username, name='change_username'),
     path('profile/two-factor', views.change_two_factor_setting, name='change_two_factor_setting'),
     path('carousel/school/photo/up/<int:image_id>', views.moveCarouselImageUp, name = "moveCarouselImageUp"),
     path('carousel/school/photo/down/<int:image_id>', views.moveCarouselImageDown, name = "moveCarouselImageDown"),

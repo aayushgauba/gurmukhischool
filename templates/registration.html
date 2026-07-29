@@ -130,8 +130,13 @@
                 <input type="text" class="form-control" id="lastName" name="lastName" required>
               </div>
               <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" maxlength="150" autocomplete="username" required>
+                <div class="form-text">Use letters, numbers, or @/./+/-/_ characters.</div>
+              </div>
+              <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" required>
+                <input type="email" class="form-control" id="email" name="email" autocomplete="email" required>
               </div>
               <div class="mb-3">
                 <label for="phoneNumber" class="form-label">Phone Number</label>

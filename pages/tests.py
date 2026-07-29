@@ -16,6 +16,7 @@ from .models import (
 from .tasks import (
     classify_spam_messages,
     process_email_pipeline,
+    purge_old_spam_messages,
     send_queued_admin_notifications,
     send_two_factor_code_email,
     two_factor_code_for_nonce,
@@ -210,6 +211,86 @@ class SpamLearningThresholdTests(SimpleTestCase):
         )
 
         self.assertEqual(learned_terms, {})
+
+
+class SpamRetentionTaskTests(TestCase):
+    def setUp(self):
+        self.old_contact_spam = Contact.objects.create(
+            name="Old Spam",
+            email="old-spam@example.com",
+            message="Old spam",
+            is_spam=True,
+            spam_reviewed=True,
+        )
+        Contact.objects.filter(pk=self.old_contact_spam.pk).update(
+            date=(timezone.now() - timedelta(days=91)).date()
+        )
+        self.recent_contact_spam = Contact.objects.create(
+            name="Recent Spam",
+            email="recent-spam@example.com",
+            message="Recent spam",
+            is_spam=True,
+            spam_reviewed=True,
+        )
+        self.old_legitimate_contact = Contact.objects.create(
+            name="Old Legitimate",
+            email="old-legitimate@example.com",
+            message="Old legitimate message",
+            spam_reviewed=True,
+        )
+        Contact.objects.filter(pk=self.old_legitimate_contact.pk).update(
+            date=(timezone.now() - timedelta(days=91)).date()
+        )
+        self.old_email_spam = MailboxMessage.objects.create(
+            folder="INBOX",
+            uid="old-spam",
+            sender_email="spam@example.com",
+            subject="Old spam",
+            received_at=timezone.now() - timedelta(days=91),
+            is_spam=True,
+            spam_reviewed=True,
+        )
+        self.recent_email_spam = MailboxMessage.objects.create(
+            folder="INBOX",
+            uid="recent-spam",
+            sender_email="spam@example.com",
+            subject="Recent spam",
+            received_at=timezone.now() - timedelta(days=89),
+            is_spam=True,
+            spam_reviewed=True,
+        )
+
+    def test_cleanup_previews_without_deleting_by_default(self):
+        result = purge_old_spam_messages.call()
+
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["contacts_matched"], 1)
+        self.assertEqual(result["emails_matched"], 1)
+        self.assertTrue(Contact.objects.filter(pk=self.old_contact_spam.pk).exists())
+        self.assertTrue(
+            MailboxMessage.objects.filter(pk=self.old_email_spam.pk).exists()
+        )
+
+    def test_cleanup_deletes_only_old_spam_when_applied(self):
+        result = purge_old_spam_messages.call(apply=True)
+
+        self.assertTrue(result["applied"])
+        self.assertEqual(result["total_matched"], 2)
+        self.assertFalse(
+            Contact.objects.filter(pk=self.old_contact_spam.pk).exists()
+        )
+        self.assertFalse(
+            MailboxMessage.objects.filter(pk=self.old_email_spam.pk).exists()
+        )
+        self.assertTrue(
+            Contact.objects.filter(pk=self.recent_contact_spam.pk).exists()
+        )
+        self.assertTrue(
+            Contact.objects.filter(pk=self.old_legitimate_contact.pk).exists()
+        )
+        self.assertTrue(
+            MailboxMessage.objects.filter(pk=self.recent_email_spam.pk).exists()
+        )
 
 
 @override_settings(

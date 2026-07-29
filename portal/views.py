@@ -18,6 +18,7 @@ from .models import UploadedFile, Assignment, Submission
 from main.models import CarouselImage as Carousel
 from main.forms import CarouselImageForm as MainCarouselImageForm
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from .decorators import (
     teacher_required,
     admin_required,
@@ -43,7 +44,7 @@ from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.hashers import check_password, make_password
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Avg, Q
 import re
 import os
@@ -1660,6 +1661,48 @@ def profile(request: HttpRequest, course_id=None):
         "active_nav": "profile",
     })
 
+
+@require_POST
+@login_required
+@approved_required
+@sensitive_post_parameters("password")
+def change_username(request):
+    username = request.POST.get("username", "").strip()
+    password = request.POST.get("password", "")
+    if not request.user.check_password(password):
+        messages.error(request, "Your current password is incorrect.")
+        return redirect("profile")
+    try:
+        UnicodeUsernameValidator()(username)
+    except ValidationError:
+        messages.error(
+            request,
+            "Use 150 or fewer letters, numbers, or @/./+/-/_ characters.",
+        )
+        return redirect("profile")
+    if not username or len(username) > 150:
+        messages.error(
+            request,
+            "Username must contain between 1 and 150 characters.",
+        )
+        return redirect("profile")
+    if CustomUser.objects.filter(
+        username__iexact=username
+    ).exclude(pk=request.user.pk).exists():
+        messages.error(request, "That username is already in use.")
+        return redirect("profile")
+    if username == request.user.username:
+        messages.info(request, "Your username is already set to that value.")
+        return redirect("profile")
+    request.user.username = username
+    try:
+        request.user.save(update_fields=["username"])
+    except IntegrityError:
+        messages.error(request, "That username is already in use.")
+        return redirect("profile")
+    messages.success(request, "Your username was updated.")
+    return redirect("profile")
+
 def send_announcement_emails(announcement):
     recipients = set()
     all_sent = True
@@ -1898,29 +1941,58 @@ def registration(request):
     if request.method == 'POST':
         firstname = request.POST.get('firstName')
         lastname = request.POST.get('lastName')
-        email = request.POST.get('email')
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password')
         phone = request.POST.get('phoneNumber')
         try:
             phone = validate_phone_number(phone)
-            if CustomUser.objects.filter(email=email).exists():
-                return redirect('login')
+            UnicodeUsernameValidator()(username)
         except ValidationError as e:
             return render(request, "registration.html", {"error": str(e)})
-        if firstname and lastname and email and password and phone:
+        if len(username) > 150:
+            return render(
+                request,
+                "registration.html",
+                {"error": "Username must be 150 characters or fewer."},
+            )
+        if CustomUser.objects.filter(username__iexact=username).exists():
+            return render(
+                request,
+                "registration.html",
+                {"error": "That username is already in use."},
+            )
+        if CustomUser.objects.filter(email__iexact=email).exists():
+            return render(
+                request,
+                "registration.html",
+                {"error": "An account already uses that email address."},
+            )
+        if firstname and lastname and username and email and password and phone:
             try:
                 validate_password(password)
             except ValidationError as error:
                 return render(request, "registration.html", {"error": " ".join(error.messages)})
-            user = CustomUser.objects.create_user(
-                first_name=firstname,
-                last_name=lastname,
-                phone_number=phone,
-                username=email,
-                email=email,
-                password=password,
-                is_active=False,
-            )
+            try:
+                user = CustomUser.objects.create_user(
+                    first_name=firstname,
+                    last_name=lastname,
+                    phone_number=phone,
+                    username=username,
+                    email=email,
+                    password=password,
+                    is_active=False,
+                )
+            except IntegrityError:
+                return render(
+                    request,
+                    "registration.html",
+                    {
+                        "error": (
+                            "That username or email address is already in use."
+                        )
+                    },
+                )
             current_site = get_current_site(request)
             subject = 'Activate Your Account'
             message = render_to_string('email/activation.html', {
@@ -2180,10 +2252,24 @@ def login(request):
         return redirect(_portal_home_for_user(request.user))
     if request.method == 'POST':
         _clear_two_factor_session(request)
-        email = request.POST.get('email', '').strip()
+        identifier = (
+            request.POST.get('identifier')
+            or request.POST.get('email')
+            or ''
+        ).strip()
         password = request.POST.get('password', '')
-        if email and password:
-            user = authenticate(username=email, password=password)
+        if identifier and password:
+            matched_user = CustomUser.objects.filter(
+                Q(email__iexact=identifier)
+                | Q(username__iexact=identifier)
+            ).only("username").first()
+            authentication_username = (
+                matched_user.username if matched_user else identifier
+            )
+            user = authenticate(
+                username=authentication_username,
+                password=password,
+            )
             if user:
                 if user.two_factor_enabled:
                     if not user.email:
@@ -2205,7 +2291,10 @@ def login(request):
                     return redirect("login")
                 auth_login(request, user)
                 return redirect(_portal_home_for_user(user))
-        messages.error(request, "The email address or password is incorrect.")
+        messages.error(
+            request,
+            "The username, email address, or password is incorrect.",
+        )
     return render(request, "login.html")
 
 

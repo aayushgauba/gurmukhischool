@@ -74,6 +74,26 @@
     </div>
 </section>
 
+<section class="profile-security-card" aria-labelledby="usernameTitle">
+    <div>
+        <p class="portal-eyebrow">Account identity</p>
+        <h2 id="usernameTitle">Username</h2>
+        <p>Change the username you can use to sign in. Your email address and account data will not change.</p>
+    </div>
+    <form method="post" action="{% url 'change_username' %}">
+        {% csrf_token %}
+        <div>
+            <label class="form-label" for="newUsername">New username</label>
+            <input class="form-control" id="newUsername" name="username" type="text" value="{{ user.username }}" maxlength="150" autocomplete="username" required>
+        </div>
+        <div>
+            <label class="form-label" for="usernamePassword">Current password</label>
+            <input class="form-control" id="usernamePassword" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn btn-portal-primary" type="submit">Update username</button>
+    </form>
+</section>
+
 <section class="profile-security-card" aria-labelledby="twoFactorTitle">
     <div>
         <p class="portal-eyebrow">Account security</p>

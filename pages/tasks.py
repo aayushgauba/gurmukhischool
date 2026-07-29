@@ -2,6 +2,7 @@ import logging
 import hashlib
 import hmac
 import math
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -45,6 +46,40 @@ def two_factor_code_for_nonce(nonce):
 
 def _mailbox_text(message):
     return "\n".join(part for part in [message.subject, message.body] if part)
+
+
+@task
+def purge_old_spam_messages(days=90, apply=False):
+    if days < 1:
+        raise ValueError("Spam retention must be at least one day.")
+
+    cutoff = timezone.now() - timedelta(days=days)
+    contact_spam = Contact.objects.filter(
+        is_spam=True,
+        date__lt=cutoff.date(),
+    )
+    mailbox_spam = MailboxMessage.objects.filter(is_spam=True).filter(
+        Q(received_at__lt=cutoff)
+        | Q(received_at__isnull=True, synced_at__lt=cutoff)
+    )
+    contact_count = contact_spam.count()
+    email_count = mailbox_spam.count()
+
+    if apply:
+        with transaction.atomic():
+            contact_spam.delete()
+            mailbox_spam.delete()
+
+    return {
+        "applied": apply,
+        "retention_days": days,
+        "cutoff": cutoff.isoformat(),
+        "contacts_matched": contact_count,
+        "emails_matched": email_count,
+        "total_matched": contact_count + email_count,
+        "contacts_deleted": contact_count if apply else 0,
+        "emails_deleted": email_count if apply else 0,
+    }
 
 
 def _admin_notification_recipients():
