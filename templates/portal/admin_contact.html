@@ -1,0 +1,90 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Contact inbox{% endblock %}
+{% block meta_description %}Review messages submitted through the website contact form.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">Administration</p>
+        <h1 class="portal-page-title">Contact inbox</h1>
+        <p class="portal-page-description">Review, reply to, and organize messages from the public website.</p>
+    </div>
+    <span class="admin-waitlist-count">
+        <i class="bi bi-envelope me-1" aria-hidden="true"></i>{{ contacts.count }} shown
+    </span>
+</header>
+
+<nav class="contact-status-tabs" aria-label="Message status">
+    <a href="?status=inbox" class="{% if status == 'inbox' %}active{% endif %}">Inbox</a>
+    <a href="?status=spam" class="{% if status == 'spam' %}active{% endif %}">Spam</a>
+    <a href="?status=all" class="{% if status == 'all' %}active{% endif %}">All</a>
+</nav>
+
+<form class="contact-filters" method="get">
+    <input name="status" type="hidden" value="{{ status }}">
+    <div>
+        <label class="visually-hidden" for="contactSearch">Search messages</label>
+        <input class="form-control" id="contactSearch" name="q" type="search" value="{{ query }}" placeholder="Search sender, email, or message">
+    </div>
+    <div>
+        <label class="visually-hidden" for="contactDate">Message date</label>
+        <input class="form-control" id="contactDate" name="date" type="date" value="{{ selected_date }}">
+    </div>
+    <button class="btn btn-portal-primary" type="submit">Filter</button>
+    {% if query or selected_date %}
+    <a class="btn btn-outline-secondary" href="?status={{ status }}">Clear</a>
+    {% endif %}
+</form>
+
+{% if contacts %}
+<section class="contact-message-list" aria-label="Contact messages">
+    {% for contact in contacts %}
+    <article class="contact-message-card">
+        <header>
+            <span class="student-initial" aria-hidden="true">{{ contact.name|first|upper }}</span>
+            <div>
+                <h2>{{ contact.name }}</h2>
+                <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
+            </div>
+            <time datetime="{{ contact.date|date:'Y-m-d' }}">{{ contact.date|date:'M j, Y' }}</time>
+            {% if contact.is_spam %}<span class="portal-status-badge">Spam</span>{% endif %}
+        </header>
+        <p class="contact-message-text">{{ contact.message|linebreaksbr }}</p>
+        <footer>
+            <a class="btn btn-sm btn-portal-primary" href="mailto:{{ contact.email }}">
+                <i class="bi bi-reply me-1" aria-hidden="true"></i>Reply
+            </a>
+            {% if contact.is_spam %}
+            <form method="post" action="{% url 'contactRestore' contact.id %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Restore</button>
+            </form>
+            {% else %}
+            <form method="post" action="{% url 'contactSpam' contact.id %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Mark as spam</button>
+            </form>
+            {% endif %}
+            <details class="contact-delete">
+                <summary class="btn btn-sm btn-outline-danger">Delete</summary>
+                <div>
+                    <p>Permanently delete this message?</p>
+                    <form method="post" action="{% url 'contactDelete' contact.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-danger" type="submit">Confirm delete</button>
+                    </form>
+                </div>
+            </details>
+        </footer>
+    </article>
+    {% endfor %}
+</section>
+{% else %}
+<section class="portal-empty-state" aria-labelledby="emptyContactsTitle">
+    <i class="bi bi-inbox" aria-hidden="true"></i>
+    <h2 class="fs-4" id="emptyContactsTitle">No messages found</h2>
+    <p class="text-secondary mb-0">Try another filter or check back later.</p>
+</section>
+{% endif %}
+{% endblock %}

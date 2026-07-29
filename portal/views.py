@@ -316,25 +316,32 @@ def moveCarouselImageDown(request, image_id):
 @approved_required
 @admin_required
 def contactSpam(request, contact_id):
-    try:
-        contact = Contact.objects.get(id=contact_id)
-        contact.is_spam = True
-        contact.save()
-        return redirect("contact")
-    except Contact.DoesNotExist:
-        return redirect("contact")
+    contact = get_object_or_404(Contact, id=contact_id)
+    Contact.objects.filter(pk=contact.pk).update(is_spam=True)
+    messages.success(request, f"The message from {contact.name} was marked as spam.")
+    return redirect("adminContactView")
+
+
+@require_POST
+@login_required
+@approved_required
+@admin_required
+def contactRestore(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id)
+    Contact.objects.filter(pk=contact.pk).update(is_spam=False)
+    messages.success(request, f"The message from {contact.name} was restored to the inbox.")
+    return redirect("adminContactView")
     
 @require_POST
 @login_required
 @approved_required
 @admin_required
 def contactDelete(request, contact_id):
-    try:
-        contact = Contact.objects.get(id=contact_id)
-        contact.delete()
-        return redirect("contact")
-    except Contact.DoesNotExist:
-        return redirect("contact")
+    contact = get_object_or_404(Contact, id=contact_id)
+    sender_name = contact.name
+    contact.delete()
+    messages.success(request, f"The message from {sender_name} was deleted.")
+    return redirect("adminContactView")
 
 @require_POST
 @login_required
@@ -1285,13 +1292,40 @@ def deleteSection(request, section_id):
 @admin_required
 @approved_required
 def adminContactView(request:HttpRequest):
-    contacts = Contact.objects.filter(is_spam = False)
-    user_agent = _user_agent(request)
+    status = request.GET.get("status", "inbox")
+    query = request.GET.get("q", "").strip()
+    selected_date = request.GET.get("date", "").strip()
+    contacts = Contact.objects.all()
+    if status == "spam":
+        contacts = contacts.filter(is_spam=True)
+    elif status == "all":
+        pass
+    else:
+        status = "inbox"
+        contacts = contacts.filter(is_spam=False)
+    if query:
+        contacts = contacts.filter(
+            Q(name__icontains=query)
+            | Q(email__icontains=query)
+            | Q(message__icontains=query)
+        )
+    if selected_date:
+        try:
+            filter_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
+        except ValueError:
+            selected_date = ""
+        else:
+            contacts = contacts.filter(date=filter_date)
+    contacts = contacts.order_by("-date", "-id")
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    if "mobile" in user_agent:
-        return render(request, 'portal/mobile_adminContact.html', {"contacts":contacts, "profile_photo":profile_photo})
-    else:   
-        return render(request, "portal/desktop_adminContact.html", {"contacts":contacts, "profile_photo":profile_photo})
+    return render(request, "portal/admin_contact.html", {
+        "contacts": contacts,
+        "profile_photo": profile_photo,
+        "status": status,
+        "query": query,
+        "selected_date": selected_date,
+        "active_nav": "admin_contact",
+    })
 
 @login_required
 @approved_required

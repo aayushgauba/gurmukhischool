@@ -1686,6 +1686,117 @@ body.portal-body {
     -webkit-line-clamp: unset;
 }
 
+.contact-status-tabs {
+    display: flex;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+
+.contact-status-tabs a {
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    color: var(--portal-muted);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.contact-status-tabs a:hover,
+.contact-status-tabs a.active {
+    background: var(--portal-accent);
+    color: #171717;
+}
+
+.contact-filters {
+    display: grid;
+    grid-template-columns: minmax(14rem, 1fr) minmax(10rem, 0.3fr) auto auto;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.contact-message-list {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.contact-message-card {
+    padding: 1rem;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.85rem;
+    background: #fff;
+    box-shadow: var(--portal-shadow);
+}
+
+.contact-message-card > header {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.contact-message-card h2 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.contact-message-card header a {
+    color: var(--portal-link);
+    overflow-wrap: anywhere;
+}
+
+.contact-message-card time {
+    color: var(--portal-muted);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.contact-message-text {
+    margin: 0.9rem 0;
+    padding: 0.85rem;
+    border-radius: 0.65rem;
+    background: var(--portal-surface);
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+.contact-message-card > footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: 0.45rem;
+}
+
+.contact-delete {
+    position: relative;
+}
+
+.contact-delete > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.contact-delete > summary::-webkit-details-marker {
+    display: none;
+}
+
+.contact-delete > div {
+    position: absolute;
+    bottom: calc(100% + 0.4rem);
+    left: 0;
+    z-index: 10;
+    width: 15rem;
+    padding: 0.7rem;
+    border: 1px solid #e5a8ae;
+    border-radius: 0.6rem;
+    background: #fff5f5;
+    box-shadow: var(--portal-shadow);
+}
+
+.contact-delete p {
+    margin-bottom: 0.5rem;
+    color: #842029;
+    font-size: 0.9rem;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;
@@ -1853,6 +1964,10 @@ body.portal-body {
         margin-top: 0.6rem;
         box-shadow: none;
     }
+
+    .contact-filters {
+        grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.45fr) auto auto;
+    }
 }
 
 @media (max-width: 575.98px) {
@@ -1895,6 +2010,20 @@ body.portal-body {
 
     .admin-user-filters {
         grid-template-columns: 1fr;
+    }
+
+    .contact-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .contact-message-card > header {
+        grid-template-columns: 2.5rem minmax(0, 1fr);
+    }
+
+    .contact-message-card time,
+    .contact-message-card header .portal-status-badge {
+        grid-column: 2;
+        justify-self: start;
     }
 }
 
