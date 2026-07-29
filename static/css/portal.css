@@ -685,6 +685,24 @@ body.portal-body {
     margin: 0;
 }
 
+.assignment-overview {
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.assignment-overview h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.assignment-overview > div > :last-child {
+    margin-bottom: 0;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;

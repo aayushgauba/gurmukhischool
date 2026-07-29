@@ -364,15 +364,19 @@ def delete_main_carousel_image(request):
 @login_required
 def addNewFilesToAssignment(request, section_id, folder_id, assignment_id):
     _course_graph(section_id, folder_id, assignment_id)
-    if request.method == "POST":
-        form = UploadedFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            file = form.save()
-            assignment = Assignment.objects.get(id = assignment_id)
-            assignment.files.add(file)
-            return redirect("viewAssignment", section_id,folder_id, assignment_id)
+    form = UploadedFileForm(request.POST, request.FILES)
+    if form.is_valid():
+        file = form.save()
+        assignment = Assignment.objects.get(id=assignment_id)
+        assignment.files.add(file)
+        messages.success(request, "The assignment file was attached.")
     else:
-        form = UploadedFileForm()
+        messages.error(
+            request,
+            "The file could not be attached. "
+            + " ".join(str(error) for errors in form.errors.values() for error in errors),
+        )
+    return redirect("viewAssignment", section_id, folder_id, assignment_id)
 
 @approved_required
 @require_POST
@@ -382,11 +386,22 @@ def submitFilesToAssignment(request, section_id, folder_id, assignment_id):
     _require_course_access(request.user, course)
     if request.user.user_type != CustomUser.STUDENT:
         raise PermissionDenied
-    if request.method == "POST":
-        form = FileUploadForm(request.POST, request.FILES, user_id = request.user.id, assignment_id = assignment_id)
-        if form.is_valid():
-            form.save()
-            return redirect("viewAssignment", section_id, folder_id, assignment_id)
+    form = FileUploadForm(
+        request.POST,
+        request.FILES,
+        user_id=request.user.id,
+        assignment_id=assignment_id,
+    )
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Your work was submitted.")
+    else:
+        messages.error(
+            request,
+            "Your work could not be submitted. "
+            + " ".join(str(error) for errors in form.errors.values() for error in errors),
+        )
+    return redirect("viewAssignment", section_id, folder_id, assignment_id)
 
 @approved_required
 @teacher_required
@@ -413,25 +428,41 @@ def deleteFilesFromAssignment(request, section_id, folder_id, assignment_id):
 @approved_required
 @login_required
 def viewAssignment(request: HttpRequest, section_id, folder_id, assignment_id):
-    course, _, folder, assignment = _course_graph(section_id, folder_id, assignment_id)
+    course, section, folder, assignment = _course_graph(section_id, folder_id, assignment_id)
     _require_course_access(request.user, course)
-    files = UploadedFile.objects.all()
+    if not _is_teacher(request.user) and not section.status:
+        raise PermissionDenied
+    files = UploadedFile.objects.exclude(
+        id__in=assignment.files.values_list("id", flat=True),
+    )
     form = UploadedFileForm()
-    context = {}
     studentform = FileUploadForm(user_id = request.user.id, assignment_id = assignment_id)
+    profile_photo = request.user.profile_photos.order_by("-uploaded_at").first()
+    context = {
+        "course": course,
+        "section": section,
+        "assignment": assignment,
+        "folder": folder,
+        "form": form,
+        "studentform": studentform,
+        "files": files,
+        "section_id": section_id,
+        "folder_id": folder_id,
+        "profile_photo": profile_photo,
+        "active_nav": "courses",
+    }
     if request.user.user_type == CustomUser.STUDENT:
-        submissions = Submission.objects.filter(user_id = request.user.id, assignment_id = assignment_id)
-        context = {"submissions":submissions,"course":course, "assignment":assignment, "folder":folder,"form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id}
+        context["submissions"] = Submission.objects.filter(
+            user_id=request.user.id,
+            assignment_id=assignment_id,
+        ).order_by("-date", "-id")
     elif _is_teacher(request.user):
-        submissions = Submission.objects.filter(assignment_id = assignment_id).distinct()
-        users = CustomUser.objects.filter(id__in=Submission.objects.filter(assignment_id=assignment.id).values('user_id').distinct())
-        context = {"submissions":submissions, "assignment":assignment, "course":course, "users":users, "folder":folder, "form":form, "studentform":studentform, "files":files, "section_id":section_id, "folder_id":folder_id}
-    files = files.exclude(id__in = assignment.files.values_list('id', flat=True))
-    user_agent = _user_agent(request)
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_assignmentDetail.html", context = context)
-    else:
-        return render(request, "portal/desktop_assignmentDetail.html", context = context)
+        context["users"] = CustomUser.objects.filter(
+            id__in=Submission.objects.filter(
+                assignment_id=assignment.id,
+            ).values("user_id"),
+        ).distinct().order_by("last_name", "first_name")
+    return render(request, "portal/assignment.html", context=context)
 
 @approved_required
 @teacher_required

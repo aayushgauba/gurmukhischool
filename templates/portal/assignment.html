@@ -1,0 +1,200 @@
+{% extends 'portal/base.html' %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block meta_description %}View {{ assignment.title }} for {{ course.title }}.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">
+            <a href="{% url 'course' course.id %}">{{ course.title }}</a> /
+            <a href="{% url 'folder' section.id folder.id %}">{{ folder.title }}</a>
+        </p>
+        <h1 class="portal-page-title">{{ assignment.title }}</h1>
+        <p class="portal-page-description">
+            Due <time datetime="{{ assignment.due_date|date:'Y-m-d' }}">{{ assignment.due_date|date:'F j, Y' }}</time>
+        </p>
+    </div>
+    {% if user.user_type == user.STUDENT %}
+    <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#uploadSubmissionModal">
+        <i class="bi bi-cloud-arrow-up me-1" aria-hidden="true"></i>Submit work
+    </button>
+    {% elif user.is_superuser and user.user_type == user.TEACHER %}
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'gradesforAssignment' folder.id assignment.id %}">Grades</a>
+        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#editAssignmentModal">Edit</button>
+        <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#addNewFileModal">Add file</button>
+        <button class="btn btn-outline-danger" type="button" data-bs-toggle="modal" data-bs-target="#deleteAssignmentModal">Delete</button>
+    </div>
+    {% endif %}
+</header>
+
+<section class="assignment-overview">
+    <h2>Instructions</h2>
+    <div>{{ assignment.description|linebreaks }}</div>
+</section>
+
+<div class="folder-content-grid mt-3">
+    <section class="resource-panel" aria-labelledby="assignmentFilesTitle">
+        <header class="resource-panel-header">
+            <div>
+                <h2 id="assignmentFilesTitle">Assignment files</h2>
+                <p>{{ assignment.files.count }} file{{ assignment.files.count|pluralize }}</p>
+            </div>
+            {% if user.is_superuser and user.user_type == user.TEACHER and files %}
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#addExistingFileModal">Attach existing</button>
+            {% endif %}
+        </header>
+        <div class="resource-list">
+            {% for file in assignment.files.all %}
+            <article class="resource-row">
+                <span class="resource-icon file-resource-icon" aria-hidden="true"><i class="bi bi-file-earmark"></i></span>
+                <div class="resource-details">
+                    <h3>{{ file.file.name|basename }}</h3>
+                    <span>Assignment resource</span>
+                </div>
+                <div class="resource-actions">
+                    <a class="btn btn-sm btn-portal-primary" href="{% url 'viewMobileContentUpload' file.id %}" target="_blank" rel="noopener">View</a>
+                    {% if user.is_superuser and user.user_type == user.TEACHER %}
+                    <form method="post" action="{% url 'deleteFilesFromAssignment' section.id folder.id assignment.id %}">
+                        {% csrf_token %}
+                        <input name="file_id" type="hidden" value="{{ file.id }}">
+                        <button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Remove {{ file.file.name|basename }}">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </article>
+            {% empty %}
+            <div class="resource-empty"><i class="bi bi-file-earmark" aria-hidden="true"></i><p>No files attached.</p></div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if user.user_type == user.STUDENT %}
+    <section class="resource-panel" aria-labelledby="mySubmissionsTitle">
+        <header class="resource-panel-header">
+            <div>
+                <h2 id="mySubmissionsTitle">My submissions</h2>
+                <p>{{ submissions.count }} submitted file{{ submissions.count|pluralize }}</p>
+            </div>
+            <i class="bi bi-cloud-check" aria-hidden="true"></i>
+        </header>
+        <div class="resource-list">
+            {% for submission in submissions %}
+            <article class="resource-row">
+                <span class="resource-icon assignment-resource-icon" aria-hidden="true"><i class="bi bi-file-check"></i></span>
+                <div class="resource-details">
+                    <h3>{{ submission.file.name|basename }}</h3>
+                    <span>{{ submission.date|date:'M j, Y' }} · {% if submission.date <= assignment.due_date %}On time{% else %}Late{% endif %}</span>
+                </div>
+                <div class="resource-actions">
+                    <a class="btn btn-sm btn-portal-primary" href="{% url 'view_submission_file' submission.id %}" target="_blank" rel="noopener">View</a>
+                    <form method="post" action="{% url 'deleteSubmission' section.id folder.id assignment.id %}">
+                        {% csrf_token %}
+                        <input name="submission_id" type="hidden" value="{{ submission.id }}">
+                        <button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Delete {{ submission.file.name|basename }}">
+                            <i class="bi bi-trash" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                </div>
+            </article>
+            {% empty %}
+            <div class="resource-empty"><i class="bi bi-cloud-arrow-up" aria-hidden="true"></i><p>You have not submitted any work.</p></div>
+            {% endfor %}
+        </div>
+    </section>
+    {% elif user.is_superuser and user.user_type == user.TEACHER %}
+    <section class="resource-panel" aria-labelledby="studentSubmissionsTitle">
+        <header class="resource-panel-header">
+            <div>
+                <h2 id="studentSubmissionsTitle">Student submissions</h2>
+                <p>{{ users.count }} student{{ users.count|pluralize }}</p>
+            </div>
+            <i class="bi bi-people" aria-hidden="true"></i>
+        </header>
+        <div class="resource-list">
+            {% for student in users %}
+            <article class="resource-row">
+                <span class="resource-icon assignment-resource-icon" aria-hidden="true"><i class="bi bi-person"></i></span>
+                <div class="resource-details"><h3>{{ student.get_full_name|default:student.username }}</h3><span>{{ student.email }}</span></div>
+                <div class="resource-actions">
+                    <a class="btn btn-sm btn-portal-primary" href="{% url 'submissions' folder.id student.id assignment.id %}">Review</a>
+                </div>
+            </article>
+            {% empty %}
+            <div class="resource-empty"><i class="bi bi-inbox" aria-hidden="true"></i><p>No student submissions yet.</p></div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+{% if user.user_type == user.STUDENT %}
+<div class="modal fade" id="uploadSubmissionModal" tabindex="-1" aria-labelledby="uploadSubmissionTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" action="{% url 'submitFilesToAssignment' section.id folder.id assignment.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header"><h2 class="modal-title fs-5" id="uploadSubmissionTitle">Submit work</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">{{ studentform|crispy }}</div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-portal-primary">Submit</button></div>
+        </form>
+    </div></div>
+</div>
+{% endif %}
+
+{% if user.is_superuser and user.user_type == user.TEACHER %}
+<div class="modal fade" id="editAssignmentModal" tabindex="-1" aria-labelledby="editAssignmentTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" action="{% url 'editAssignment' section.id folder.id assignment.id %}">
+            {% csrf_token %}
+            <div class="modal-header"><h2 class="modal-title fs-5" id="editAssignmentTitle">Edit assignment</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="form-label" for="editTitle">Title</label><input class="form-control" id="editTitle" name="title" maxlength="200" value="{{ assignment.title }}" required></div>
+                <div class="mb-3"><label class="form-label" for="editDescription">Description</label><textarea class="form-control" id="editDescription" name="description" rows="5" required>{{ assignment.description }}</textarea></div>
+                <div><label class="form-label" for="editDueDate">Due date</label><input class="form-control" id="editDueDate" name="due_date" type="date" value="{{ assignment.due_date|date:'Y-m-d' }}" required></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-portal-primary">Save</button></div>
+        </form>
+    </div></div>
+</div>
+
+<div class="modal fade" id="addNewFileModal" tabindex="-1" aria-labelledby="addNewFileTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" action="{% url 'addNewFilesToAssignment' section.id folder.id assignment.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header"><h2 class="modal-title fs-5" id="addNewFileTitle">Attach new file</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">{{ form|crispy }}</div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-portal-primary">Upload</button></div>
+        </form>
+    </div></div>
+</div>
+
+{% if files %}
+<div class="modal fade" id="addExistingFileModal" tabindex="-1" aria-labelledby="addExistingFileTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" action="{% url 'addExistingFilesToAssignment' section.id folder.id assignment.id %}">
+            {% csrf_token %}
+            <div class="modal-header"><h2 class="modal-title fs-5" id="addExistingFileTitle">Attach existing file</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body"><label class="form-label" for="existingFile">File</label><select class="form-select" id="existingFile" name="existing_file" required>{% for file in files %}<option value="{{ file.id }}">{{ file.file.name|basename }}</option>{% endfor %}</select></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-portal-primary">Attach</button></div>
+        </form>
+    </div></div>
+</div>
+{% endif %}
+
+<div class="modal fade" id="deleteAssignmentModal" tabindex="-1" aria-labelledby="deleteAssignmentTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" action="{% url 'deleteAssignment' section.id folder.id assignment.id %}">
+            {% csrf_token %}
+            <div class="modal-header"><h2 class="modal-title fs-5" id="deleteAssignmentTitle">Delete {{ assignment.title }}?</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body"><p class="mb-0">This permanently deletes the assignment and its related records.</p></div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger">Delete assignment</button></div>
+        </form>
+    </div></div>
+</div>
+{% endif %}
+{% endblock %}
