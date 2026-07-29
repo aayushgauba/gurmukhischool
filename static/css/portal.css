@@ -1478,6 +1478,86 @@ body.portal-body {
     gap: 0.5rem;
 }
 
+.admin-user-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.admin-user-filters {
+    display: grid;
+    grid-template-columns: minmax(14rem, 1fr) minmax(10rem, 0.35fr) auto auto;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.admin-user-card {
+    padding: 1rem;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.85rem;
+    background: #fff;
+    box-shadow: var(--portal-shadow);
+}
+
+.admin-user-summary {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.admin-user-editor {
+    margin-top: 0.85rem;
+    border-top: 1px solid var(--portal-border);
+}
+
+.admin-user-editor > summary {
+    width: fit-content;
+    padding-top: 0.85rem;
+    color: var(--portal-link);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-user-editor > form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    align-items: end;
+    gap: 0.75rem;
+    padding-top: 0.85rem;
+}
+
+.admin-user-danger-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+}
+
+.admin-user-danger-actions details > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.admin-user-danger-actions details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.admin-delete-confirmation {
+    max-width: 25rem;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid #e5a8ae;
+    border-radius: 0.6rem;
+    background: #fff5f5;
+}
+
+.admin-delete-confirmation p {
+    margin-bottom: 0.6rem;
+    color: #842029;
+    font-size: 0.9rem;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;
@@ -1616,6 +1696,19 @@ body.portal-body {
     .admin-approval-form {
         grid-column: 2;
     }
+
+    .admin-user-editor > form {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .admin-user-editor > form button {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+
+    .admin-user-filters {
+        grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.5fr) auto auto;
+    }
 }
 
 @media (max-width: 575.98px) {
@@ -1640,6 +1733,23 @@ body.portal-body {
     }
 
     .admin-approval-form {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-user-summary {
+        grid-template-columns: 2.5rem minmax(0, 1fr);
+    }
+
+    .admin-user-summary .portal-status-badge {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .admin-user-editor > form {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-user-filters {
         grid-template-columns: 1fr;
     }
 }

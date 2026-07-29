@@ -25,7 +25,7 @@ from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
-from django.db.models import Avg
+from django.db.models import Avg, Q
 import re
 import os
 import asyncio
@@ -1107,13 +1107,35 @@ def adminViewHome(request:HttpRequest):
 @admin_required
 @approved_required
 def adminUsers(request:HttpRequest):
-    user_agent = _user_agent(request)
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    users = CustomUser.objects.filter(approved = True)
-    if "mobile" in user_agent:
-        return render(request, 'portal/mobile_adminUsers.html', {"users":users, "profile_photo":profile_photo})
-    else:   
-        return render(request, "portal/desktop_adminUsers.html", {"users":users, "profile_photo":profile_photo})
+    users = CustomUser.objects.filter(approved=True).order_by(
+        "user_type",
+        "last_name",
+        "first_name",
+        "username",
+    )
+    query = request.GET.get("q", "").strip()
+    selected_role = request.GET.get("role", "").strip()
+    if query:
+        users = users.filter(
+            Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(username__icontains=query)
+            | Q(email__icontains=query)
+        )
+    valid_roles = {value for value, _ in CustomUser.USER_TYPES}
+    if selected_role in valid_roles:
+        users = users.filter(user_type=selected_role)
+    else:
+        selected_role = ""
+    return render(request, "portal/admin_users.html", {
+        "users": users,
+        "query": query,
+        "selected_role": selected_role,
+        "user_roles": CustomUser.USER_TYPES,
+        "profile_photo": profile_photo,
+        "active_nav": "admin_users",
+    })
 
 
 @require_POST
@@ -1121,57 +1143,56 @@ def adminUsers(request:HttpRequest):
 @admin_required
 @approved_required
 def delete_user(request):
-    if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        user = get_object_or_404(CustomUser, id=user_id)
-        if user == request.user:
-            return JsonResponse(
-                {"detail": "You cannot delete your own account."},
-                status=400,
-            )
-        if (
-            user.user_type == CustomUser.ADMIN
-            and CustomUser.objects.filter(
-                user_type=CustomUser.ADMIN,
-                approved=True,
-                is_active=True,
-            ).count() <= 1
-        ):
-            return JsonResponse(
-                {"detail": "The last active administrator cannot be deleted."},
-                status=400,
-            )
-        user.delete()
-        return redirect('adminUsers')
+    user = get_object_or_404(CustomUser, id=request.POST.get('user_id'))
+    if user == request.user:
+        messages.error(request, "You cannot delete your own account.")
+        return redirect("adminUsers")
+    if (
+        user.user_type == CustomUser.ADMIN
+        and user.is_active
+        and CustomUser.objects.filter(
+            user_type=CustomUser.ADMIN,
+            approved=True,
+            is_active=True,
+        ).count() <= 1
+    ):
+        messages.error(request, "The last active administrator cannot be deleted.")
+        return redirect("adminUsers")
+    display_name = user.get_full_name() or user.username
+    user.delete()
+    messages.success(request, f"{display_name} was deleted.")
+    return redirect('adminUsers')
 
 @require_POST
 @login_required
 @admin_required
 @approved_required
 def admit_user(request):
-    if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        user = get_object_or_404(CustomUser, id=user_id)
-        if user == request.user:
-            return JsonResponse(
-                {"detail": "You cannot revoke your own approval."},
-                status=400,
-            )
-        if (
-            user.user_type == CustomUser.ADMIN
-            and CustomUser.objects.filter(
-                user_type=CustomUser.ADMIN,
-                approved=True,
-                is_active=True,
-            ).count() <= 1
-        ):
-            return JsonResponse(
-                {"detail": "The last active administrator cannot be revoked."},
-                status=400,
-            )
-        user.approved = False
-        user.save()
-        return redirect('adminViewHome')
+    user = get_object_or_404(
+        CustomUser,
+        id=request.POST.get('user_id'),
+        approved=True,
+    )
+    if user == request.user:
+        messages.error(request, "You cannot move your own account to the waitlist.")
+        return redirect("adminUsers")
+    if (
+        user.user_type == CustomUser.ADMIN
+        and user.is_active
+        and CustomUser.objects.filter(
+            user_type=CustomUser.ADMIN,
+            approved=True,
+            is_active=True,
+        ).count() <= 1
+    ):
+        messages.error(request, "The last active administrator cannot be moved to the waitlist.")
+        return redirect("adminUsers")
+    display_name = user.get_full_name() or user.username
+    user.approved = False
+    user.is_active = False
+    user.save(update_fields=["approved", "is_active"])
+    messages.success(request, f"{display_name} was moved to the account waitlist.")
+    return redirect('adminViewHome')
 
 
 @require_POST
@@ -1692,13 +1713,20 @@ def addKirtan(request):
 @approved_required
 @require_POST
 def changeUserInfo(request):
-    user_id = request.POST.get("user_id")
-    user = CustomUser.objects.get(id = user_id)
-    first_name = request.POST.get("first_name")
-    last_name = request.POST.get("last_name")
+    user = get_object_or_404(
+        CustomUser,
+        id=request.POST.get("user_id"),
+        approved=True,
+    )
+    first_name = request.POST.get("first_name", "").strip()
+    last_name = request.POST.get("last_name", "").strip()
+    if not first_name or not last_name:
+        messages.error(request, "First and last name are required.")
+        return redirect("adminUsers")
     user.first_name = first_name
     user.last_name = last_name
-    user.save()
+    user.save(update_fields=["first_name", "last_name"])
+    messages.success(request, f"{user.get_full_name()} was updated.")
     return redirect("adminUsers")
 
 @teacher_required
