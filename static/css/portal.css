@@ -1162,6 +1162,90 @@ body.portal-body {
     font-weight: 700;
 }
 
+.enrollment-panel {
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.enrollment-panel-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    background: #fff9e6;
+}
+
+.enrollment-panel-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.enrollment-panel-header p {
+    margin: 0.15rem 0 0;
+    color: var(--portal-muted);
+    font-size: 0.88rem;
+}
+
+.enrollment-panel-header > span {
+    color: var(--portal-muted);
+    font-size: 0.88rem;
+}
+
+.enrollment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+    gap: 0.75rem;
+    padding: 1rem;
+}
+
+.enrollment-option {
+    display: grid;
+    grid-template-columns: auto 2.4rem minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: center;
+    min-width: 0;
+    padding: 0.8rem;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.65rem;
+    cursor: pointer;
+}
+
+.enrollment-option:hover {
+    border-color: var(--portal-accent-dark);
+    background: #fffdf7;
+}
+
+.enrollment-option:has(.form-check-input:checked) {
+    border-color: var(--portal-accent-dark);
+    background: #fff9e6;
+}
+
+.enrollment-option .form-check-input {
+    margin: 0;
+}
+
+.enrollment-details {
+    display: grid;
+    min-width: 0;
+}
+
+.enrollment-details strong,
+.enrollment-details small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.enrollment-details small {
+    color: var(--portal-muted);
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;

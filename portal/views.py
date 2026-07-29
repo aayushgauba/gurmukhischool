@@ -1593,33 +1593,47 @@ def sectionAdd(request, course_id):
     Section.objects.create(title = title, course_id = course_id, order = Count)
     return redirect("course", course_id)
 
+@approved_required
 @teacher_required
 @superuser_required
 @login_required
 def addStudents(request: HttpRequest, course_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    course = Course.objects.get(id=course_id)
-    enrolled_students = course.people.all()
+    course = get_object_or_404(Course, id=course_id)
+    enrolled_student_ids = course.people.filter(
+        user_type=CustomUser.STUDENT,
+    ).values_list("id", flat=True)
     all_students = CustomUser.objects.filter(
-        user_type=CustomUser.STUDENT
-    ).exclude(id__in=enrolled_students)
+        user_type=CustomUser.STUDENT,
+    ).exclude(id__in=enrolled_student_ids).order_by(
+        "last_name",
+        "first_name",
+        "username",
+    )
     if request.method == 'POST':
-        selected_students = request.POST.getlist('selected_students')
-        for student_id in selected_students:
-            student = CustomUser.objects.get(id=student_id)
-            course.people.add(student)
+        selected_students = []
+        for value in request.POST.getlist("selected_students"):
+            try:
+                selected_students.append(int(value))
+            except (TypeError, ValueError):
+                continue
+        students_to_add = all_students.filter(id__in=selected_students)
+        added_count = students_to_add.count()
+        if added_count:
+            course.people.add(*students_to_add)
+            messages.success(
+                request,
+                f"{added_count} student{'s' if added_count != 1 else ''} added to {course.title}.",
+            )
+        else:
+            messages.info(request, "Select at least one available student.")
         return redirect('students', course.id)
-    else:
-        context = {
-            'course': course,
-            'all_students': all_students,
-            'profile_photo':profile_photo
-        }
-    user_agent = _user_agent(request)
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_studentAdd.html", context)
-    else:
-        return render(request, "portal/desktop_studentAdd.html", context)
+    return render(request, "portal/students_add.html", {
+        "course": course,
+        "all_students": all_students,
+        "profile_photo": profile_photo,
+        "active_nav": "courses",
+    })
 
 def account_activation_sent(request):
     return render(request, 'portal/invalidAccountActivation.html')

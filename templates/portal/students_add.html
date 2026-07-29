@@ -1,0 +1,56 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Add students – {{ course.title }}{% endblock %}
+{% block meta_description %}Enroll students in {{ course.title }}.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow"><a href="{% url 'students' course.id %}">Students</a> / Enrollment</p>
+        <h1 class="portal-page-title">Add students</h1>
+        <p class="portal-page-description">Select one or more students to enroll in {{ course.title }}.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'students' course.id %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to roster
+    </a>
+</header>
+
+{% if all_students %}
+<form method="post">
+    {% csrf_token %}
+    <section class="enrollment-panel" aria-labelledby="availableStudentsTitle">
+        <header class="enrollment-panel-header">
+            <div>
+                <h2 id="availableStudentsTitle">Available students</h2>
+                <p>{{ all_students.count }} student{{ all_students.count|pluralize }} available</p>
+            </div>
+            <span><i class="bi bi-check2-square me-1" aria-hidden="true"></i>Select students to add</span>
+        </header>
+        <div class="enrollment-grid">
+            {% for student in all_students %}
+            <label class="enrollment-option">
+                <input class="form-check-input" name="selected_students" type="checkbox" value="{{ student.id }}">
+                <span class="student-initial" aria-hidden="true">{{ student.first_name|first|default:student.username|first|upper }}</span>
+                <span class="enrollment-details">
+                    <strong>{{ student.get_full_name|default:student.username }}</strong>
+                    <small>{{ student.email|default:'No email provided' }}</small>
+                </span>
+            </label>
+            {% endfor %}
+        </div>
+    </section>
+    <div class="attendance-save-bar">
+        <p>Only selected students will be added to this course.</p>
+        <button class="btn btn-portal-primary" type="submit">
+            <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Add selected students
+        </button>
+    </div>
+</form>
+{% else %}
+<section class="portal-empty-state" aria-labelledby="noAvailableStudentsTitle">
+    <i class="bi bi-person-check" aria-hidden="true"></i>
+    <h2 class="fs-4" id="noAvailableStudentsTitle">Everyone is enrolled</h2>
+    <p class="text-secondary mb-0">There are no additional student accounts available for this course.</p>
+</section>
+{% endif %}
+{% endblock %}
