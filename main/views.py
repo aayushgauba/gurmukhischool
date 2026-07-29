@@ -1,41 +1,53 @@
-from django.shortcuts import render,HttpResponse, redirect
-from .models import CarouselImage, BlacklistedIP
-from pages.models import Contact
-from portal.models import EmailSubscriber
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
+from django.template.loader import get_template
 from django.views.decorators.http import require_POST
-from django.http import JsonResponse
+
+from .forms import ContactForm, NewsletterSubscriptionForm
+from .models import CarouselImage
 
 def indexMain(request):
-    images = CarouselImage.objects.all()
-    images = images.order_by("order")
-    return render(request,"main/index.html", {"images":images})
+    images = CarouselImage.objects.order_by("order", "pk")
+    return render(request, "main/index.html", {"images": images, "active_page": "home"})
 
 def aboutMain(request):
-    return render(request,"main/about.html")
+    return render(request, "main/about.html", {"active_page": "about"})
 
 def sitemap(request):
-    return HttpResponse(open('templates/sitemap.xml').read(), content_type='text/xml')
+    content = get_template("sitemap.xml").render({"request": request})
+    return HttpResponse(content, content_type="application/xml")
 
 def subscribe(request):
-    return render(request,"subscribe.html")
+    return render(
+        request,
+        "subscribe.html",
+        {"form": NewsletterSubscriptionForm(), "active_page": "subscribe"},
+    )
 
 @require_POST
 def subscribePOST(request):
-    firstName = request.POST.get("firstName")
-    lastName = request.POST.get("lastName")
-    name = str(firstName + " " + lastName)
-    email = request.POST.get("email")
-    EmailSubscriber.objects.create(name = name, email = email)
-    return redirect("indexMain")
+    form = NewsletterSubscriptionForm(request.POST)
+    if form.is_valid():
+        form.save()
+        return redirect("indexMain")
+    return render(
+        request,
+        "subscribe.html",
+        {"form": form, "active_page": "subscribe"},
+        status=400,
+    )
 
 def contact(request):
+    form = ContactForm(request.POST or None)
     if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        email = request.POST.get('email', '').strip()
-        message = request.POST.get('message', '').strip()
-        ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0] or request.META.get('REMOTE_ADDR')
-        if name and email and message:
-            Contact.objects.create(name=name, email=email, message=message, ip_address=ip)
+        if form.is_valid():
+            contact_message = form.save(commit=False)
+            contact_message.ip_address = request.META.get("REMOTE_ADDR")
+            contact_message.save()
             return redirect("indexMain")
-        return JsonResponse({"status": "invalid_form"}, status=400)
-    return render(request, 'contact.html')
+    return render(
+        request,
+        "contact.html",
+        {"form": form, "active_page": "contact"},
+        status=400 if request.method == "POST" else 200,
+    )

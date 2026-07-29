@@ -1,228 +1,37 @@
-{%load static%}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>About Us - Sikh Study Circle of St. Louis (Gurdwara Sahib)</title>
-  <meta name="description" content="Learn about the Sikh Study Circle of St. Louis, a vibrant Gurdwara serving the Sikh community since 1986. Discover our spiritual services, community programs, and commitment to Sikh values, education, and seva." />
-  <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
-  <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
-  <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-  <link rel="icon" href="{% static 'images/logo.jpg' %}" type="image/jpg">
-  <style nonce="{{ csp_nonce }}">
-    body {
-      font-family: 'Mukta', sans-serif;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      background-color: #f4f4f4;
-      padding-top: 76px;
-    }
-    .content {
-      flex: 1;
-    }
-    .navbar-custom {
-      background-color: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    .navbar-custom .navbar-brand,
-    .navbar-custom .nav-link {
-      color: #333;
-      font-weight: 600;
-      transition: color 0.3s ease;
-    }
-    .navbar-custom .nav-link:hover {
-      color: #FFC107;
-    }
-    .footer-custom {
-      background-color: #333;
-      color: #fff;
-      padding: 20px 0;
-      margin-top: 40px;
-    }
-    .footer-custom a {
-      color: #FFC107;
-      transition: color 0.3s ease;
-    }
-    .footer-custom a:hover {
-      color: #e0a800;
-      text-decoration: none;
-    }
-    .navbar-logo {
-      height: 50px;
-      width: auto;
-      margin-right: 10px;
-    }
-    .navbar-custom .navbar-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .about-section {
-      background: white;
-      padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      margin: 40px 0;
-    }
-    .about-image {
-      width: 100%;
-      height: 300px;
-      object-fit: cover;
-      border-radius: 8px;
-      margin-bottom: 30px;
-    }
-    .values-section {
-      margin-top: 30px;
-    }
-    .value-item {
-      text-align: center;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    .value-icon {
-      font-size: 2.5rem;
-      color: #FFC107;
-      margin-bottom: 15px;
-    }
-    .content {
-        margin-top: 80px;
-    }
-    .content {
-        margin-top: 80px;
-    }
-  </style>
-</head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
-    <div class="container">
-      <a class="navbar-brand" href="#">
-        <img src="{% static 'images/logo.jpg' %}" alt="Sikh Study Circle Logo" class="navbar-logo">
-        Sikh Study Circle of St. Louis
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'indexMain' %}">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="{% url 'aboutMain' %}">About Us</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'contact' %}">Contact</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'index' %}">Gurmukhi School</a>
-          </li>
+{% extends "main/base.html" %}
+{% load static %}
+{% block title %}About Us - Sikh Study Circle of St. Louis (Gurdwara Sahib){% endblock %}
+{% block description %}Learn about the Sikh Study Circle of St. Louis, a vibrant Gurdwara serving the Sikh community since 1986. Discover our spiritual services, community programs, and commitment to Sikh values, education, and seva.{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="content-panel">
+      <img src="{% static 'images/gurudwara.jpg' %}" alt="Sikh Study Circle Building" class="content-image mb-4">
+      <h2 class="text-center mb-4">Our Story</h2>
+      <p class="lead text-center mb-5">Serving the Greater St. Louis Sikh Community Since 1986</p>
+      <div class="row mb-5"><div class="col-lg-8 mx-auto">
+        <p>The Sikh Study Circle of St. Louis was established in 1986 as a spiritual and cultural center for the growing Sikh community in the St. Louis metropolitan area. Located in the heart of St. Peters, Missouri, our Gurdwara has been a beacon of Sikh values, traditions, and community service for over three decades.</p>
+        <p>What began as a small gathering of dedicated Sikh families has grown into a vibrant community center that serves hundreds of families across the greater St. Louis region. Our location at 116 Willis Dr, Saint Peters, has become a cornerstone for spiritual guidance, cultural preservation, and community outreach.</p>
+      </div></div>
+      <div class="values-section">
+        <h3 class="text-center mb-4">Our Core Values</h3>
+        <div class="row g-4">
+          <div class="col-md-4"><div class="site-card text-center"><i class="bi bi-heart" aria-hidden="true"></i><h4 class="mt-3">Seva (Selfless Service)</h4><p>Commitment to serving others and contributing to the community's well-being</p></div></div>
+          <div class="col-md-4"><div class="site-card text-center"><i class="bi bi-people" aria-hidden="true"></i><h4 class="mt-3">Community</h4><p>Fostering a welcoming environment for all and promoting unity</p></div></div>
+          <div class="col-md-4"><div class="site-card text-center"><i class="bi bi-book" aria-hidden="true"></i><h4 class="mt-3">Education</h4><p>Providing spiritual and cultural education for all generations</p></div></div>
+        </div>
+      </div>
+      <div class="text-center mt-5">
+        <h3>Our Services</h3>
+        <p class="mb-4">We offer a range of services and programs to our community:</p>
+        <ul class="list-unstyled">
+          <li class="mb-3">Daily Prayers and Kirtan (Divine Music)</li>
+          <li class="mb-3">Weekly Langar (Community Kitchen)</li>
+          <li class="mb-3">Punjabi Language Classes</li>
+          <li class="mb-3">Community Events and Celebrations</li>
         </ul>
       </div>
     </div>
-  </nav>
-
-  <div class="content">
-    <div class="container">
-      <div class="about-section">
-        <div class="row">
-          <div class="col-12">
-            <img src="{% static 'images/gurudwara.jpg' %}" alt="Sikh Study Circle Building" class="about-image">
-            <h2 class="text-center mb-4">Our Story</h2>
-            <p class="lead text-center mb-5">Serving the Greater St. Louis Sikh Community Since 1986</p>
-            
-            <div class="row mb-5">
-              <div class="col-lg-8 mx-auto">
-                <p>The Sikh Study Circle of St. Louis was established in 1986 as a spiritual and cultural center for the growing Sikh community in the St. Louis metropolitan area. Located in the heart of St. Peters, Missouri, our Gurdwara has been a beacon of Sikh values, traditions, and community service for over three decades.</p>
-                <p>What began as a small gathering of dedicated Sikh families has grown into a vibrant community center that serves hundreds of families across the greater St. Louis region. Our location at 116 Willis Dr, Saint Peters, has become a cornerstone for spiritual guidance, cultural preservation, and community outreach.</p>
-              </div>
-            </div>
-
-            <div class="values-section">
-              <h3 class="text-center mb-4">Our Core Values</h3>
-              <div class="row">
-                <div class="col-md-4">
-                  <div class="value-item">
-                    <i class="fas fa-heart value-icon"></i>
-                    <h4>Seva (Selfless Service)</h4>
-                    <p>Commitment to serving others and contributing to the community's well-being</p>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="value-item">
-                    <i class="fas fa-hands-helping value-icon"></i>
-                    <h4>Community</h4>
-                    <p>Fostering a welcoming environment for all and promoting unity</p>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="value-item">
-                    <i class="fas fa-book value-icon"></i>
-                    <h4>Education</h4>
-                    <p>Providing spiritual and cultural education for all generations</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="text-center mt-5">
-              <h3>Our Services</h3>
-              <p class="mb-4">We offer a range of services and programs to our community:</p>
-              <div class="row">
-                <div class="col-lg-8 mx-auto">
-                  <ul class="list-unstyled">
-                    <li class="mb-3">Daily Prayers and Kirtan (Divine Music)</li>
-                    <li class="mb-3">Weekly Langar (Community Kitchen)</li>
-                    <li class="mb-3">Punjabi Language Classes</li>
-                    <li class="mb-3">Community Events and Celebrations</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
-
-  <footer class="footer-custom">
-    <div class="container">
-      <div class="row">
-        <div class="col-md-4">
-          <h5>Contact Us</h5>
-          <p>
-            Sikh Study Circle of St. Louis<br>
-            116 Willis Dr<br>
-            Saint Peters, MO, 63376<br>
-            Phone: (636) 926-3731<br>
-          </p>
-        </div>
-        <div class="col-md-4">
-          <h5>Follow Us</h5>
-          <div class="social-links">
-            <a href="https://www.facebook.com/STLGurdwara" target="_blank"><i class="fab fa-facebook"></i> Facebook</a>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <h5>Quick Links</h5>
-          <ul class="list-unstyled">
-            <li><a href="{% url 'indexMain' %}">Home</a></li>
-            <li><a href="{% url 'aboutMain' %}">About Us</a></li>
-            <li><a href="{% url 'contact' %}">Contact</a></li>
-            <li><a href="{% url 'index' %}">Gurmukhi School</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-12 text-center">
-          <p class="mt-3 mb-0">&copy; 2024 Sikh Study Circle of St. Louis. All Rights Reserved.</p>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
-</body>
-</html>
+</section>
+{% endblock %}

@@ -1,241 +1,28 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home | Sikh Study Circle Gurmukhi School</title>
-  <meta name="description" content="Welcome to the Sikh Study Circle Gurmukhi School, where we teach Gurmukhi, Gurbani, and Sikh values to students of all ages. Join us for language learning, cultural enrichment, and community events." />
-  <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
-  <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
-  <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">    
-  <style nonce="{{ csp_nonce }}">
-    body {
-      font-family: 'Mukta', sans-serif;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      background-color: #f4f4f4;
-    }
-    .content {
-      flex: 1;
-      margin-top: 80px;
-    }
-    .navbar-custom {
-      background-color: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    .navbar-custom .navbar-brand,
-    .navbar-custom .nav-link {
-      color: #333;
-      font-weight: 600;
-      transition: color 0.3s ease;
-    }
-    .navbar-custom .nav-link:hover {
-      color: #FFC107;
-    }
-    .navbar-custom .logo {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #FFC107;
-      margin-right: 10px;
-    }
-    .footer-custom {
-      background-color: #333;
-      color: #fff;
-      padding: 20px 0;
-    }
-    .footer-custom a {
-      color: #FFC107;
-      transition: color 0.3s ease;
-    }
-    .footer-custom a:hover {
-      color: #e0a800;
-      text-decoration: none;
-    }
-    .ios-slider {
-      position: relative;
-      overflow: hidden;
-      border-radius: 20px;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-      margin: 20px auto;
-      max-width: 90%;
-    }
-    .ios-slider-inner {
-      display: flex;
-      transition: transform 0.5s ease;
-    }
-    .content {
-        margin-top: 80px;
-    }
-    .ios-slide {
-      flex: 0 0 100%;
-      position: relative;
-    }
-    .ios-slide img {
-      width: 100%;
-      height: 500px;
-      object-fit: cover;
-    }
-    .ios-caption {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: rgba(255, 255, 255, 0.8);
-      backdrop-filter: blur(10px);
-      padding: 20px;
-      transform: translateY(100%);
-      transition: transform 0.5s ease;
-    }
-    .ios-slide:hover .ios-caption {
-      transform: translateY(0);
-    }
-    .ios-caption h5 {
-      margin: 0;
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: #333;
-    }
-    .ios-caption p {
-      margin: 10px 0 0;
-      font-size: 1rem;
-      color: #666;
-    }
-    .ios-slider-nav {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-    }
-    .ios-slider-nav-item {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.5);
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    .ios-slider-nav-item.active {
-      background: #fff;
-    }
-  </style>
-</head>
-<body>
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
-    <div class="container">
-      <a class="navbar-brand" href="#">
-        <span class="logo">ੴ</span> Sikh Study Circle Gurmukhi School
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page" href="{% url 'index' %}">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'about' %}">About Us</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'registration' %}">Registration</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'login' %}"><i class="fas fa-sign-in-alt"></i> Login</a>
-          </li>
-        </ul>
+{% extends "school_base.html" %}
+{% block title %}Home | Sikh Study Circle Gurmukhi School{% endblock %}
+{% block description %}Welcome to the Sikh Study Circle Gurmukhi School, where we teach Gurmukhi, Gurbani, and Sikh values to students of all ages. Join us for language learning, cultural enrichment, and community events.{% endblock %}
+{% block content %}
+{% if images %}
+<section class="section">
+  <div class="container">
+    <div id="schoolCarousel" class="carousel slide site-carousel" data-bs-ride="carousel" data-bs-interval="7000">
+      <div class="carousel-indicators">
+        {% for image in images %}<button type="button" data-bs-target="#schoolCarousel" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>{% endfor %}
       </div>
-    </div>
-  </nav>
-
-  <!-- Content -->
-  <div class="content" style="margin-top: 80px;">
-    <!-- Slider -->
-    {% if images %}
-    <div class="ios-slider">
-      <div class="ios-slider-inner">
+      <div class="carousel-inner">
         {% for image in images %}
-        <div class="ios-slide">
-          <img src="{{ image.image.url }}" alt="Slide {{ forloop.counter }}">
-          <div class="ios-caption">
-            <h5>{{ image.title }}</h5>
-            <p>{{ image.description }}</p>
-          </div>
+        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+          <img src="{{ image.image.url }}" alt="Slide {{ forloop.counter }}" {% if not forloop.first %}loading="lazy"{% endif %}>
+          <div class="carousel-caption"><h5>{{ image.title }}</h5><p>{{ image.description }}</p></div>
         </div>
         {% endfor %}
       </div>
-      <div class="ios-slider-nav">
-        {% for image in images %}
-        <div class="ios-slider-nav-item {% if forloop.first %}active{% endif %}"></div>
-        {% endfor %}
-      </div>
+      {% if images|length > 1 %}
+      <button class="carousel-control-prev" type="button" data-bs-target="#schoolCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button>
+      <button class="carousel-control-next" type="button" data-bs-target="#schoolCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button>
+      {% endif %}
     </div>
-    {% endif %}
   </div>
-
-  <!-- Footer -->
-  <footer class="footer-custom mt-auto">
-    <div class="container">
-      <div class="row">
-        <div class="col-md-4">
-          <h5>Contact Us</h5>
-          <p>
-            Sikh Study Circle<br>
-            116 Willis Dr<br>
-            Saint Peters, MO, 63376<br>
-            Phone: (636) 926-3731<br>
-          </p>
-        </div>
-        <div class="col-md-4">
-          <!-- Removed "Follow Us" section -->
-        </div>
-        <div class="col-md-4">
-          <h5>Useful Links</h5>
-          <ul class="list-unstyled">
-            <li><a href="{% url 'index' %}">Home</a></li>
-            <li><a href="{% url 'about' %}">About Us</a></li>
-            <li><a href="{% url 'registration' %}">Registration</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-12 text-center">
-          <p class="mt-3 mb-0">&copy; 2024 Gurumukhi School. All Rights Reserved.</p>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <script src="{%static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
-  <script nonce="{{ csp_nonce }}">
-    document.addEventListener('DOMContentLoaded', function() {
-      const slider = document.querySelector('.ios-slider-inner');
-      const slides = document.querySelectorAll('.ios-slide');
-      const navItems = document.querySelectorAll('.ios-slider-nav-item');
-      let currentIndex = 0;
-
-      function goToSlide(index) {
-        slider.style.transform = `translateX(-${index * 100}%)`;
-        navItems.forEach((item, i) => {
-          item.classList.toggle('active', i === index);
-        });
-        currentIndex = index;
-      }
-
-      navItems.forEach((item, index) => {
-        item.addEventListener('click', () => goToSlide(index));
-      });
-
-      setInterval(() => {
-        currentIndex = (currentIndex + 1) % slides.length;
-        goToSlide(currentIndex);
-      }, 5000);
-    });
-  </script>
-</body>
-</html>
+</section>
+{% endif %}
+{% endblock %}

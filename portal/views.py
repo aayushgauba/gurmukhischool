@@ -36,8 +36,12 @@ import asyncio
 import calendar
 from datetime import datetime
 import json
+import logging
 import mimetypes
 import secrets
+
+
+logger = logging.getLogger(__name__)
 
 
 TWO_FACTOR_USER_SESSION_KEY = "two_factor_user_id"
@@ -1914,6 +1918,10 @@ def _send_two_factor_code(request, user, backend=None):
     try:
         email.send(fail_silently=False)
     except Exception:
+        logger.exception(
+            "Two-factor verification email failed for user_id=%s.",
+            user.pk,
+        )
         return False
 
     now_timestamp = int(timezone.now().timestamp())

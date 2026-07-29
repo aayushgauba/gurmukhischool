@@ -1,0 +1,72 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Sikh Study Circle of St. Louis{% endblock %}</title>
+  <meta name="description" content="{% block description %}Sikh Study Circle of St. Louis is a welcoming place for prayer, learning, seva, and community.{% endblock %}">
+  <link rel="icon" href="{% static 'images/logo.jpg' %}" type="image/jpeg">
+  <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
+  <link href="{% static 'css/bootstrap-icons.min.css' %}" rel="stylesheet">
+  <link href="{% static 'css/public-site.css' %}" rel="stylesheet">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <nav class="navbar navbar-expand-lg navbar-light navbar-custom fixed-top" aria-label="Main navigation">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'indexMain' %}">
+        <img src="{% static 'images/logo.jpg' %}" alt="" class="navbar-logo">
+        <span class="brand-text">Sikh Study Circle of St. Louis</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation" aria-controls="mainNavigation" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNavigation">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link {% if active_page == 'home' %}active{% endif %}" href="{% url 'indexMain' %}">Home</a></li>
+          <li class="nav-item"><a class="nav-link {% if active_page == 'about' %}active{% endif %}" href="{% url 'aboutMain' %}">About Us</a></li>
+          <li class="nav-item"><a class="nav-link {% if active_page == 'contact' %}active{% endif %}" href="{% url 'contact' %}">Contact</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">Gurmukhi School</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <main id="main-content">
+    {% if messages %}
+    <div class="container pt-3">
+      {% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="status">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer-custom">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <h2>Contact Us</h2>
+          <p>Sikh Study Circle of St. Louis<br>116 Willis Dr<br>Saint Peters, MO, 63376<br>Phone: <a href="tel:+16369263731">(636) 926-3731</a></p>
+        </div>
+        <div class="col-md-4">
+          <h2>Follow Us</h2>
+          <a href="https://www.facebook.com/STLGurdwara" target="_blank" rel="noopener noreferrer"><i class="bi bi-facebook" aria-hidden="true"></i> Facebook</a>
+        </div>
+        <div class="col-md-4">
+          <h2>Quick Links</h2>
+          <ul class="list-unstyled mb-0">
+            <li><a href="{% url 'indexMain' %}">Home</a></li>
+            <li><a href="{% url 'aboutMain' %}">About Us</a></li>
+            <li><a href="{% url 'contact' %}">Contact</a></li>
+            <li><a href="{% url 'index' %}">Gurmukhi School</a></li>
+          </ul>
+        </div>
+      </div>
+      <hr class="border-secondary my-4">
+      <p class="mb-0 text-center">&copy; 2024 Sikh Study Circle of St. Louis. All Rights Reserved.</p>
+    </div>
+  </footer>
+  <script src="{% static 'js/bootstrap.bundle.min.js' %}" nonce="{{ csp_nonce }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
