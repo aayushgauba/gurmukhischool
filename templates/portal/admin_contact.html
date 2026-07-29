@@ -50,6 +50,7 @@
             <div><h3 class="h5 mb-0">{{ email_message.sender_name|default:email_message.sender_email }}</h3><a href="mailto:{{ email_message.sender_email }}">{{ email_message.sender_email }}</a></div>
             <time datetime="{{ email_message.received_at|date:'c' }}">{{ email_message.received_at|date:'M j, Y g:i A' }}</time>
             {% if email_message.is_spam %}<span class="portal-status-badge">Spam</span>{% endif %}
+            {% if email_message.spam_reviewed and not email_message.is_spam %}<span class="portal-status-badge success">Trusted</span>{% endif %}
         </header>
         <h4 class="h6 mt-3">{{ email_message.subject|default:'(No subject)' }}</h4>
         <p class="contact-message-text">{{ email_message.body|default:'No plain-text message body was available.'|linebreaksbr }}</p>
@@ -58,6 +59,9 @@
             {% if email_message.is_spam %}
             <form method="post" action="{% url 'mailboxRestore' email_message.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Restore</button></form>
             {% else %}
+            {% if not email_message.spam_reviewed %}
+            <form method="post" action="{% url 'mailboxTrust' email_message.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success" type="submit">Trust as legitimate</button></form>
+            {% endif %}
             <form method="post" action="{% url 'mailboxSpam' email_message.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Mark as spam</button></form>
             {% endif %}
         </footer>
@@ -76,6 +80,7 @@
             <div><h3 class="h5 mb-0">{{ contact.name }}</h3><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></div>
             <time datetime="{{ contact.date|date:'Y-m-d' }}">{{ contact.date|date:'M j, Y' }}</time>
             {% if contact.is_spam %}<span class="portal-status-badge">Spam</span>{% endif %}
+            {% if contact.spam_reviewed and not contact.is_spam %}<span class="portal-status-badge success">Trusted</span>{% endif %}
         </header>
         <p class="contact-message-text">{{ contact.message|linebreaksbr }}</p>
         <footer>
@@ -83,6 +88,9 @@
             {% if contact.is_spam %}
             <form method="post" action="{% url 'contactRestore' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Restore</button></form>
             {% else %}
+            {% if not contact.spam_reviewed %}
+            <form method="post" action="{% url 'contactTrust' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success" type="submit">Trust as legitimate</button></form>
+            {% endif %}
             <form method="post" action="{% url 'contactSpam' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Mark as spam</button></form>
             {% endif %}
             <details class="contact-delete"><summary class="btn btn-sm btn-outline-danger">Delete</summary><div><p>Permanently delete this message?</p><form method="post" action="{% url 'contactDelete' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-danger" type="submit">Confirm delete</button></form></div></details>

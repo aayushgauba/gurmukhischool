@@ -390,6 +390,20 @@ def contactRestore(request, contact_id):
 @login_required
 @approved_required
 @admin_required
+def contactTrust(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id, is_spam=False)
+    Contact.objects.filter(pk=contact.pk).update(spam_reviewed=True)
+    messages.success(
+        request,
+        f"The message from {contact.name} was trusted as legitimate.",
+    )
+    return redirect("adminContactView")
+
+
+@require_POST
+@login_required
+@approved_required
+@admin_required
 def mailboxSpam(request, message_id):
     mailbox_message = get_object_or_404(MailboxMessage, id=message_id)
     MailboxMessage.objects.filter(pk=mailbox_message.pk).update(
@@ -411,6 +425,23 @@ def mailboxRestore(request, message_id):
         spam_reviewed=True,
     )
     messages.success(request, "The email was restored to the inbox.")
+    return redirect("adminContactView")
+
+
+@require_POST
+@login_required
+@approved_required
+@admin_required
+def mailboxTrust(request, message_id):
+    mailbox_message = get_object_or_404(
+        MailboxMessage,
+        id=message_id,
+        is_spam=False,
+    )
+    MailboxMessage.objects.filter(pk=mailbox_message.pk).update(
+        spam_reviewed=True,
+    )
+    messages.success(request, "The email was trusted as legitimate.")
     return redirect("adminContactView")
     
 @require_POST
