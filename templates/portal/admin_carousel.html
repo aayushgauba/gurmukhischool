@@ -1,0 +1,143 @@
+{% extends 'portal/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Carousel management{% endblock %}
+{% block meta_description %}Manage Gurmukhi School and website carousel images.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">Administration</p>
+        <h1 class="portal-page-title">Carousel images</h1>
+        <p class="portal-page-description">Upload images and control the order in which they appear.</p>
+    </div>
+</header>
+
+<section class="carousel-manager" aria-labelledby="schoolCarouselTitle">
+    <header class="carousel-manager-header">
+        <div>
+            <h2 id="schoolCarouselTitle">Gurmukhi School</h2>
+            <p>{{ images.count }} image{{ images.count|pluralize }} in the school carousel.</p>
+        </div>
+        <details class="carousel-upload">
+            <summary class="btn btn-portal-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add image</summary>
+            <form method="post" action="{% url 'gurmukhiSchoolImageUpload' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button class="btn btn-portal-primary" type="submit">Upload image</button>
+            </form>
+        </details>
+    </header>
+
+    {% if images %}
+    <div class="carousel-image-grid">
+        {% for image in images %}
+        <article class="carousel-image-card">
+            <img src="{{ image.image.url }}" alt="{{ image.title }}" loading="lazy">
+            <div class="carousel-image-content">
+                <div>
+                    <span class="portal-eyebrow">Position {{ forloop.counter }}</span>
+                    <h3>{{ image.title }}</h3>
+                    <p>{{ image.description|default:'No description provided.' }}</p>
+                </div>
+                <div class="carousel-image-actions">
+                    <form method="post" action="{% url 'moveCarouselImageUp' image.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-secondary" type="submit"{% if forloop.first %} disabled{% endif %} aria-label="Move {{ image.title }} up">
+                            <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'moveCarouselImageDown' image.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-secondary" type="submit"{% if forloop.last %} disabled{% endif %} aria-label="Move {{ image.title }} down">
+                            <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                    <details class="carousel-delete">
+                        <summary class="btn btn-sm btn-outline-danger" aria-label="Delete {{ image.title }}"><i class="bi bi-trash" aria-hidden="true"></i></summary>
+                        <div>
+                            <p>Delete “{{ image.title }}”?</p>
+                            <form method="post" action="{% url 'delete_carousel_image' %}">
+                                {% csrf_token %}
+                                <input name="image_id" type="hidden" value="{{ image.id }}">
+                                <button class="btn btn-sm btn-danger" type="submit">Confirm delete</button>
+                            </form>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="portal-empty-state compact">
+        <i class="bi bi-images" aria-hidden="true"></i>
+        <p class="mb-0">No school carousel images have been uploaded.</p>
+    </div>
+    {% endif %}
+</section>
+
+<section class="carousel-manager" aria-labelledby="websiteCarouselTitle">
+    <header class="carousel-manager-header">
+        <div>
+            <h2 id="websiteCarouselTitle">Main website</h2>
+            <p>{{ mainImages.count }} image{{ mainImages.count|pluralize }} in the public website carousel.</p>
+        </div>
+        <details class="carousel-upload">
+            <summary class="btn btn-portal-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add image</summary>
+            <form method="post" action="{% url 'mainCarouselImageUpload' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ mainform|crispy }}
+                <button class="btn btn-portal-primary" type="submit">Upload image</button>
+            </form>
+        </details>
+    </header>
+
+    {% if mainImages %}
+    <div class="carousel-image-grid">
+        {% for image in mainImages %}
+        <article class="carousel-image-card">
+            <img src="{{ image.image.url }}" alt="{{ image.title }}" loading="lazy">
+            <div class="carousel-image-content">
+                <div>
+                    <span class="portal-eyebrow">Position {{ forloop.counter }}</span>
+                    <h3>{{ image.title }}</h3>
+                    <p>{{ image.description|default:'No description provided.' }}</p>
+                </div>
+                <div class="carousel-image-actions">
+                    <form method="post" action="{% url 'moveMainCarouselImageUp' image.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-secondary" type="submit"{% if forloop.first %} disabled{% endif %} aria-label="Move {{ image.title }} up">
+                            <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'moveMainCarouselImageDown' image.id %}">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-outline-secondary" type="submit"{% if forloop.last %} disabled{% endif %} aria-label="Move {{ image.title }} down">
+                            <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                    <details class="carousel-delete">
+                        <summary class="btn btn-sm btn-outline-danger" aria-label="Delete {{ image.title }}"><i class="bi bi-trash" aria-hidden="true"></i></summary>
+                        <div>
+                            <p>Delete “{{ image.title }}”?</p>
+                            <form method="post" action="{% url 'delete_main_carousel_image' %}">
+                                {% csrf_token %}
+                                <input name="main_image_id" type="hidden" value="{{ image.id }}">
+                                <button class="btn btn-sm btn-danger" type="submit">Confirm delete</button>
+                            </form>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="portal-empty-state compact">
+        <i class="bi bi-images" aria-hidden="true"></i>
+        <p class="mb-0">No website carousel images have been uploaded.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -193,66 +193,98 @@ def addExistingFilesToAssignment(request, section_id, folder_id, assignment_id):
 @approved_required
 @admin_required
 def carousel_management(request: HttpRequest):
-    images = CarouselImage.objects.all()
-    user_agent = _user_agent(request)
-    mainImages = Carousel.objects.all()
-    images = images.order_by("order")
-    mainImages = mainImages.order_by("order")
+    images = CarouselImage.objects.order_by("order", "id")
+    mainImages = Carousel.objects.order_by("order", "id")
     form = CarouselImageForm()
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     mainform = MainCarouselImageForm()
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_adminCarousel.html", {'profile_photo':profile_photo, 'images': images,'mainImages':mainImages, 'form': form, 'mainform':mainform})
-    else:   
-        return render(request, "portal/desktop_adminCarousel.html", {'profile_photo':profile_photo, 'images': images,'mainImages':mainImages, 'form': form, 'mainform':mainform})
+    return render(request, "portal/admin_carousel.html", {
+        "profile_photo": profile_photo,
+        "images": images,
+        "mainImages": mainImages,
+        "form": form,
+        "mainform": mainform,
+        "active_nav": "carousel",
+    })
 
 @login_required
 @approved_required
 @admin_required
 @require_POST
 def mainCarouselImageUpload(request):
-    images = Carousel.objects.all()
-    if images:
-        count = images.count()
-    else:
-        count = 0
     form = MainCarouselImageForm(request.POST, request.FILES)
     if form.is_valid():
-        image = form.save()
-        image.order = count
-        image.save() 
-        return redirect('carousel_management')
+        with transaction.atomic():
+            items = _normalize_carousel_order(Carousel)
+            image = form.save(commit=False)
+            image.order = len(items)
+            image.save()
+        messages.success(request, "The website carousel image was added.")
+    else:
+        messages.error(
+            request,
+            "The website carousel image could not be added. "
+            + " ".join(str(error) for errors in form.errors.values() for error in errors),
+        )
+    return redirect('carousel_management')
 
 @login_required
 @approved_required
 @admin_required
 @require_POST
 def gurmukhiSchoolImageUpload(request):
-    images = CarouselImage.objects.all()
-    if images:
-        count = images.count()
-    else:
-        count = 0
     form = CarouselImageForm(request.POST, request.FILES)
     if form.is_valid():
-        image = form.save()
-        image.order = count
-        image.save() 
-        return redirect('carousel_management')
+        with transaction.atomic():
+            items = _normalize_carousel_order(CarouselImage)
+            image = form.save(commit=False)
+            image.order = len(items)
+            image.save()
+        messages.success(request, "The school carousel image was added.")
+    else:
+        messages.error(
+            request,
+            "The school carousel image could not be added. "
+            + " ".join(str(error) for errors in form.errors.values() for error in errors),
+        )
+    return redirect('carousel_management')
+
+
+def _normalize_carousel_order(model):
+    items = list(model.objects.select_for_update().order_by("order", "id"))
+    changed = []
+    for index, item in enumerate(items):
+        if item.order != index:
+            item.order = index
+            changed.append(item)
+    if changed:
+        model.objects.bulk_update(changed, ["order"])
+    return items
+
+
+def _move_carousel_image(model, image_id, offset):
+    with transaction.atomic():
+        items = _normalize_carousel_order(model)
+        current_index = next(
+            (index for index, item in enumerate(items) if item.pk == image_id),
+            None,
+        )
+        if current_index is None:
+            raise Http404("Carousel image not found.")
+        target_index = current_index + offset
+        if not 0 <= target_index < len(items):
+            return
+        current = items[current_index]
+        target = items[target_index]
+        current.order, target.order = target.order, current.order
+        model.objects.bulk_update([current, target], ["order"])
 
 @login_required
 @approved_required
 @admin_required
 @require_POST
 def moveMainCarouselImageUp(request, image_id):
-    image = Carousel.objects.get(id = image_id)
-    order = image.order
-    if order >0:
-        newImage = Carousel.objects.get(order = (order-1))
-        image.order = order -1
-        newImage.order = order
-        image.save()
-        newImage.save()
+    _move_carousel_image(Carousel, image_id, -1)
     return redirect("carousel_management")
 
 @login_required
@@ -260,14 +292,7 @@ def moveMainCarouselImageUp(request, image_id):
 @admin_required
 @require_POST
 def moveMainCarouselImageDown(request, image_id):
-    image = Carousel.objects.get(id = image_id)
-    order = image.order
-    if order is not None and order < Carousel.objects.count() - 1:
-        newImage = Carousel.objects.get(order = (order+1))
-        image.order = order +1
-        newImage.order = order
-        image.save()
-        newImage.save()
+    _move_carousel_image(Carousel, image_id, 1)
     return redirect("carousel_management")
 
 @login_required
@@ -275,14 +300,7 @@ def moveMainCarouselImageDown(request, image_id):
 @admin_required
 @require_POST
 def moveCarouselImageUp(request, image_id):
-    image = CarouselImage.objects.get(id = image_id)
-    order = image.order
-    if order >0:
-        newImage = CarouselImage.objects.get(order = (order-1))
-        image.order = order -1
-        newImage.order = order
-        image.save()
-        newImage.save()
+    _move_carousel_image(CarouselImage, image_id, -1)
     return redirect("carousel_management")
 
 @login_required
@@ -290,15 +308,7 @@ def moveCarouselImageUp(request, image_id):
 @admin_required
 @require_POST
 def moveCarouselImageDown(request, image_id):
-    image = CarouselImage.objects.get(id = image_id)
-    order = image.order
-    if order is not None and order < CarouselImage.objects.count() - 1:
-        newImage = CarouselImage.objects.get(order = (order+1))
-        image.order = order +1
-        newImage.order = order
-        image.save()
-        newImage.save()
-    
+    _move_carousel_image(CarouselImage, image_id, 1)
     return redirect("carousel_management")
 
 @require_POST
@@ -331,34 +341,48 @@ def contactDelete(request, contact_id):
 @approved_required
 @admin_required
 def delete_carousel_image(request):
-    if request.method == 'POST':
-        image_id = request.POST.get('image_id')
-        image =  CarouselImage.objects.get(id=image_id)
-        if image.image.path and os.path.exists(image.image.path):
-            os.remove(image.image.path)
+    image = get_object_or_404(CarouselImage, id=request.POST.get('image_id'))
+    title = image.title
+    storage = image.image.storage
+    image_name = image.image.name
+    with transaction.atomic():
         image.delete()
         for order, remaining in enumerate(CarouselImage.objects.order_by('order', 'id')):
             if remaining.order != order:
                 remaining.order = order
                 remaining.save(update_fields=['order'])
-        return redirect('carousel_management')
+    try:
+        if image_name:
+            storage.delete(image_name)
+    except Exception:
+        messages.warning(request, f"{title} was removed, but its stored image file could not be deleted.")
+    else:
+        messages.success(request, f"{title} was removed from the school carousel.")
+    return redirect('carousel_management')
     
 @require_POST
 @login_required
 @approved_required
 @admin_required
 def delete_main_carousel_image(request):
-    if request.method == 'POST':
-        image_id = request.POST.get('main_image_id')
-        image =  Carousel.objects.get(id=image_id)
-        if image.image.path and os.path.exists(image.image.path):
-            os.remove(image.image.path)
+    image = get_object_or_404(Carousel, id=request.POST.get('main_image_id'))
+    title = image.title
+    storage = image.image.storage
+    image_name = image.image.name
+    with transaction.atomic():
         image.delete()
         for order, remaining in enumerate(Carousel.objects.order_by('order', 'id')):
             if remaining.order != order:
                 remaining.order = order
                 remaining.save(update_fields=['order'])
-        return redirect('carousel_management')
+    try:
+        if image_name:
+            storage.delete(image_name)
+    except Exception:
+        messages.warning(request, f"{title} was removed, but its stored image file could not be deleted.")
+    else:
+        messages.success(request, f"{title} was removed from the website carousel.")
+    return redirect('carousel_management')
 
 @approved_required
 @teacher_required
