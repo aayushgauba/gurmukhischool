@@ -3,7 +3,7 @@
     <a href="{% url 'adminViewHome' %}" class="nav-link{% if active_nav == 'admin_dashboard' %} active{% endif %}"><i class="bi bi-speedometer2" aria-hidden="true"></i><span>Dashboard</span></a>
     <a href="{% url 'adminUsers' %}" class="nav-link{% if active_nav == 'admin_users' %} active{% endif %}"><i class="bi bi-people" aria-hidden="true"></i><span>Users</span></a>
     <a href="{% url 'carousel_management' %}" class="nav-link{% if active_nav == 'carousel' %} active{% endif %}"><i class="bi bi-images" aria-hidden="true"></i><span>Carousel</span></a>
-    <a href="{% url 'adminContactView' %}" class="nav-link{% if active_nav == 'admin_contact' %} active{% endif %}"><i class="bi bi-envelope" aria-hidden="true"></i><span>Contact</span></a>
+    <a href="{% url 'adminContactView' %}" class="nav-link{% if active_nav == 'admin_contact' %} active{% endif %}"><i class="bi bi-envelope" aria-hidden="true"></i><span>Email</span></a>
     <a href="{% url 'calenderNotification' %}" class="nav-link{% if active_nav == 'calendar' %} active{% endif %}"><i class="bi bi-calendar3" aria-hidden="true"></i><span>Calendar</span></a>
     {% endif %}
     {% if user.is_web_manager and not user.is_admin %}

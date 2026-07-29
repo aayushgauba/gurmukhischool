@@ -242,6 +242,21 @@ DEFAULT_FROM_EMAIL = os.environ.get(
     EMAIL_HOST_USER or 'webmaster@localhost',
 )
 SERVER_EMAIL = os.environ.get('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
+EMAIL_IMAP_HOST = os.environ.get('EMAIL_IMAP_HOST', '')
+EMAIL_IMAP_PORT = env_int('EMAIL_IMAP_PORT', 993)
+EMAIL_IMAP_USE_SSL = env_bool('EMAIL_IMAP_USE_SSL', True)
+EMAIL_IMAP_USE_TLS = env_bool('EMAIL_IMAP_USE_TLS', False)
+if EMAIL_IMAP_USE_SSL and EMAIL_IMAP_USE_TLS:
+    raise ImproperlyConfigured(
+        'EMAIL_IMAP_USE_SSL and EMAIL_IMAP_USE_TLS cannot both be true'
+    )
+EMAIL_IMAP_USER = os.environ.get('EMAIL_IMAP_USER', EMAIL_HOST_USER)
+EMAIL_IMAP_PASSWORD = os.environ.get(
+    'EMAIL_IMAP_PASSWORD',
+    EMAIL_HOST_PASSWORD,
+)
+EMAIL_IMAP_FOLDER = os.environ.get('EMAIL_IMAP_FOLDER', 'INBOX')
+EMAIL_IMAP_SYNC_LIMIT = env_int('EMAIL_IMAP_SYNC_LIMIT', 100)
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 MEDIA_URL = '/media/'

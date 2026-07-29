@@ -1,90 +1,103 @@
 {% extends 'portal/base.html' %}
 
-{% block title %}Contact inbox{% endblock %}
-{% block meta_description %}Review messages submitted through the website contact form.{% endblock %}
+{% block title %}Email{% endblock %}
+{% block meta_description %}Manage website contact messages and the configured email inbox.{% endblock %}
 
 {% block content %}
 <header class="portal-page-header">
     <div>
         <p class="portal-eyebrow">Administration</p>
-        <h1 class="portal-page-title">Contact inbox</h1>
-        <p class="portal-page-description">Review, reply to, and organize messages. Recurring terms from messages you mark as spam help classify future submissions.</p>
+        <h1 class="portal-page-title">Email</h1>
+        <p class="portal-page-description">Read contact messages and mailbox email, save drafts, and reply from the configured address.</p>
     </div>
-    <span class="admin-waitlist-count">
-        <i class="bi bi-envelope me-1" aria-hidden="true"></i>{{ contacts.count }} shown
-    </span>
+    <div class="d-flex flex-wrap gap-2">
+        <span class="admin-waitlist-count"><i class="bi bi-envelope me-1" aria-hidden="true"></i>{{ shown_count }} shown</span>
+        {% if mailbox_configured %}
+        <form method="post" action="{% url 'adminMailboxSync' %}">{% csrf_token %}<button class="btn btn-outline-secondary" type="submit"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Sync inbox</button></form>
+        {% endif %}
+        <a class="btn btn-portal-primary" href="{% url 'adminMailboxCompose' %}"><i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Compose</a>
+    </div>
 </header>
 
-<nav class="contact-status-tabs" aria-label="Message status">
+{% if not mailbox_configured %}
+<div class="alert alert-warning" role="status">Incoming email is not configured. Contact messages, drafts, and sending still work; add the EMAIL_IMAP_* environment values to load mailbox email.</div>
+{% endif %}
+
+<nav class="contact-status-tabs" aria-label="Mailbox folders">
     <a href="?status=inbox" class="{% if status == 'inbox' %}active{% endif %}">Inbox</a>
+    <a href="?status=contact" class="{% if status == 'contact' %}active{% endif %}">Contact forms</a>
+    <a href="?status=email" class="{% if status == 'email' %}active{% endif %}">Email</a>
+    <a href="?status=drafts" class="{% if status == 'drafts' %}active{% endif %}">Drafts</a>
+    <a href="?status=sent" class="{% if status == 'sent' %}active{% endif %}">Sent</a>
     <a href="?status=spam" class="{% if status == 'spam' %}active{% endif %}">Spam</a>
-    <a href="?status=all" class="{% if status == 'all' %}active{% endif %}">All</a>
 </nav>
 
 <form class="contact-filters" method="get">
     <input name="status" type="hidden" value="{{ status }}">
-    <div>
-        <label class="visually-hidden" for="contactSearch">Search messages</label>
-        <input class="form-control" id="contactSearch" name="q" type="search" value="{{ query }}" placeholder="Search sender, email, or message">
-    </div>
-    <div>
-        <label class="visually-hidden" for="contactDate">Message date</label>
-        <input class="form-control" id="contactDate" name="date" type="date" value="{{ selected_date }}">
-    </div>
+    <div><label class="visually-hidden" for="contactSearch">Search messages</label><input class="form-control" id="contactSearch" name="q" type="search" value="{{ query }}" placeholder="Search sender, recipient, subject, or message"></div>
+    <div><label class="visually-hidden" for="contactDate">Message date</label><input class="form-control" id="contactDate" name="date" type="date" value="{{ selected_date }}"></div>
     <button class="btn btn-portal-primary" type="submit">Filter</button>
-    {% if query or selected_date %}
-    <a class="btn btn-outline-secondary" href="?status={{ status }}">Clear</a>
-    {% endif %}
+    {% if query or selected_date %}<a class="btn btn-outline-secondary" href="?status={{ status }}">Clear</a>{% endif %}
 </form>
 
+{% if mailbox_messages %}
+<section class="contact-message-list mb-4" aria-labelledby="emailMessagesTitle">
+    <h2 class="h5" id="emailMessagesTitle">Email messages</h2>
+    {% for email_message in mailbox_messages %}
+    <article class="contact-message-card">
+        <header>
+            <span class="student-initial" aria-hidden="true">{{ email_message.sender_name|default:email_message.sender_email|first|upper }}</span>
+            <div><h3 class="h5 mb-0">{{ email_message.sender_name|default:email_message.sender_email }}</h3><a href="mailto:{{ email_message.sender_email }}">{{ email_message.sender_email }}</a></div>
+            <time datetime="{{ email_message.received_at|date:'c' }}">{{ email_message.received_at|date:'M j, Y g:i A' }}</time>
+        </header>
+        <h4 class="h6 mt-3">{{ email_message.subject|default:'(No subject)' }}</h4>
+        <p class="contact-message-text">{{ email_message.body|default:'No plain-text message body was available.'|linebreaksbr }}</p>
+        <footer><a class="btn btn-sm btn-portal-primary" href="{% url 'adminMailboxCompose' %}?message={{ email_message.id }}"><i class="bi bi-reply me-1" aria-hidden="true"></i>Reply</a></footer>
+    </article>
+    {% endfor %}
+</section>
+{% endif %}
+
 {% if contacts %}
-<section class="contact-message-list" aria-label="Contact messages">
+<section class="contact-message-list mb-4" aria-labelledby="contactMessagesTitle">
+    <h2 class="h5" id="contactMessagesTitle">Website contact messages</h2>
     {% for contact in contacts %}
     <article class="contact-message-card">
         <header>
             <span class="student-initial" aria-hidden="true">{{ contact.name|first|upper }}</span>
-            <div>
-                <h2>{{ contact.name }}</h2>
-                <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>
-            </div>
+            <div><h3 class="h5 mb-0">{{ contact.name }}</h3><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></div>
             <time datetime="{{ contact.date|date:'Y-m-d' }}">{{ contact.date|date:'M j, Y' }}</time>
             {% if contact.is_spam %}<span class="portal-status-badge">Spam</span>{% endif %}
         </header>
         <p class="contact-message-text">{{ contact.message|linebreaksbr }}</p>
         <footer>
-            <a class="btn btn-sm btn-portal-primary" href="mailto:{{ contact.email }}">
-                <i class="bi bi-reply me-1" aria-hidden="true"></i>Reply
-            </a>
+            <a class="btn btn-sm btn-portal-primary" href="{% url 'adminMailboxCompose' %}?contact={{ contact.id }}"><i class="bi bi-reply me-1" aria-hidden="true"></i>Reply</a>
             {% if contact.is_spam %}
-            <form method="post" action="{% url 'contactRestore' contact.id %}">
-                {% csrf_token %}
-                <button class="btn btn-sm btn-outline-secondary" type="submit">Restore</button>
-            </form>
+            <form method="post" action="{% url 'contactRestore' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Restore</button></form>
             {% else %}
-            <form method="post" action="{% url 'contactSpam' contact.id %}">
-                {% csrf_token %}
-                <button class="btn btn-sm btn-outline-secondary" type="submit">Mark as spam</button>
-            </form>
+            <form method="post" action="{% url 'contactSpam' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Mark as spam</button></form>
             {% endif %}
-            <details class="contact-delete">
-                <summary class="btn btn-sm btn-outline-danger">Delete</summary>
-                <div>
-                    <p>Permanently delete this message?</p>
-                    <form method="post" action="{% url 'contactDelete' contact.id %}">
-                        {% csrf_token %}
-                        <button class="btn btn-sm btn-danger" type="submit">Confirm delete</button>
-                    </form>
-                </div>
-            </details>
+            <details class="contact-delete"><summary class="btn btn-sm btn-outline-danger">Delete</summary><div><p>Permanently delete this message?</p><form method="post" action="{% url 'contactDelete' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-danger" type="submit">Confirm delete</button></form></div></details>
         </footer>
     </article>
     {% endfor %}
 </section>
-{% else %}
-<section class="portal-empty-state" aria-labelledby="emptyContactsTitle">
-    <i class="bi bi-inbox" aria-hidden="true"></i>
-    <h2 class="fs-4" id="emptyContactsTitle">No messages found</h2>
-    <p class="text-secondary mb-0">Try another filter or check back later.</p>
+{% endif %}
+
+{% if drafts %}
+<section class="contact-message-list" aria-labelledby="draftMessagesTitle">
+    <h2 class="h5" id="draftMessagesTitle">{% if status == 'sent' %}Sent email{% else %}Drafts{% endif %}</h2>
+    {% for draft in drafts %}
+    <article class="contact-message-card">
+        <header><span class="student-initial" aria-hidden="true"><i class="bi bi-pencil"></i></span><div><h3 class="h5 mb-0">{{ draft.subject }}</h3><span>To: {{ draft.recipient }}</span></div><time datetime="{{ draft.updated_at|date:'c' }}">{{ draft.updated_at|date:'M j, Y g:i A' }}</time></header>
+        <p class="contact-message-text">{{ draft.body|linebreaksbr }}</p>
+        {% if draft.status == 'draft' %}<footer><a class="btn btn-sm btn-portal-primary" href="{% url 'adminMailboxCompose' %}?draft={{ draft.id }}">Continue editing</a></footer>{% endif %}
+    </article>
+    {% endfor %}
 </section>
+{% endif %}
+
+{% if not contacts and not mailbox_messages and not drafts %}
+<section class="portal-empty-state" aria-labelledby="emptyContactsTitle"><i class="bi bi-inbox" aria-hidden="true"></i><h2 class="fs-4" id="emptyContactsTitle">No messages found</h2><p class="text-secondary mb-0">Try another filter or synchronize the mailbox.</p></section>
 {% endif %}
 {% endblock %}

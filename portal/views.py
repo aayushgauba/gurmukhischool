@@ -29,7 +29,9 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from asgiref.sync import sync_to_async
-from pages.models import Contact
+from pages.forms import MailComposeForm
+from pages.mailbox import mailbox_is_configured, send_admin_email, sync_inbox
+from pages.models import Contact, MailboxMessage, MailDraft
 from django.core.exceptions import ValidationError
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
@@ -1390,19 +1392,37 @@ def adminContactView(request:HttpRequest):
     status = request.GET.get("status", "inbox")
     query = request.GET.get("q", "").strip()
     selected_date = request.GET.get("date", "").strip()
-    contacts = Contact.objects.all()
+    contacts = Contact.objects.none()
+    mailbox_messages = MailboxMessage.objects.none()
+    drafts = MailDraft.objects.none()
     if status == "spam":
-        contacts = contacts.filter(is_spam=True)
-    elif status == "all":
-        pass
+        contacts = Contact.objects.filter(is_spam=True)
+    elif status == "contact":
+        contacts = Contact.objects.filter(is_spam=False)
+    elif status == "email":
+        mailbox_messages = MailboxMessage.objects.all()
+    elif status in {"drafts", "sent"}:
+        drafts = MailDraft.objects.filter(status=status[:-1] if status.endswith("s") else status)
     else:
         status = "inbox"
-        contacts = contacts.filter(is_spam=False)
+        contacts = Contact.objects.filter(is_spam=False)
+        mailbox_messages = MailboxMessage.objects.all()
     if query:
         contacts = contacts.filter(
             Q(name__icontains=query)
             | Q(email__icontains=query)
             | Q(message__icontains=query)
+        )
+        mailbox_messages = mailbox_messages.filter(
+            Q(sender_name__icontains=query)
+            | Q(sender_email__icontains=query)
+            | Q(subject__icontains=query)
+            | Q(body__icontains=query)
+        )
+        drafts = drafts.filter(
+            Q(recipient__icontains=query)
+            | Q(subject__icontains=query)
+            | Q(body__icontains=query)
         )
     if selected_date:
         try:
@@ -1411,16 +1431,126 @@ def adminContactView(request:HttpRequest):
             selected_date = ""
         else:
             contacts = contacts.filter(date=filter_date)
+            mailbox_messages = mailbox_messages.filter(received_at__date=filter_date)
+            drafts = drafts.filter(updated_at__date=filter_date)
     contacts = contacts.order_by("-date", "-id")
+    mailbox_messages = mailbox_messages.order_by("-received_at", "-id")
+    drafts = drafts.order_by("-updated_at", "-id")
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     return render(request, "portal/admin_contact.html", {
         "contacts": contacts,
+        "mailbox_messages": mailbox_messages,
+        "drafts": drafts,
+        "shown_count": contacts.count() + mailbox_messages.count() + drafts.count(),
+        "mailbox_configured": mailbox_is_configured(),
         "profile_photo": profile_photo,
         "status": status,
         "query": query,
         "selected_date": selected_date,
         "active_nav": "admin_contact",
     })
+
+
+@require_POST
+@login_required
+@admin_required
+@approved_required
+def adminMailboxSync(request):
+    try:
+        synced = sync_inbox()
+    except Exception:
+        logger.exception("Mailbox synchronization failed.")
+        messages.error(
+            request,
+            "The mailbox could not be synchronized. Check the IMAP configuration.",
+        )
+    else:
+        messages.success(request, f"Mailbox synchronized. {synced} messages checked.")
+    return redirect("adminContactView")
+
+
+@login_required
+@admin_required
+@approved_required
+def adminMailboxCompose(request):
+    draft = None
+    draft_id = request.POST.get("draft_id") or request.GET.get("draft")
+    if draft_id:
+        draft = get_object_or_404(MailDraft, id=draft_id, status=MailDraft.DRAFT)
+
+    contact_id = request.POST.get("contact_id") or request.GET.get("contact")
+    message_id = request.POST.get("message_id") or request.GET.get("message")
+    contact = get_object_or_404(Contact, id=contact_id) if contact_id else None
+    mailbox_message = (
+        get_object_or_404(MailboxMessage, id=message_id) if message_id else None
+    )
+    initial = {}
+    if contact:
+        initial = {"recipient": contact.email, "subject": ""}
+    elif mailbox_message:
+        subject = mailbox_message.subject or ""
+        initial = {
+            "recipient": mailbox_message.sender_email,
+            "subject": subject if subject.lower().startswith("re:") else f"Re: {subject}",
+        }
+
+    form = MailComposeForm(
+        request.POST or None,
+        instance=draft,
+        initial=initial,
+    )
+    if request.method == "POST" and form.is_valid():
+        mail_record = form.save(commit=False)
+        mail_record.created_by = draft.created_by if draft else request.user
+        mail_record.created_by_name = (
+            draft.created_by_name
+            if draft and draft.created_by_name
+            else request.user.get_full_name() or request.user.username
+        )
+        mail_record.contact = contact
+        mail_record.reply_to_message = mailbox_message
+        action = request.POST.get("action")
+        if action == "save":
+            mail_record.status = MailDraft.DRAFT
+            mail_record.save()
+            messages.success(request, "Draft saved.")
+            return redirect("adminContactView")
+        if action == "send":
+            mail_record.status = MailDraft.DRAFT
+            mail_record.save()
+            try:
+                send_admin_email(mail_record, request.user)
+            except Exception:
+                logger.exception("Admin mailbox email failed to send.")
+                messages.error(
+                    request,
+                    "The email could not be sent. It was saved as a draft.",
+                )
+            else:
+                mail_record.status = MailDraft.SENT
+                mail_record.sent_at = timezone.now()
+                mail_record.save(update_fields=["status", "sent_at", "updated_at"])
+                messages.success(
+                    request,
+                    f"Email sent from {settings.DEFAULT_FROM_EMAIL}.",
+                )
+                return redirect("adminContactView")
+
+    profile_photo = request.user.profile_photos.order_by("-uploaded_at").first()
+    return render(
+        request,
+        "portal/admin_mail_compose.html",
+        {
+            "form": form,
+            "draft": draft,
+            "contact": contact,
+            "mailbox_message": mailbox_message,
+            "profile_photo": profile_photo,
+            "active_nav": "admin_contact",
+            "from_email": settings.DEFAULT_FROM_EMAIL,
+        },
+        status=400 if request.method == "POST" and not form.is_valid() else 200,
+    )
 
 @login_required
 @approved_required

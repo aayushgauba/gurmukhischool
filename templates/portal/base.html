@@ -87,7 +87,7 @@
         {% if user.is_admin %}
         <a href="{% url 'adminViewHome' %}"{% if active_nav == 'admin_dashboard' %} class="active" aria-current="page"{% endif %}><i class="bi bi-speedometer2" aria-hidden="true"></i><span>Dashboard</span></a>
         <a href="{% url 'adminUsers' %}"{% if active_nav == 'admin_users' %} class="active" aria-current="page"{% endif %}><i class="bi bi-people" aria-hidden="true"></i><span>Users</span></a>
-        <a href="{% url 'adminContactView' %}"{% if active_nav == 'admin_contact' %} class="active" aria-current="page"{% endif %}><i class="bi bi-envelope" aria-hidden="true"></i><span>Contact</span></a>
+        <a href="{% url 'adminContactView' %}"{% if active_nav == 'admin_contact' %} class="active" aria-current="page"{% endif %}><i class="bi bi-envelope" aria-hidden="true"></i><span>Email</span></a>
         <a href="{% url 'calenderNotification' %}"{% if active_nav == 'calendar' %} class="active" aria-current="page"{% endif %}><i class="bi bi-calendar3" aria-hidden="true"></i><span>Calendar</span></a>
         <form method="post" action="{% url 'logout' %}">
             {% csrf_token %}

@@ -1,0 +1,26 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}{% if draft %}Edit draft{% else %}Compose email{% endif %}{% endblock %}
+{% block meta_description %}Compose an email from the configured Gurmukhi School mailbox.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div><p class="portal-eyebrow">Email</p><h1 class="portal-page-title">{% if draft %}Edit draft{% else %}Compose email{% endif %}</h1><p class="portal-page-description">This email will be sent from {{ from_email }} and signed with your name.</p></div>
+    <a class="btn btn-outline-secondary" href="{% url 'adminContactView' %}">Back to email</a>
+</header>
+
+<section class="admin-user-card">
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if draft %}<input name="draft_id" type="hidden" value="{{ draft.id }}">{% endif %}
+        {% if contact %}<input name="contact_id" type="hidden" value="{{ contact.id }}">{% endif %}
+        {% if mailbox_message %}<input name="message_id" type="hidden" value="{{ mailbox_message.id }}">{% endif %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="mb-3"><label class="form-label" for="{{ form.recipient.id_for_label }}">To</label>{{ form.recipient }}{% for error in form.recipient.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+        <div class="mb-3"><label class="form-label" for="{{ form.subject.id_for_label }}">Subject</label>{{ form.subject }}{% for error in form.subject.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+        <div class="mb-3"><label class="form-label" for="{{ form.body.id_for_label }}">Message</label>{{ form.body }}{% for error in form.body.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
+        <p class="text-secondary small">Your signature is added automatically when the email is sent.</p>
+        <div class="d-flex flex-wrap gap-2"><button class="btn btn-portal-primary" name="action" value="send" type="submit"><i class="bi bi-send me-1" aria-hidden="true"></i>Send email</button><button class="btn btn-outline-secondary" name="action" value="save" type="submit">Save draft</button></div>
+    </form>
+</section>
+{% endblock %}
