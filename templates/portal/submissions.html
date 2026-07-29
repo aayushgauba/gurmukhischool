@@ -1,0 +1,106 @@
+{% extends 'portal/base.html' %}
+{% load custom_filters %}
+
+{% block title %}{{ student.get_full_name|default:student.username }} – {{ assignment.title }}{% endblock %}
+{% block meta_description %}Review a student submission for {{ assignment.title }}.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">
+            <a href="{% url 'viewAssignment' section.id folder.id assignment.id %}">{{ assignment.title }}</a> /
+            Submission review
+        </p>
+        <h1 class="portal-page-title">{{ student.get_full_name|default:student.username }}</h1>
+        <p class="portal-page-description">{{ student.email }}</p>
+    </div>
+    <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#assignGradeModal">
+        <i class="bi bi-bar-chart me-1" aria-hidden="true"></i>
+        {% if grade %}Update grade{% else %}Assign grade{% endif %}
+    </button>
+</header>
+
+<section class="submission-summary" aria-label="Grade summary">
+    <div>
+        <span>Assignment</span>
+        <strong>{{ assignment.title }}</strong>
+    </div>
+    <div>
+        <span>Due date</span>
+        <strong>{{ assignment.due_date|date:'M j, Y' }}</strong>
+    </div>
+    <div>
+        <span>Current grade</span>
+        <strong>{% if grade %}{{ grade.grade|floatformat:'-2' }}%{% else %}Not graded{% endif %}</strong>
+    </div>
+</section>
+
+<section class="resource-panel mt-3" aria-labelledby="submittedFilesTitle">
+    <header class="resource-panel-header">
+        <div>
+            <h2 id="submittedFilesTitle">Submitted files</h2>
+            <p>{{ submissions.count }} file{{ submissions.count|pluralize }}</p>
+        </div>
+        <i class="bi bi-cloud-check" aria-hidden="true"></i>
+    </header>
+    <div class="resource-list">
+        {% for submission in submissions %}
+        <article class="resource-row">
+            <span class="resource-icon assignment-resource-icon" aria-hidden="true"><i class="bi bi-file-check"></i></span>
+            <div class="resource-details">
+                <h3>{{ submission.file.name|basename }}</h3>
+                <span>
+                    Submitted {{ submission.date|date:'M j, Y' }} ·
+                    {% if submission.date <= assignment.due_date %}On time{% else %}Late{% endif %}
+                </span>
+            </div>
+            <div class="resource-actions">
+                <a class="btn btn-sm btn-portal-primary" href="{% url 'view_submission_file' submission.id %}" target="_blank" rel="noopener">View</a>
+            </div>
+        </article>
+        {% empty %}
+        <div class="resource-empty">
+            <i class="bi bi-inbox" aria-hidden="true"></i>
+            <p>This student has no submitted files.</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<div class="modal fade" id="assignGradeModal" tabindex="-1" aria-labelledby="assignGradeTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{% url 'assignGradeToAssignment' folder.id student.id assignment.id course.id %}" method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="assignGradeTitle">
+                        {% if grade %}Update{% else %}Assign{% endif %} grade
+                    </h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" for="gradeInput">Grade percentage</label>
+                    <div class="input-group">
+                        <input
+                            class="form-control"
+                            id="gradeInput"
+                            name="grade"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value="{% if grade %}{{ grade.grade|floatformat:'-2' }}{% endif %}"
+                            required
+                        >
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-portal-primary">Save grade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

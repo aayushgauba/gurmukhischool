@@ -703,6 +703,38 @@ body.portal-body {
     margin-bottom: 0;
 }
 
+.submission-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.submission-summary > div {
+    display: grid;
+    gap: 0.2rem;
+    padding: 1rem 1.25rem;
+    border-right: 1px solid var(--portal-border);
+}
+
+.submission-summary > div:last-child {
+    border-right: 0;
+}
+
+.submission-summary span {
+    color: var(--portal-muted);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.submission-summary strong {
+    font-size: 1.05rem;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;
@@ -806,6 +838,19 @@ body.portal-body {
 
     .folder-content-grid {
         grid-template-columns: 1fr;
+    }
+
+    .submission-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .submission-summary > div {
+        border-right: 0;
+        border-bottom: 1px solid var(--portal-border);
+    }
+
+    .submission-summary > div:last-child {
+        border-bottom: 0;
     }
 }
 

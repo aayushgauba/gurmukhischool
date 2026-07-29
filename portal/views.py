@@ -706,13 +706,15 @@ def assignGradeToAssignment(request, folder_id, user_id, assignment_id, course_i
     try:
         new_grade = _parse_grade(request.POST.get("grade"))
     except ValidationError as error:
-        return JsonResponse({"detail": error.message}, status=400)
+        messages.error(request, error.message)
+        return redirect("submissions", folder_id, user_id, assignment_id)
     Grade.objects.update_or_create(
         user_id=user_id,
         assignment_id=assignment_id,
         course_id=course_id,
         defaults={"grade": new_grade},
     )
+    messages.success(request, "The grade was saved.")
     return redirect("submissions", folder_id, user_id, assignment_id)
 
 @approved_required
@@ -1394,11 +1396,13 @@ def removeStudentFromCourse(request, course_id):
 @login_required
 def submissions(request: HttpRequest, folder_id, user_id, assignment_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    user_agent = _user_agent(request)
     course, _, folder, assignment = _course_graph(
         folder_id=folder_id,
         assignment_id=assignment_id,
     )
+    section = Section.objects.filter(folders=folder).order_by("order", "id").first()
+    if section is None:
+        raise Http404
     if not course.people.filter(id=user_id, user_type=CustomUser.STUDENT).exists():
         raise Http404
     grade = Grade.objects.filter(
@@ -1406,12 +1410,22 @@ def submissions(request: HttpRequest, folder_id, user_id, assignment_id):
         assignment_id=assignment_id,
         course_id=course.id,
     ).first()
-    submissions = Submission.objects.filter(user_id =user_id, assignment_id = assignment_id)
-    user = CustomUser.objects.get(id = user_id)
-    if "mobile" in user_agent:
-        return render(request, "portal/mobile_submissionView.html", context = {"submissions":submissions, "grade":grade, "folder":folder, "user": user, "assignment":assignment, "profile_photo":profile_photo})
-    else:
-        return render(request, "portal/desktop_submissionView.html", context = {"submissions":submissions, "grade":grade, "folder":folder, "user": user, "assignment":assignment, "profile_photo":profile_photo})
+    student = get_object_or_404(CustomUser, id=user_id)
+    submissions = Submission.objects.filter(
+        user_id=user_id,
+        assignment_id=assignment_id,
+    ).order_by("-date", "-id")
+    return render(request, "portal/submissions.html", {
+        "submissions": submissions,
+        "grade": grade,
+        "course": course,
+        "section": section,
+        "folder": folder,
+        "student": student,
+        "assignment": assignment,
+        "profile_photo": profile_photo,
+        "active_nav": "courses",
+    })
 
 def PasswordResetView(request):
     if request.method == 'POST':
