@@ -243,24 +243,6 @@ def process_group_photos():
 
 @task
 def spam_classifier_report():
-    from pages.models import Contact
-    from pages.spam_classifier import learn_spam_terms
+    from pages.tasks import classify_spam_messages
 
-    spam_messages = list(
-        Contact.objects.filter(is_spam=True).values_list("message", flat=True)
-    )
-    legitimate_messages = list(
-        Contact.objects.filter(is_spam=False).values_list("message", flat=True)
-    )
-    learned_terms = learn_spam_terms(spam_messages, legitimate_messages)
-    return {
-        "spam_messages": len(spam_messages),
-        "legitimate_messages": len(legitimate_messages),
-        "learned_terms": [
-            {"term": term, "score": round(score, 3)}
-            for term, score in sorted(
-                learned_terms.items(),
-                key=lambda item: (-item[1], item[0]),
-            )[:50]
-        ],
-    }
+    return classify_spam_messages.call()

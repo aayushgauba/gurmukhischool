@@ -10,10 +10,91 @@ from django.utils import timezone
 from portal.models import CustomUser
 
 from .mailbox import mailbox_is_configured, send_admin_email, sync_inbox
-from .models import MailDraft
+from .models import Contact, MailDraft, MailboxMessage
+from .spam_classifier import is_likely_spam, learn_spam_terms
 
 
 logger = logging.getLogger(__name__)
+
+
+def _mailbox_text(message):
+    return "\n".join(part for part in [message.subject, message.body] if part)
+
+
+@task
+def classify_spam_messages():
+    spam_messages = list(
+        Contact.objects.filter(is_spam=True, spam_reviewed=True).values_list(
+            "message",
+            flat=True,
+        )
+    )
+    spam_messages.extend(
+        _mailbox_text(message)
+        for message in MailboxMessage.objects.filter(
+            is_spam=True,
+            spam_reviewed=True,
+        ).only("subject", "body")
+    )
+    legitimate_messages = list(
+        Contact.objects.filter(
+            is_spam=False,
+            spam_reviewed=True,
+        ).values_list("message", flat=True)
+    )
+    legitimate_messages.extend(
+        _mailbox_text(message)
+        for message in MailboxMessage.objects.filter(
+            is_spam=False,
+            spam_reviewed=True,
+        ).only(
+            "subject",
+            "body",
+        )
+    )
+
+    learned_terms = learn_spam_terms(spam_messages, legitimate_messages)
+    contact_spam_ids = []
+    for contact in Contact.objects.filter(
+        is_spam=False,
+        spam_reviewed=False,
+    ).only("id", "message"):
+        likely_spam, _ = is_likely_spam(
+            contact.message,
+            spam_messages,
+            legitimate_messages,
+        )
+        if likely_spam:
+            contact_spam_ids.append(contact.pk)
+
+    email_spam_ids = []
+    for message in MailboxMessage.objects.filter(
+        is_spam=False,
+        spam_reviewed=False,
+    ).only("id", "subject", "body"):
+        likely_spam, _ = is_likely_spam(
+            _mailbox_text(message),
+            spam_messages,
+            legitimate_messages,
+        )
+        if likely_spam:
+            email_spam_ids.append(message.pk)
+
+    Contact.objects.filter(pk__in=contact_spam_ids).update(is_spam=True)
+    MailboxMessage.objects.filter(pk__in=email_spam_ids).update(is_spam=True)
+    return {
+        "reviewed_spam_messages": len(spam_messages),
+        "legitimate_messages": len(legitimate_messages),
+        "contacts_classified_as_spam": len(contact_spam_ids),
+        "emails_classified_as_spam": len(email_spam_ids),
+        "learned_terms": [
+            {"term": term, "score": round(score, 3)}
+            for term, score in sorted(
+                learned_terms.items(),
+                key=lambda item: (-item[1], item[0]),
+            )[:50]
+        ],
+    }
 
 
 @task

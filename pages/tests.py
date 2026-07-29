@@ -3,8 +3,12 @@ from django.core import mail
 from django.test import TestCase, override_settings
 
 from .mailbox import send_admin_email
-from .models import MailDraft, MailboxMessage
-from .tasks import process_email_pipeline, send_two_factor_code_email
+from .models import Contact, MailDraft, MailboxMessage
+from .tasks import (
+    classify_spam_messages,
+    process_email_pipeline,
+    send_two_factor_code_email,
+)
 
 
 @override_settings(
@@ -70,3 +74,73 @@ class AdminMailboxTests(TestCase):
         self.assertEqual(result["responses"]["sent"], 1)
         self.assertEqual(draft.status, MailDraft.SENT)
         self.assertFalse(result["sync"]["configured"])
+
+
+class CombinedSpamClassifierTests(TestCase):
+    def setUp(self):
+        Contact.objects.create(
+            name="Spam One",
+            email="one@example.com",
+            message="crypto jackpot investment",
+            is_spam=True,
+            spam_reviewed=True,
+        )
+        Contact.objects.create(
+            name="Spam Two",
+            email="two@example.com",
+            message="crypto jackpot offer",
+            is_spam=True,
+            spam_reviewed=True,
+        )
+        MailboxMessage.objects.create(
+            folder="INBOX",
+            uid="spam-3",
+            subject="crypto jackpot winner",
+            is_spam=True,
+            spam_reviewed=True,
+        )
+        Contact.objects.create(
+            name="Parent",
+            email="parent@example.com",
+            message="Question about the school class schedule",
+            spam_reviewed=True,
+        )
+
+    def test_task_classifies_contact_forms_and_mailbox_email(self):
+        contact = Contact.objects.create(
+            name="Candidate",
+            email="candidate@example.com",
+            message="Pending classification",
+        )
+        Contact.objects.filter(pk=contact.pk).update(
+            message="Claim your crypto jackpot now",
+        )
+        email = MailboxMessage.objects.create(
+            folder="INBOX",
+            uid="candidate-email",
+            subject="Crypto jackpot opportunity",
+        )
+
+        result = classify_spam_messages.call()
+
+        contact.refresh_from_db()
+        email.refresh_from_db()
+        self.assertTrue(contact.is_spam)
+        self.assertFalse(contact.spam_reviewed)
+        self.assertTrue(email.is_spam)
+        self.assertFalse(email.spam_reviewed)
+        self.assertEqual(result["contacts_classified_as_spam"], 1)
+        self.assertEqual(result["emails_classified_as_spam"], 1)
+
+    def test_reviewed_legitimate_message_is_not_reclassified(self):
+        contact = Contact.objects.create(
+            name="Reviewed",
+            email="reviewed@example.com",
+            message="crypto jackpot question",
+            spam_reviewed=True,
+        )
+
+        classify_spam_messages.call()
+
+        contact.refresh_from_db()
+        self.assertFalse(contact.is_spam)

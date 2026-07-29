@@ -359,7 +359,10 @@ def moveCarouselImageDown(request, image_id):
 @admin_required
 def contactSpam(request, contact_id):
     contact = get_object_or_404(Contact, id=contact_id)
-    Contact.objects.filter(pk=contact.pk).update(is_spam=True)
+    Contact.objects.filter(pk=contact.pk).update(
+        is_spam=True,
+        spam_reviewed=True,
+    )
     messages.success(request, f"The message from {contact.name} was marked as spam.")
     return redirect("adminContactView")
 
@@ -370,8 +373,39 @@ def contactSpam(request, contact_id):
 @admin_required
 def contactRestore(request, contact_id):
     contact = get_object_or_404(Contact, id=contact_id)
-    Contact.objects.filter(pk=contact.pk).update(is_spam=False)
+    Contact.objects.filter(pk=contact.pk).update(
+        is_spam=False,
+        spam_reviewed=True,
+    )
     messages.success(request, f"The message from {contact.name} was restored to the inbox.")
+    return redirect("adminContactView")
+
+
+@require_POST
+@login_required
+@approved_required
+@admin_required
+def mailboxSpam(request, message_id):
+    mailbox_message = get_object_or_404(MailboxMessage, id=message_id)
+    MailboxMessage.objects.filter(pk=mailbox_message.pk).update(
+        is_spam=True,
+        spam_reviewed=True,
+    )
+    messages.success(request, "The email was marked as spam.")
+    return redirect("adminContactView")
+
+
+@require_POST
+@login_required
+@approved_required
+@admin_required
+def mailboxRestore(request, message_id):
+    mailbox_message = get_object_or_404(MailboxMessage, id=message_id)
+    MailboxMessage.objects.filter(pk=mailbox_message.pk).update(
+        is_spam=False,
+        spam_reviewed=True,
+    )
+    messages.success(request, "The email was restored to the inbox.")
     return redirect("adminContactView")
     
 @require_POST
@@ -1398,10 +1432,11 @@ def adminContactView(request:HttpRequest):
     drafts = MailDraft.objects.none()
     if status == "spam":
         contacts = Contact.objects.filter(is_spam=True)
+        mailbox_messages = MailboxMessage.objects.filter(is_spam=True)
     elif status == "contact":
         contacts = Contact.objects.filter(is_spam=False)
     elif status == "email":
-        mailbox_messages = MailboxMessage.objects.all()
+        mailbox_messages = MailboxMessage.objects.filter(is_spam=False)
     elif status == "drafts":
         drafts = MailDraft.objects.filter(
             status__in=[MailDraft.DRAFT, MailDraft.QUEUED]
@@ -1411,7 +1446,7 @@ def adminContactView(request:HttpRequest):
     else:
         status = "inbox"
         contacts = Contact.objects.filter(is_spam=False)
-        mailbox_messages = MailboxMessage.objects.all()
+        mailbox_messages = MailboxMessage.objects.filter(is_spam=False)
     if query:
         contacts = contacts.filter(
             Q(name__icontains=query)

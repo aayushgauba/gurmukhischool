@@ -49,10 +49,18 @@
             <span class="student-initial" aria-hidden="true">{{ email_message.sender_name|default:email_message.sender_email|first|upper }}</span>
             <div><h3 class="h5 mb-0">{{ email_message.sender_name|default:email_message.sender_email }}</h3><a href="mailto:{{ email_message.sender_email }}">{{ email_message.sender_email }}</a></div>
             <time datetime="{{ email_message.received_at|date:'c' }}">{{ email_message.received_at|date:'M j, Y g:i A' }}</time>
+            {% if email_message.is_spam %}<span class="portal-status-badge">Spam</span>{% endif %}
         </header>
         <h4 class="h6 mt-3">{{ email_message.subject|default:'(No subject)' }}</h4>
         <p class="contact-message-text">{{ email_message.body|default:'No plain-text message body was available.'|linebreaksbr }}</p>
-        <footer><a class="btn btn-sm btn-portal-primary" href="{% url 'adminMailboxCompose' %}?message={{ email_message.id }}"><i class="bi bi-reply me-1" aria-hidden="true"></i>Reply</a></footer>
+        <footer>
+            <a class="btn btn-sm btn-portal-primary" href="{% url 'adminMailboxCompose' %}?message={{ email_message.id }}"><i class="bi bi-reply me-1" aria-hidden="true"></i>Reply</a>
+            {% if email_message.is_spam %}
+            <form method="post" action="{% url 'mailboxRestore' email_message.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Restore</button></form>
+            {% else %}
+            <form method="post" action="{% url 'mailboxSpam' email_message.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Mark as spam</button></form>
+            {% endif %}
+        </footer>
     </article>
     {% endfor %}
 </section>

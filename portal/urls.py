@@ -83,5 +83,7 @@ urlpatterns = [
     path('logout/', views.signout, name='logout'),
     path('contact/spam/<int:contact_id>/', views.contactSpam, name='contactSpam'),
     path('contact/restore/<int:contact_id>/', views.contactRestore, name='contactRestore'),
+    path('mailbox/spam/<int:message_id>/', views.mailboxSpam, name='mailboxSpam'),
+    path('mailbox/restore/<int:message_id>/', views.mailboxRestore, name='mailboxRestore'),
     path('contact/delete/<int:contact_id>/', views.contactDelete, name='contactDelete'),
 ]

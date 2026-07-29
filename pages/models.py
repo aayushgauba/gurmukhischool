@@ -9,6 +9,7 @@ class Contact(models.Model):
     date = models.DateField(auto_now=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     is_spam = models.BooleanField(default=False)
+    spam_reviewed = models.BooleanField(default=False)
 
 
 class MailboxMessage(models.Model):
@@ -22,6 +23,8 @@ class MailboxMessage(models.Model):
     body = models.TextField(blank=True)
     received_at = models.DateTimeField(null=True, blank=True)
     synced_at = models.DateTimeField(auto_now=True)
+    is_spam = models.BooleanField(default=False)
+    spam_reviewed = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-received_at", "-id"]

@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 
 from portal.models import CustomUser
 
-from .models import Contact
+from .models import Contact, MailboxMessage
 from .spam_classifier import is_likely_spam
 
 
@@ -19,15 +19,38 @@ logger = logging.getLogger(__name__)
 
 @receiver(pre_save, sender=Contact, dispatch_uid="pages.classify_contact_spam")
 def classify_contact_spam(sender, instance, **kwargs):
-    if instance.pk or instance.is_spam:
+    if instance.pk or instance.is_spam or instance.spam_reviewed:
         return
-    spam_messages = Contact.objects.filter(is_spam=True).values_list(
+    spam_messages = list(Contact.objects.filter(
+        is_spam=True,
+        spam_reviewed=True,
+    ).values_list(
         "message",
         flat=True,
+    ))
+    spam_messages.extend(
+        "\n".join(part for part in [message.subject, message.body] if part)
+        for message in MailboxMessage.objects.filter(
+            is_spam=True,
+            spam_reviewed=True,
+        ).only("subject", "body")
     )
-    legitimate_messages = Contact.objects.filter(is_spam=False).values_list(
+    legitimate_messages = list(Contact.objects.filter(
+        is_spam=False,
+        spam_reviewed=True,
+    ).values_list(
         "message",
         flat=True,
+    ))
+    legitimate_messages.extend(
+        "\n".join(part for part in [message.subject, message.body] if part)
+        for message in MailboxMessage.objects.filter(
+            is_spam=False,
+            spam_reviewed=True,
+        ).only(
+            "subject",
+            "body",
+        )
     )
     likely_spam, matched_terms = is_likely_spam(
         instance.message,
