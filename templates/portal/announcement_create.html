@@ -1,0 +1,44 @@
+{% extends 'portal/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create announcement{% endblock %}
+{% block meta_description %}Publish an announcement to Gurmukhi School courses.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow"><a href="{% url 'announcements' %}">Announcements</a> / Create</p>
+        <h1 class="portal-page-title">Create announcement</h1>
+        <p class="portal-page-description">Publish an update and email the students enrolled in the selected courses.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'announcements' %}">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Cancel
+    </a>
+</header>
+
+<form method="post" action="{% url 'create_announcement' %}">
+    {% csrf_token %}
+    <section class="announcement-form-panel" aria-labelledby="announcementDetailsTitle">
+        <header>
+            <div>
+                <h2 id="announcementDetailsTitle">Announcement details</h2>
+                <p>A title and at least one recipient course are required.</p>
+            </div>
+            <i class="bi bi-megaphone" aria-hidden="true"></i>
+        </header>
+        <div class="announcement-form-body">
+            {{ form|crispy }}
+            <div class="announcement-delivery-note">
+                <i class="bi bi-envelope" aria-hidden="true"></i>
+                <p><strong>Email notification</strong><br>Each student receives at most one email, even when enrolled in multiple selected courses.</p>
+            </div>
+        </div>
+    </section>
+    <div class="attendance-save-bar">
+        <p>The announcement appears in the portal immediately after publishing.</p>
+        <button class="btn btn-portal-primary" type="submit">
+            <i class="bi bi-send me-1" aria-hidden="true"></i>Publish announcement
+        </button>
+    </div>
+</form>
+{% endblock %}

@@ -1289,10 +1289,11 @@ def send_announcement_emails(announcement):
     recipients = set()
     all_sent = True
     for course in announcement.recipients.all():
-        students = course.people.filter(user_type=CustomUser.STUDENT).distinct()
+        students = course.people.filter(
+            user_type=CustomUser.STUDENT,
+        ).exclude(email="").distinct()
         for student in students:
             if student.email not in recipients:
-                print(f"Sending email to: {student.email}")
                 recipients.add(student.email)
                 try:
                     send_mail(
@@ -1302,10 +1303,8 @@ def send_announcement_emails(announcement):
                         recipient_list=[student.email],
                         fail_silently=False,
                     )
-                    print(f"Email sent to: {student.email}")
-                except Exception as e:
+                except Exception:
                     all_sent = False
-                    print(f"Failed to send email to: {student.email}, error: {e}")
     announcement.sent = all_sent
     announcement.save(update_fields=['sent'])
 
@@ -1315,26 +1314,23 @@ def send_announcement_emails(announcement):
 @login_required
 def create_announcement(request: HttpRequest):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()    
-    user_agent = _user_agent(request)
     if request.method == 'POST':
-        print("Form submitted")
         form = AnnouncementForm(request.POST)
         if form.is_valid():
-            print("Form is valid")
             announcement = form.save()
-
             send_announcement_emails(announcement)
-
-            return redirect('announcements')  # Redirect to the announcements page after saving
-        else:
-            print("Form is not valid")
-            print(form.errors)
+            if announcement.sent:
+                messages.success(request, "The announcement was published and notification emails were sent.")
+            else:
+                messages.warning(request, "The announcement was published, but one or more notification emails failed.")
+            return redirect('announcements')
     else:
         form = AnnouncementForm()
-    if "mobile" in user_agent:
-        return render(request, 'portal/mobile_announcementsCreate.html', {'form': form, "profile_photo":profile_photo})
-    else:
-        return render(request, 'portal/desktop_announcementCreate.html', {'form': form, "profile_photo":profile_photo})
+    return render(request, "portal/announcement_create.html", {
+        "form": form,
+        "profile_photo": profile_photo,
+        "active_nav": "announcements",
+    })
 
 @approved_required
 @teacher_required
