@@ -114,3 +114,41 @@ class TwoFactorEmailDelivery(models.Model):
 
     class Meta:
         ordering = ["created_at", "id"]
+
+
+class AdminMessageNotification(models.Model):
+    QUEUED = "queued"
+    SENT = "sent"
+    SKIPPED = "skipped"
+    STATUS_CHOICES = [
+        (QUEUED, "Queued"),
+        (SENT, "Sent"),
+        (SKIPPED, "Skipped"),
+    ]
+
+    contact = models.OneToOneField(
+        Contact,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="admin_notification",
+    )
+    mailbox_message = models.OneToOneField(
+        MailboxMessage,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="admin_notification",
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default=QUEUED,
+    )
+    attempts = models.PositiveIntegerField(default=0)
+    last_error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]

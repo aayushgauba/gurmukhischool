@@ -5,6 +5,7 @@ import hmac
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
+from django.db.models import F, Q
 from django.tasks import task
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -12,7 +13,13 @@ from django.utils import timezone
 from portal.models import CustomUser
 
 from .mailbox import mailbox_is_configured, send_admin_email, sync_inbox
-from .models import Contact, MailDraft, MailboxMessage, TwoFactorEmailDelivery
+from .models import (
+    AdminMessageNotification,
+    Contact,
+    MailDraft,
+    MailboxMessage,
+    TwoFactorEmailDelivery,
+)
 from .spam_classifier import is_likely_spam, learn_spam_terms
 
 
@@ -30,6 +37,141 @@ def two_factor_code_for_nonce(nonce):
 
 def _mailbox_text(message):
     return "\n".join(part for part in [message.subject, message.body] if part)
+
+
+def _admin_notification_recipients():
+    return list(
+        CustomUser.objects.filter(
+            approved=True,
+            is_active=True,
+        )
+        .filter(
+            Q(user_type=CustomUser.ADMIN)
+            | Q(groups__name=CustomUser.ADMIN)
+            | Q(contact_notifications_enabled=True)
+        )
+        .exclude(email="")
+        .values_list("email", flat=True)
+        .distinct()
+    )
+
+
+@task
+def send_queued_admin_notifications():
+    recipients = _admin_notification_recipients()
+    sent = 0
+    failed = 0
+    skipped = 0
+    if not recipients:
+        return {
+            "sent": 0,
+            "failed": 0,
+            "skipped": 0,
+            "queued": AdminMessageNotification.objects.filter(
+                status=AdminMessageNotification.QUEUED
+            ).count(),
+            "error": "No administrator notification recipients are configured.",
+        }
+
+    notification_ids = list(
+        AdminMessageNotification.objects.filter(
+            status=AdminMessageNotification.QUEUED
+        ).values_list("id", flat=True)
+    )
+    for notification_id in notification_ids:
+        try:
+            with transaction.atomic():
+                notification = (
+                    AdminMessageNotification.objects.select_for_update()
+                    .get(pk=notification_id)
+                )
+                if notification.status != AdminMessageNotification.QUEUED:
+                    continue
+                source = notification.contact or notification.mailbox_message
+                if source is None or source.is_spam:
+                    notification.status = AdminMessageNotification.SKIPPED
+                    notification.save(update_fields=["status"])
+                    skipped += 1
+                    continue
+
+                if notification.contact_id:
+                    contact = notification.contact
+                    plain_text = (
+                        "A new message has been received through the website "
+                        "contact form.\n\n"
+                        f"From: {contact.name}\n"
+                        f"Email: {contact.email}\n"
+                        f"Date: {contact.date:%B %d, %Y}\n\n"
+                        f"{contact.message}"
+                    )
+                    html_message = render_to_string(
+                        "email/contactNotification.html",
+                        {"contact": contact},
+                    )
+                    reply_to = [contact.email]
+                else:
+                    mailbox_message = notification.mailbox_message
+                    plain_text = (
+                        "A new email has been received in the configured "
+                        "mailbox.\n\n"
+                        f"From: {mailbox_message.sender_name}\n"
+                        f"Email: {mailbox_message.sender_email}\n"
+                        f"Subject: {mailbox_message.subject or '(No subject)'}"
+                        f"\n\n{mailbox_message.body}"
+                    )
+                    html_message = render_to_string(
+                        "email/mailboxNotification.html",
+                        {"mailbox_message": mailbox_message},
+                    )
+                    reply_to = (
+                        [mailbox_message.sender_email]
+                        if mailbox_message.sender_email
+                        else None
+                    )
+
+                email = EmailMultiAlternatives(
+                    subject="A new message has been received",
+                    body=plain_text,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[],
+                    bcc=recipients,
+                    reply_to=reply_to,
+                )
+                email.attach_alternative(html_message, "text/html")
+                email.send(fail_silently=False)
+                notification.status = AdminMessageNotification.SENT
+                notification.attempts += 1
+                notification.last_error = ""
+                notification.sent_at = timezone.now()
+                notification.save(
+                    update_fields=[
+                        "status",
+                        "attempts",
+                        "last_error",
+                        "sent_at",
+                    ]
+                )
+        except Exception as exc:
+            AdminMessageNotification.objects.filter(pk=notification_id).update(
+                attempts=F("attempts") + 1,
+                last_error=str(exc)[:2000],
+            )
+            logger.exception(
+                "Queued administrator notification %s failed.",
+                notification_id,
+            )
+            failed += 1
+        else:
+            if notification.status == AdminMessageNotification.SENT:
+                sent += 1
+    return {
+        "sent": sent,
+        "failed": failed,
+        "skipped": skipped,
+        "queued": AdminMessageNotification.objects.filter(
+            status=AdminMessageNotification.QUEUED
+        ).count(),
+    }
 
 
 @task

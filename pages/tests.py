@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from .mailbox import send_admin_email
 from .models import (
+    AdminMessageNotification,
     Contact,
     MailDraft,
     MailboxMessage,
@@ -15,6 +16,7 @@ from .models import (
 from .tasks import (
     classify_spam_messages,
     process_email_pipeline,
+    send_queued_admin_notifications,
     send_two_factor_code_email,
     two_factor_code_for_nonce,
 )
@@ -163,3 +165,64 @@ class CombinedSpamClassifierTests(TestCase):
 
         contact.refresh_from_db()
         self.assertFalse(contact.is_spam)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="configured@example.com",
+    EMAIL_HOST_USER="configured@example.com",
+)
+class AdminNotificationQueueTests(TestCase):
+    def setUp(self):
+        self.recipient = get_user_model().objects.create_user(
+            username="recipient@example.com",
+            email="recipient@example.com",
+            approved=True,
+            contact_notifications_enabled=True,
+        )
+
+    def test_contact_notification_is_queued_then_sent_by_separate_task(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            contact = Contact.objects.create(
+                name="Visitor",
+                email="visitor@example.com",
+                message="I have a question.",
+            )
+
+        self.assertEqual(len(mail.outbox), 0)
+        notification = AdminMessageNotification.objects.get(contact=contact)
+        self.assertEqual(notification.status, AdminMessageNotification.QUEUED)
+
+        result = send_queued_admin_notifications.call()
+
+        notification.refresh_from_db()
+        self.assertEqual(result["sent"], 1)
+        self.assertEqual(notification.status, AdminMessageNotification.SENT)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].bcc, ["recipient@example.com"])
+
+    def test_new_external_mail_is_queued_but_site_mail_is_not(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            external = MailboxMessage.objects.create(
+                folder="INBOX",
+                uid="external",
+                sender_email="visitor@example.com",
+                subject="Question",
+            )
+            site_message = MailboxMessage.objects.create(
+                folder="INBOX",
+                uid="site",
+                sender_email="configured@example.com",
+                subject="Automated notification",
+            )
+
+        self.assertTrue(
+            AdminMessageNotification.objects.filter(
+                mailbox_message=external
+            ).exists()
+        )
+        self.assertFalse(
+            AdminMessageNotification.objects.filter(
+                mailbox_message=site_message
+            ).exists()
+        )
