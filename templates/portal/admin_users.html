@@ -82,6 +82,7 @@
                         <label class="form-check-label" for="managedRole{{ managed_user.id }}{{ forloop.counter }}">{{ role_label }}</label>
                     </div>
                     {% endfor %}
+                    <p class="form-text mb-0">Student cannot be combined with Teacher, Admin, Web Manager, or Email Sender.</p>
                 </fieldset>
                 <button class="btn btn-portal-primary" type="submit">Save roles</button>
             </form>

@@ -1,13 +1,14 @@
 from datetime import date
 import re
+from urllib.parse import urlparse
 
 from django.core import mail
 from django.contrib.auth.models import Group
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase, override_settings
-from django.urls import reverse
+from django.urls import resolve, reverse
 from django.db import IntegrityError, transaction
 
 from .models import (
@@ -23,7 +24,55 @@ from .models import (
 )
 from .forms import UploadedFileForm
 from .decorators import admin_required, teacher_required, web_manager_required
-from .views import _set_user_roles
+from .views import _set_user_roles, registration
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="configured@example.com",
+    ALLOWED_HOSTS=["testserver"],
+)
+class AccountActivationTests(TestCase):
+    def test_registration_email_link_activates_new_account(self):
+        request = RequestFactory().post(
+            reverse("registration"),
+            {
+                "firstName": "New",
+                "lastName": "Student",
+                "username": "newstudent",
+                "email": "newstudent@example.com",
+                "phoneNumber": "(636) 555-0100",
+                "password": "StrongPass!483",
+                "confirmPassword": "StrongPass!483",
+            },
+        )
+
+        response = registration(request)
+
+        self.assertEqual(response.status_code, 302)
+        user = CustomUser.objects.get(username="newstudent")
+        self.assertEqual(user.email, "newstudent@example.com")
+        self.assertFalse(user.is_active)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["newstudent@example.com"])
+
+        match = re.search(
+            r'href="([^"]*/activate/[^"]+)"',
+            mail.outbox[0].alternatives[0].body,
+        )
+        self.assertIsNotNone(match)
+        activation_path = urlparse(match.group(1)).path
+        resolved = resolve(activation_path)
+        activation_request = RequestFactory().get(activation_path)
+
+        activation_response = resolved.func(
+            activation_request,
+            **resolved.kwargs,
+        )
+
+        self.assertEqual(activation_response.status_code, 302)
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
 
 
 class PortalSecurityTests(TestCase):
@@ -263,6 +312,16 @@ class MultipleRoleTests(TestCase):
             set(self.user.groups.values_list("name", flat=True)),
             {CustomUser.TEACHER, CustomUser.WEB_MANAGER},
         )
+
+    def test_student_cannot_be_combined_with_staff_role(self):
+        with self.assertRaisesMessage(
+            ValidationError,
+            "Student cannot be combined",
+        ):
+            _set_user_roles(
+                self.user,
+                {CustomUser.STUDENT, CustomUser.TEACHER},
+            )
 
 
 @override_settings(

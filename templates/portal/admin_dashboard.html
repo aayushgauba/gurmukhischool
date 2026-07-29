@@ -41,6 +41,7 @@
                         <label class="form-check-label" for="role{{ pending_user.id }}{{ forloop.counter }}">{{ role_label }}</label>
                     </div>
                     {% endfor %}
+                    <p class="form-text mb-0">Student cannot be combined with staff roles.</p>
                 </fieldset>
                 <button class="btn btn-sm btn-portal-primary" type="submit"><i class="bi bi-person-check me-1" aria-hidden="true"></i>Approve</button>
             </form>

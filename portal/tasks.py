@@ -103,6 +103,7 @@ def transfer_legacy_profile_photos():
 @task
 def normalize_user_permissions():
     updated = 0
+    conflicts = []
     role_groups = {
         role: Group.objects.get_or_create(name=role)[0]
         for role in CustomUser.ROLE_VALUES
@@ -114,7 +115,20 @@ def normalize_user_permissions():
         ):
             user.groups.add(role_groups[user.user_type])
             updated += 1
-    return {"updated": updated}
+        assigned_roles = set(
+            user.groups.filter(
+                name__in=CustomUser.ROLE_VALUES
+            ).values_list("name", flat=True)
+        )
+        if user.user_type in CustomUser.ROLE_VALUES:
+            assigned_roles.add(user.user_type)
+        if CustomUser.role_validation_error(assigned_roles):
+            conflicts.append(user.pk)
+    return {
+        "updated": updated,
+        "conflicting_users": conflicts,
+        "conflict_count": len(conflicts),
+    }
 
 
 def _send_html_email(*, subject, body, html, recipients):

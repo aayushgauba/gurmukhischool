@@ -28,6 +28,7 @@ class CustomUser(AbstractUser):
     ROLE_VALUES = frozenset(
         (WEB_MANAGER, ADMIN, TEACHER, STUDENT, PARENT, EMAIL_SENDER)
     )
+    STAFF_ROLES = frozenset((WEB_MANAGER, ADMIN, TEACHER, EMAIL_SENDER))
 
     profile_photo = models.FileField(upload_to='profile_photos/', blank=True, null=True)
     profile_photos = models.ManyToManyField(
@@ -49,6 +50,16 @@ class CustomUser(AbstractUser):
     )
     embedding = models.JSONField(blank=True, null=True)
     modified_profile_photo = models.BooleanField(default=True)
+
+    @classmethod
+    def role_validation_error(cls, roles):
+        roles = set(roles)
+        if cls.STUDENT in roles and roles.intersection(cls.STAFF_ROLES):
+            return (
+                "Student cannot be combined with Teacher, Admin, "
+                "Web Manager, or Email Sender."
+            )
+        return None
 
     @cached_property
     def role_names(self):

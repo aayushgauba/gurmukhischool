@@ -1192,11 +1192,17 @@ def _validated_roles(request):
     if legacy_role:
         roles.add(legacy_role)
     if not roles or not roles.issubset(CustomUser.ROLE_VALUES):
-        return None
-    return roles
+        return None, "Select at least one valid user role."
+    role_error = CustomUser.role_validation_error(roles)
+    if role_error:
+        return None, role_error
+    return roles, None
 
 
 def _set_user_roles(user, roles):
+    role_error = CustomUser.role_validation_error(roles)
+    if role_error:
+        raise ValidationError(role_error)
     role_groups = {
         group.name: group
         for group in Group.objects.filter(name__in=CustomUser.ROLE_VALUES)
@@ -1221,9 +1227,9 @@ def adminViewHome(request:HttpRequest):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
         user = get_object_or_404(CustomUser, id=user_id, approved=False)
-        roles = _validated_roles(request)
+        roles, role_error = _validated_roles(request)
         if roles is None:
-            messages.error(request, "Select at least one valid user role.")
+            messages.error(request, role_error)
             return redirect("adminViewHome")
         _set_user_roles(user, roles)
         user.is_superuser = False
@@ -1318,9 +1324,9 @@ def change_user_roles(request):
     if user == request.user:
         messages.error(request, "You cannot change your own roles.")
         return redirect("adminUsers")
-    roles = _validated_roles(request)
+    roles, role_error = _validated_roles(request)
     if roles is None:
-        messages.error(request, "Select at least one valid user role.")
+        messages.error(request, role_error)
         return redirect("adminUsers")
     if user.is_admin and CustomUser.objects.filter(
         approved=True,
