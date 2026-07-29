@@ -68,6 +68,33 @@
             </form>
         </details>
 
+        <div class="admin-notification-setting">
+            <div>
+                <strong>Contact message emails</strong>
+                {% if managed_user.user_type == managed_user.ADMIN %}
+                <span>Enabled automatically for administrators.</span>
+                {% elif not managed_user.email %}
+                <span>Add an email address before enabling notifications.</span>
+                {% elif managed_user.contact_notifications_enabled %}
+                <span>This user receives new website contact messages.</span>
+                {% else %}
+                <span>This user does not receive contact messages.</span>
+                {% endif %}
+            </div>
+            {% if managed_user.user_type == managed_user.ADMIN %}
+            <span class="portal-status-badge">Always on</span>
+            {% else %}
+            <form method="post" action="{% url 'changeContactNotifications' %}">
+                {% csrf_token %}
+                <input name="user_id" type="hidden" value="{{ managed_user.id }}">
+                <input name="enabled" type="hidden" value="{% if managed_user.contact_notifications_enabled %}false{% else %}true{% endif %}">
+                <button class="btn btn-sm {% if managed_user.contact_notifications_enabled %}btn-outline-secondary{% else %}btn-portal-primary{% endif %}" type="submit"{% if not managed_user.email %} disabled{% endif %}>
+                    {% if managed_user.contact_notifications_enabled %}Disable{% else %}Enable{% endif %}
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
         {% if managed_user != request.user %}
         <div class="admin-user-danger-actions">
             <form method="post" action="{% url 'admit_user' %}">

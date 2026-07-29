@@ -1811,6 +1811,33 @@ def changeUserInfo(request):
     messages.success(request, f"{user.get_full_name()} was updated.")
     return redirect("adminUsers")
 
+
+@require_POST
+@login_required
+@admin_required
+@approved_required
+def changeContactNotifications(request):
+    user = get_object_or_404(
+        CustomUser,
+        id=request.POST.get("user_id"),
+        approved=True,
+    )
+    display_name = user.get_full_name() or user.username
+    if user.user_type == CustomUser.ADMIN:
+        messages.info(
+            request,
+            f"{display_name} is an administrator and already receives contact notifications.",
+        )
+        return redirect("adminUsers")
+    enabled = request.POST.get("enabled") == "true"
+    user.contact_notifications_enabled = enabled
+    user.save(update_fields=["contact_notifications_enabled"])
+    if enabled:
+        messages.success(request, f"{display_name} will receive new contact-message emails.")
+    else:
+        messages.success(request, f"{display_name} will no longer receive contact-message emails.")
+    return redirect("adminUsers")
+
 @teacher_required
 @superuser_required
 @login_required

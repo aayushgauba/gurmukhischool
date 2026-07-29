@@ -1534,6 +1534,31 @@ body.portal-body {
     margin-top: 0.85rem;
 }
 
+.admin-notification-setting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.85rem;
+    padding: 0.75rem;
+    border-radius: 0.65rem;
+    background: var(--portal-surface);
+}
+
+.admin-notification-setting > div {
+    display: grid;
+}
+
+.admin-notification-setting span {
+    color: var(--portal-muted);
+    font-size: 0.85rem;
+}
+
+.admin-notification-setting .portal-status-badge {
+    color: inherit;
+    white-space: nowrap;
+}
+
 .admin-user-danger-actions details > summary {
     list-style: none;
     cursor: pointer;
@@ -2257,6 +2282,11 @@ body.portal-body {
 
     .admin-user-editor > form {
         grid-template-columns: 1fr;
+    }
+
+    .admin-notification-setting {
+        align-items: start;
+        flex-direction: column;
     }
 
     .admin-user-filters {
