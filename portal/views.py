@@ -1049,14 +1049,14 @@ def scheduleDefine(request, course_id):
 @admin_required
 @approved_required
 def adminViewHome(request:HttpRequest):
-    user_agent = _user_agent(request)
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
         user_type = request.POST.get('user_type')
-        user = get_object_or_404(CustomUser, id=user_id)
+        user = get_object_or_404(CustomUser, id=user_id, approved=False)
         valid_roles = {value for value, _ in CustomUser.USER_TYPES}
         if user_type not in valid_roles:
-            raise ValidationError("Invalid user role.")
+            messages.error(request, "Select a valid user role.")
+            return redirect("adminViewHome")
         user.user_type = user_type
         user.is_superuser = user_type in (
             CustomUser.TEACHER,
@@ -1075,20 +1075,33 @@ def adminViewHome(request:HttpRequest):
             'token': default_token_generator.make_token(user),
             'protocol': 'https' if request.is_secure() else 'http',
         })
-        send_mail(
-            subject,
-            plain_text_message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            html_message=message,
-        )
+        if not user.email:
+            messages.warning(
+                request,
+                "The account was approved, but no notification was sent because it has no email address.",
+            )
+        else:
+            try:
+                send_mail(
+                    subject,
+                    plain_text_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    html_message=message,
+                )
+            except Exception:
+                messages.warning(request, "The account was approved, but the notification email failed.")
+            else:
+                messages.success(request, "The account was approved and the user was notified.")
         return redirect("adminViewHome")
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    users = CustomUser.objects.filter(approved = False)
-    if "mobile" in user_agent:
-        return render(request, 'portal/mobile_adminHome.html', {"users":users, 'profile_photo':profile_photo})
-    else:   
-        return render(request, "portal/desktop_adminHome.html", {"users":users, 'profile_photo':profile_photo})
+    users = CustomUser.objects.filter(approved=False).order_by("date_joined", "id")
+    return render(request, "portal/admin_dashboard.html", {
+        "users": users,
+        "user_roles": CustomUser.USER_TYPES,
+        "profile_photo": profile_photo,
+        "active_nav": "admin_dashboard",
+    })
 
 @login_required
 @admin_required

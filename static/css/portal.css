@@ -1400,6 +1400,84 @@ body.portal-body {
     margin: 0;
 }
 
+.admin-waitlist-count {
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    background: #fff4cc;
+    color: #624a00;
+    font-weight: 700;
+}
+
+.admin-waitlist {
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.admin-waitlist > header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    background: #fff9e6;
+}
+
+.admin-waitlist > header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.admin-waitlist > header p {
+    margin: 0.15rem 0 0;
+    color: var(--portal-muted);
+    font-size: 0.88rem;
+}
+
+.admin-waitlist-list {
+    display: grid;
+}
+
+.admin-waitlist-row {
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr) minmax(18rem, auto);
+    gap: 0.8rem;
+    align-items: center;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+}
+
+.admin-waitlist-row:last-child {
+    border-bottom: 0;
+}
+
+.admin-waitlist-identity {
+    display: grid;
+    min-width: 0;
+}
+
+.admin-waitlist-identity strong,
+.admin-waitlist-identity span,
+.admin-waitlist-identity small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-waitlist-identity span,
+.admin-waitlist-identity small {
+    color: var(--portal-muted);
+}
+
+.admin-waitlist-identity small {
+    font-size: 0.8rem;
+}
+
+.admin-approval-form {
+    display: grid;
+    grid-template-columns: minmax(10rem, 1fr) auto;
+    gap: 0.5rem;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;
@@ -1407,7 +1485,7 @@ body.portal-body {
     left: 0;
     z-index: 1030;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
     min-height: 4.25rem;
     border-top: 1px solid #343d47;
     background: var(--portal-sidebar);
@@ -1530,6 +1608,14 @@ body.portal-body {
     .grade-summary > div:last-child {
         border-bottom: 0;
     }
+
+    .admin-waitlist-row {
+        grid-template-columns: 2.4rem minmax(0, 1fr);
+    }
+
+    .admin-approval-form {
+        grid-column: 2;
+    }
 }
 
 @media (max-width: 575.98px) {
@@ -1551,6 +1637,10 @@ body.portal-body {
 
     .grade-entry-input {
         grid-column: 2;
+    }
+
+    .admin-approval-form {
+        grid-template-columns: 1fr;
     }
 }
 

@@ -1,0 +1,56 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Admin dashboard{% endblock %}
+{% block meta_description %}Review and approve Gurmukhi School portal accounts.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">Administration</p>
+        <h1 class="portal-page-title">Account waitlist</h1>
+        <p class="portal-page-description">Review pending accounts and assign the appropriate portal role.</p>
+    </div>
+    <span class="admin-waitlist-count">
+        <i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>{{ users.count }} pending
+    </span>
+</header>
+
+{% if users %}
+<section class="admin-waitlist" aria-labelledby="pendingAccountsTitle">
+    <header>
+        <h2 id="pendingAccountsTitle">Pending accounts</h2>
+        <p>Approving an account activates access immediately.</p>
+    </header>
+    <div class="admin-waitlist-list">
+        {% for pending_user in users %}
+        <article class="admin-waitlist-row">
+            <span class="student-initial" aria-hidden="true">{{ pending_user.first_name|first|default:pending_user.username|first|upper }}</span>
+            <div class="admin-waitlist-identity">
+                <strong>{{ pending_user.get_full_name|default:pending_user.username }}</strong>
+                <span>{{ pending_user.email|default:'No email provided' }}</span>
+                <small>Registered {{ pending_user.date_joined|date:'M j, Y' }}</small>
+            </div>
+            <form class="admin-approval-form" method="post" action="{% url 'adminViewHome' %}">
+                {% csrf_token %}
+                <input name="user_id" type="hidden" value="{{ pending_user.id }}">
+                <label class="visually-hidden" for="role{{ pending_user.id }}">Role for {{ pending_user.get_full_name|default:pending_user.username }}</label>
+                <select class="form-select form-select-sm" id="role{{ pending_user.id }}" name="user_type" required>
+                    <option value="">Choose role</option>
+                    {% for role_value, role_label in user_roles %}
+                    <option value="{{ role_value }}">{{ role_label }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-portal-primary" type="submit"><i class="bi bi-person-check me-1" aria-hidden="true"></i>Approve</button>
+            </form>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="portal-empty-state" aria-labelledby="emptyWaitlistTitle">
+    <i class="bi bi-person-check" aria-hidden="true"></i>
+    <h2 class="fs-4" id="emptyWaitlistTitle">Waitlist is clear</h2>
+    <p class="text-secondary mb-0">There are no accounts waiting for approval.</p>
+</section>
+{% endif %}
+{% endblock %}
