@@ -1246,6 +1246,93 @@ body.portal-body {
     color: var(--portal-muted);
 }
 
+.grade-entry-panel {
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.grade-entry-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    background: #fff9e6;
+}
+
+.grade-entry-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.grade-entry-header p {
+    margin: 0.15rem 0 0;
+    color: var(--portal-muted);
+    font-size: 0.88rem;
+}
+
+.grade-entry-header > span {
+    color: var(--portal-muted);
+    font-size: 0.88rem;
+}
+
+.grade-entry-list {
+    display: grid;
+}
+
+.grade-entry-row {
+    display: grid;
+    grid-template-columns: 2.4rem minmax(0, 1fr) minmax(7rem, 9rem);
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.8rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+}
+
+.grade-entry-row:last-child {
+    border-bottom: 0;
+}
+
+.grade-entry-row:hover {
+    background: #fffdf7;
+}
+
+.grade-entry-student {
+    display: grid;
+    min-width: 0;
+}
+
+.grade-entry-student strong,
+.grade-entry-student small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.grade-entry-student small {
+    color: var(--portal-muted);
+}
+
+.grade-entry-input {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.grade-entry-input input {
+    text-align: right;
+}
+
+.grade-entry-input > span {
+    color: var(--portal-muted);
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;
@@ -1389,6 +1476,14 @@ body.portal-body {
 
     .schedule-days {
         grid-template-columns: 1fr;
+    }
+
+    .grade-entry-row {
+        grid-template-columns: 2.4rem minmax(0, 1fr);
+    }
+
+    .grade-entry-input {
+        grid-column: 2;
     }
 }
 

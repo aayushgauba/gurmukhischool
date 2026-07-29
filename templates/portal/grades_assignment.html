@@ -1,0 +1,71 @@
+{% extends 'portal/base.html' %}
+
+{% block title %}Grade {{ assignment.title }}{% endblock %}
+{% block meta_description %}Enter student grades for {{ assignment.title }}.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow">
+            <a href="{% url 'viewAssignment' section.id folder.id assignment.id %}">{{ assignment.title }}</a> /
+            Grades
+        </p>
+        <h1 class="portal-page-title">Grade assignment</h1>
+        <p class="portal-page-description">Enter grades from 0 to 100 for {{ assignment.title }}.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'grades' course.id %}">
+        <i class="bi bi-bar-chart me-1" aria-hidden="true"></i>Course grades
+    </a>
+</header>
+
+{% if grades %}
+<form method="post">
+    {% csrf_token %}
+    <section class="grade-entry-panel" aria-labelledby="gradeRosterTitle">
+        <header class="grade-entry-header">
+            <div>
+                <h2 id="gradeRosterTitle">Student grades</h2>
+                <p>{{ grades|length }} enrolled student{{ grades|length|pluralize }}</p>
+            </div>
+            <span>Blank values remain unchanged</span>
+        </header>
+        <div class="grade-entry-list">
+            {% for student_grade in grades %}
+            <label class="grade-entry-row" for="grade{{ student_grade.id }}">
+                <span class="student-initial" aria-hidden="true">{{ student_grade.name|first|upper }}</span>
+                <span class="grade-entry-student">
+                    <strong>{{ student_grade.name }}</strong>
+                    <small>{{ student_grade.email }}</small>
+                </span>
+                <span class="grade-entry-input">
+                    <input
+                        class="form-control"
+                        id="grade{{ student_grade.id }}"
+                        name="grade_{{ student_grade.id }}"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value="{% if student_grade.grade is not None %}{{ student_grade.grade|floatformat:'-2' }}{% endif %}"
+                        placeholder="—"
+                        aria-label="Grade for {{ student_grade.name }}"
+                    >
+                    <span>%</span>
+                </span>
+            </label>
+            {% endfor %}
+        </div>
+    </section>
+    <div class="attendance-save-bar">
+        <p>All entered values are validated before any grades are saved.</p>
+        <button class="btn btn-portal-primary" type="submit"><i class="bi bi-check-lg me-1" aria-hidden="true"></i>Save grades</button>
+    </div>
+</form>
+{% else %}
+<section class="portal-empty-state" aria-labelledby="emptyGradeRosterTitle">
+    <i class="bi bi-people" aria-hidden="true"></i>
+    <h2 class="fs-4" id="emptyGradeRosterTitle">No students enrolled</h2>
+    <p class="text-secondary mb-0">Add students to the course before entering grades.</p>
+</section>
+{% endif %}
+{% endblock %}

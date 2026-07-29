@@ -1342,41 +1342,71 @@ def create_announcement(request: HttpRequest):
 @login_required
 def gradesforAssignment(request: HttpRequest, folder_id, assignment_id):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    user_agent = _user_agent(request)
-    gradeArray = []
-    Course, _, _, _ = _course_graph(
+    course, _, folder, assignment = _course_graph(
         folder_id=folder_id,
         assignment_id=assignment_id,
     )
-    course_id = Course.id
-    for people in Course.people.all():
-        try:
-            grade = Grade.objects.get(assignment_id = assignment_id, course_id= course_id, user_id = people.id).grade
-        except Grade.DoesNotExist:
-            grade = None
-        dict = {"id":people.id, "people":str(people.first_name +" "+people.last_name), "grade": grade}
-        gradeArray.append(dict)
+    section = Section.objects.filter(folders=folder).order_by("order", "id").first()
+    if section is None:
+        raise Http404
+    students = course.people.filter(
+        user_type=CustomUser.STUDENT,
+    ).order_by("last_name", "first_name", "username")
+    existing_grades = {
+        grade.user_id: grade.grade
+        for grade in Grade.objects.filter(
+            assignment=assignment,
+            course=course,
+            user__in=students,
+        )
+    }
+    grade_array = [
+        {
+            "id": student.id,
+            "name": student.get_full_name() or student.username,
+            "email": student.email,
+            "grade": existing_grades.get(student.id),
+        }
+        for student in students
+    ]
     if request.method == "POST":
-        for people in gradeArray:
-            grade_new = request.POST.get(str("grade_"+str(people['id'])))
-            if grade_new == 'None':
-                grade_new = ""
-            if grade_new:
-                try:
-                    grade_value = _parse_grade(grade_new)
-                except ValidationError:
-                    continue
-                Grade.objects.update_or_create(
-                    assignment_id=assignment_id,
-                    course_id=course_id,
-                    user_id=people['id'],
-                    defaults={"grade": grade_value},
-                )
-        return redirect("gradesforAssignment", folder_id, assignment_id)
-    if "mobile" in user_agent:    
-        return render(request, "portal/mobile_gradeStudents.html", {"grades":gradeArray, "course":Course, "profile_photo":profile_photo})
-    else:
-        return render(request, "portal/desktop_gradeStudents.html", {"grades":gradeArray, "course":Course, "profile_photo":profile_photo})
+        updates = []
+        invalid_names = []
+        for student_grade in grade_array:
+            raw_grade = request.POST.get(f"grade_{student_grade['id']}", "").strip()
+            if not raw_grade:
+                continue
+            try:
+                grade_value = _parse_grade(raw_grade)
+            except ValidationError:
+                invalid_names.append(student_grade["name"])
+            else:
+                updates.append((student_grade["id"], grade_value))
+        if invalid_names:
+            messages.error(
+                request,
+                "Enter a grade from 0 to 100 for: " + ", ".join(invalid_names),
+            )
+        else:
+            with transaction.atomic():
+                for student_id, grade_value in updates:
+                    Grade.objects.update_or_create(
+                        assignment=assignment,
+                        course=course,
+                        user_id=student_id,
+                        defaults={"grade": grade_value},
+                    )
+            messages.success(request, f"{len(updates)} grade{'s' if len(updates) != 1 else ''} saved.")
+            return redirect("gradesforAssignment", folder_id, assignment_id)
+    return render(request, "portal/grades_assignment.html", {
+        "grades": grade_array,
+        "course": course,
+        "section": section,
+        "folder": folder,
+        "assignment": assignment,
+        "profile_photo": profile_photo,
+        "active_nav": "courses",
+    })
 
 @approved_required
 @teacher_required
