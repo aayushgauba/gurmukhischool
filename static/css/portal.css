@@ -832,6 +832,136 @@ body.portal-body {
     text-align: center;
 }
 
+.attendance-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--portal-muted);
+    font-size: 0.9rem;
+}
+
+.attendance-legend span {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.attendance-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+}
+
+.attendance-dot.is-present,
+.attendance-calendar td.is-present {
+    background: #dff3e5;
+    color: #176b35;
+}
+
+.attendance-dot.is-absent,
+.attendance-calendar td.is-absent {
+    background: #fde4e4;
+    color: #9b1c1c;
+}
+
+.attendance-dot.is-today,
+.attendance-calendar td.is-today {
+    background: #fff1bd;
+    color: #624a00;
+}
+
+.attendance-panel {
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 4px 16px rgb(16 24 40 / 5%);
+}
+
+.attendance-month-header {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--portal-border);
+    background: #fff9e6;
+}
+
+.attendance-month-header h2 {
+    margin: 0;
+    font-size: clamp(1.2rem, 3vw, 1.55rem);
+    text-align: center;
+}
+
+.attendance-calendar {
+    width: 100%;
+    min-width: 36rem;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.attendance-calendar th {
+    padding: 0.7rem 0.35rem;
+    border-bottom: 1px solid var(--portal-border);
+    color: var(--portal-muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.attendance-calendar td {
+    height: 5rem;
+    padding: 0.5rem;
+    border-right: 1px solid var(--portal-border);
+    border-bottom: 1px solid var(--portal-border);
+    text-align: right;
+    vertical-align: top;
+}
+
+.attendance-calendar td:last-child {
+    border-right: 0;
+}
+
+.attendance-calendar tr:last-child td {
+    border-bottom: 0;
+}
+
+.attendance-calendar td.is-empty {
+    background: #fafafa;
+}
+
+.attendance-calendar td.is-scheduled {
+    background: #fffdf7;
+}
+
+.attendance-calendar td.is-scheduled a {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    margin-left: auto;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--portal-accent);
+    color: #171717;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.schedule-days {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem 1rem;
+}
+
+.schedule-days label {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .portal-bottom-nav {
     position: fixed;
     right: 0;
@@ -971,6 +1101,10 @@ body.portal-body {
 
     .resource-actions {
         grid-column: 2;
+    }
+
+    .schedule-days {
+        grid-template-columns: 1fr;
     }
 }
 

@@ -1,0 +1,119 @@
+{% extends 'portal/base.html' %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+
+{% block title %}Attendance – {{ course.title }}{% endblock %}
+{% block meta_description %}View attendance for {{ course.title }}.{% endblock %}
+
+{% block content %}
+<header class="portal-page-header">
+    <div>
+        <p class="portal-eyebrow"><a href="{% url 'course' course.id %}">{{ course.title }}</a> / Attendance</p>
+        <h1 class="portal-page-title">Attendance</h1>
+        <p class="portal-page-description">
+            {% if user.user_type == user.STUDENT %}Review your recorded attendance.{% else %}Select a scheduled class day to record attendance.{% endif %}
+        </p>
+    </div>
+    {% if user.is_superuser and user.user_type == user.TEACHER %}
+    <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#scheduleModal"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Schedule</button>
+        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#uploadAttendanceModal"><i class="bi bi-upload me-1" aria-hidden="true"></i>Upload</button>
+        <button class="btn btn-portal-primary" type="button" data-bs-toggle="modal" data-bs-target="#photoUploadModal"><i class="bi bi-camera me-1" aria-hidden="true"></i>Add photos</button>
+    </div>
+    {% endif %}
+</header>
+
+{% if user.user_type == user.STUDENT %}
+<div class="attendance-legend" aria-label="Attendance legend">
+    <span><i class="attendance-dot is-present" aria-hidden="true"></i>Present</span>
+    <span><i class="attendance-dot is-absent" aria-hidden="true"></i>Absent</span>
+    <span><i class="attendance-dot is-today" aria-hidden="true"></i>Today</span>
+</div>
+{% endif %}
+
+<section class="attendance-panel" aria-labelledby="attendanceMonth">
+    <header class="attendance-month-header">
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'attendance' course.id prev_year prev_month %}" aria-label="Previous month"><i class="bi bi-chevron-left" aria-hidden="true"></i><span class="d-none d-sm-inline ms-1">Previous</span></a>
+        <h2 id="attendanceMonth">{{ month_name }} {{ year }}</h2>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'attendance' course.id next_year next_month %}" aria-label="Next month"><span class="d-none d-sm-inline me-1">Next</span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    </header>
+    <div class="table-responsive">
+        <table class="attendance-calendar">
+            <thead><tr><th scope="col">Mon</th><th scope="col">Tue</th><th scope="col">Wed</th><th scope="col">Thu</th><th scope="col">Fri</th><th scope="col">Sat</th><th scope="col">Sun</th></tr></thead>
+            <tbody>
+                {% for week in weeks %}
+                <tr>
+                    {% for day in week %}
+                    {% if day %}
+                        {% if user.is_superuser and user.user_type == user.TEACHER and forloop.counter0|is_allowed_day:allowed_days %}
+                        <td class="{% if day == today %}is-today{% endif %} is-scheduled">
+                            <a href="{% url 'mark_attendance' course.id day month year %}" aria-label="Mark attendance for {{ month_name }} {{ day }}">{{ day }}</a>
+                        </td>
+                        {% elif user.user_type == user.STUDENT %}
+                        <td class="{% if day == today %}is-today{% elif day in attendance %}is-present{% elif day in absent %}is-absent{% endif %}">{{ day }}</td>
+                        {% else %}
+                        <td class="{% if day == today %}is-today{% endif %}">{{ day }}</td>
+                        {% endif %}
+                    {% else %}
+                    <td class="is-empty"></td>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if user.is_superuser and user.user_type == user.TEACHER %}
+<div class="modal fade" id="scheduleModal" tabindex="-1" aria-labelledby="scheduleTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" action="{% url 'scheduleDefine' course.id %}">
+            {% csrf_token %}
+            <div class="modal-header"><h2 class="modal-title fs-5" id="scheduleTitle">Set attendance schedule</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6"><label class="form-label" for="scheduleStart">Start month</label><input class="form-control" id="scheduleStart" name="startDate" type="month" required></div>
+                    <div class="col-sm-6"><label class="form-label" for="scheduleEnd">End month</label><input class="form-control" id="scheduleEnd" name="endDate" type="month" required></div>
+                </div>
+                <fieldset>
+                    <legend class="form-label">Class days</legend>
+                    <div class="schedule-days">
+                        <label><input class="form-check-input" name="week" type="checkbox" value="0"> Monday</label>
+                        <label><input class="form-check-input" name="week" type="checkbox" value="1"> Tuesday</label>
+                        <label><input class="form-check-input" name="week" type="checkbox" value="2"> Wednesday</label>
+                        <label><input class="form-check-input" name="week" type="checkbox" value="3"> Thursday</label>
+                        <label><input class="form-check-input" name="week" type="checkbox" value="4"> Friday</label>
+                        <label><input class="form-check-input" name="week" type="checkbox" value="5"> Saturday</label>
+                        <label><input class="form-check-input" name="week" type="checkbox" value="6"> Sunday</label>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-portal-primary">Save schedule</button></div>
+        </form>
+    </div></div>
+</div>
+
+<div class="modal fade" id="uploadAttendanceModal" tabindex="-1" aria-labelledby="uploadAttendanceTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" action="{% url 'uploadAttendanceData' course.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header"><h2 class="modal-title fs-5" id="uploadAttendanceTitle">Upload attendance</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">{{ attendanceform|crispy }}</div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-portal-primary">Upload</button></div>
+        </form>
+    </div></div>
+</div>
+
+<div class="modal fade" id="photoUploadModal" tabindex="-1" aria-labelledby="photoUploadTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <form method="post" action="{% url 'uploadGroupPhoto' course.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header"><h2 class="modal-title fs-5" id="photoUploadTitle">Add attendance photos</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">{{ photoform|crispy }}</div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-portal-primary">Upload photos</button></div>
+        </form>
+    </div></div>
+</div>
+{% endif %}
+{% endblock %}

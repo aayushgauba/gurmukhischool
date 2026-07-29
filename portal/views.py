@@ -876,15 +876,15 @@ def mark_attendance(request: HttpRequest, course_id, day, month, year):
 @login_required
 def attendance(request: HttpRequest, course_id, year=None, month=None):
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    user_agent = _user_agent(request)
     course = get_object_or_404(Course, id=course_id)
     _require_course_access(request.user, course)
+    now = datetime.now()
     if not year or not month:
-        year = datetime.now().year
-        month = datetime.now().month
+        year = now.year
+        month = now.month
     cal = calendar.Calendar()
     month_days = list(cal.itermonthdays2(year, month))
-    today = datetime.now().day if year == datetime.now().year and month == datetime.now().month else None
+    today = now.day if year == now.year and month == now.month else None
     prev_month = month - 1
     next_month = month + 1
     prev_year = year
@@ -918,6 +918,7 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
         context = {
         'year': year,
         'month': month,
+        'month_name': calendar.month_name[month],
         'month_days': month_days,
         'today': today,
         'prev_year': prev_year,
@@ -932,10 +933,7 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
     }
     else:
         photoform = GroupPhotoUploadForm()
-        try:
-            schedule = Schedule.objects.get(course = Course.objects.get(id = course_id))
-        except Exception as e:
-            schedule = None
+        schedule = Schedule.objects.filter(course=course).first()
         attendanceForm = UploadedAttendanceForm(course=course)
         if schedule:
             start_date = datetime.strptime(schedule.start_date, "%Y-%m")
@@ -954,6 +952,7 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
         'photoform':photoform,
         'year': year,
         'month': month,
+        'month_name': calendar.month_name[month],
         'month_days': month_days,
         'today': today,
         'prev_year': prev_year,
@@ -964,10 +963,8 @@ def attendance(request: HttpRequest, course_id, year=None, month=None):
         'course':course,
         'profile_photo':profile_photo,
     }
-    if "mobile" in user_agent:        
-        return render(request, 'portal/mobile_attendance.html', context)
-    else:
-        return render(request, 'portal/desktop_attendance.html', context)
+    context["active_nav"] = "courses"
+    return render(request, "portal/attendance.html", context)
 
 @approved_required
 @teacher_required
@@ -982,11 +979,17 @@ def uploadAttendanceData(request, course_id):
         request.FILES,
         course=course,
     )
-    print("Submitted data:", form)
     if form.is_valid():
         upload = form.save(commit=False)
         upload.course = course
         upload.save()
+        messages.success(request, "The attendance file was uploaded.")
+    else:
+        messages.error(
+            request,
+            "The attendance file could not be uploaded. "
+            + " ".join(str(error) for errors in form.errors.values() for error in errors),
+        )
     return redirect(next_url)
 
 @approved_required
@@ -998,11 +1001,17 @@ def uploadGroupPhoto(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     next_url = request.META.get('HTTP_REFERER', '/')
     form = GroupPhotoUploadForm(request.POST, request.FILES)
-    print("Submitted data:", form)
     if form.is_valid():
         upload = form.save(commit=False)
         upload.course = course
         upload.save()
+        messages.success(request, "The attendance photos were uploaded.")
+    else:
+        messages.error(
+            request,
+            "The photos could not be uploaded. "
+            + " ".join(str(error) for errors in form.errors.values() for error in errors),
+        )
     return redirect(next_url)
 
 @approved_required    
@@ -1020,9 +1029,11 @@ def scheduleDefine(request, course_id):
         end = datetime.strptime(end_date or "", "%Y-%m")
         weekdays = [int(choice) for choice in choices]
     except (TypeError, ValueError):
-        return JsonResponse({"detail": "Invalid schedule values."}, status=400)
-    if start > end or any(day not in range(7) for day in weekdays):
-        return JsonResponse({"detail": "Invalid schedule range."}, status=400)
+        messages.error(request, "Enter valid schedule values.")
+        return redirect(next_url)
+    if start > end or not weekdays or any(day not in range(7) for day in weekdays):
+        messages.error(request, "Choose a valid date range and at least one class day.")
+        return redirect(next_url)
     course = get_object_or_404(Course, id=course_id)
     Schedule.objects.update_or_create(
         course=course,
@@ -1032,6 +1043,7 @@ def scheduleDefine(request, course_id):
             "days": json.dumps(weekdays),
         },
     )
+    messages.success(request, "The attendance schedule was saved.")
     return redirect(next_url)
 
 
