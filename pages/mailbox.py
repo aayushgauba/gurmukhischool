@@ -109,8 +109,11 @@ def sync_inbox():
             pass
 
 
-def send_admin_email(mail_record, user):
-    sender_name = user.get_full_name() or user.username
+def send_admin_email(mail_record, user=None):
+    sender_name = mail_record.created_by_name
+    if user is not None:
+        sender_name = user.get_full_name() or user.username
+    sender_name = sender_name or "Sikh Study Circle Administrator"
     signature = f"—\n{sender_name}\nSikh Study Circle of St. Louis"
     body = f"{mail_record.body.rstrip()}\n\n{signature}"
     email_message = EmailMultiAlternatives(

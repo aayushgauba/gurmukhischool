@@ -38,9 +38,11 @@ class MailboxMessage(models.Model):
 
 class MailDraft(models.Model):
     DRAFT = "draft"
+    QUEUED = "queued"
     SENT = "sent"
     STATUS_CHOICES = [
         (DRAFT, "Draft"),
+        (QUEUED, "Queued"),
         (SENT, "Sent"),
     ]
 

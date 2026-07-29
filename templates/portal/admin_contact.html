@@ -89,7 +89,7 @@
     <h2 class="h5" id="draftMessagesTitle">{% if status == 'sent' %}Sent email{% else %}Drafts{% endif %}</h2>
     {% for draft in drafts %}
     <article class="contact-message-card">
-        <header><span class="student-initial" aria-hidden="true"><i class="bi bi-pencil"></i></span><div><h3 class="h5 mb-0">{{ draft.subject }}</h3><span>To: {{ draft.recipient }}</span></div><time datetime="{{ draft.updated_at|date:'c' }}">{{ draft.updated_at|date:'M j, Y g:i A' }}</time></header>
+        <header><span class="student-initial" aria-hidden="true"><i class="bi bi-pencil"></i></span><div><h3 class="h5 mb-0">{{ draft.subject }}</h3><span>To: {{ draft.recipient }}</span></div><time datetime="{{ draft.updated_at|date:'c' }}">{{ draft.updated_at|date:'M j, Y g:i A' }}</time>{% if draft.status == 'queued' %}<span class="portal-status-badge">Queued</span>{% endif %}</header>
         <p class="contact-message-text">{{ draft.body|linebreaksbr }}</p>
         {% if draft.status == 'draft' %}<footer><a class="btn btn-sm btn-portal-primary" href="{% url 'adminMailboxCompose' %}?draft={{ draft.id }}">Continue editing</a></footer>{% endif %}
     </article>

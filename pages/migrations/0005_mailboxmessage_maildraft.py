@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ("recipient", models.EmailField(max_length=254)),
                 ("subject", models.CharField(max_length=998)),
                 ("body", models.TextField()),
-                ("status", models.CharField(choices=[("draft", "Draft"), ("sent", "Sent")], default="draft", max_length=10)),
+                ("status", models.CharField(choices=[("draft", "Draft"), ("queued", "Queued"), ("sent", "Sent")], default="draft", max_length=10)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("sent_at", models.DateTimeField(blank=True, null=True)),

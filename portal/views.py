@@ -30,8 +30,9 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
 from asgiref.sync import sync_to_async
 from pages.forms import MailComposeForm
-from pages.mailbox import mailbox_is_configured, send_admin_email, sync_inbox
+from pages.mailbox import mailbox_is_configured
 from pages.models import Contact, MailboxMessage, MailDraft
+from pages.tasks import process_email_pipeline, send_two_factor_code_email
 from django.core.exceptions import ValidationError
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
@@ -1401,8 +1402,12 @@ def adminContactView(request:HttpRequest):
         contacts = Contact.objects.filter(is_spam=False)
     elif status == "email":
         mailbox_messages = MailboxMessage.objects.all()
-    elif status in {"drafts", "sent"}:
-        drafts = MailDraft.objects.filter(status=status[:-1] if status.endswith("s") else status)
+    elif status == "drafts":
+        drafts = MailDraft.objects.filter(
+            status__in=[MailDraft.DRAFT, MailDraft.QUEUED]
+        )
+    elif status == "sent":
+        drafts = MailDraft.objects.filter(status=MailDraft.SENT)
     else:
         status = "inbox"
         contacts = Contact.objects.filter(is_spam=False)
@@ -1456,16 +1461,17 @@ def adminContactView(request:HttpRequest):
 @admin_required
 @approved_required
 def adminMailboxSync(request):
-    try:
-        synced = sync_inbox()
-    except Exception:
-        logger.exception("Mailbox synchronization failed.")
-        messages.error(
-            request,
-            "The mailbox could not be synchronized. Check the IMAP configuration.",
-        )
+    result = process_email_pipeline.call()
+    sync_result = result["sync"]
+    if sync_result.get("error"):
+        logger.error("Mailbox synchronization failed: %s", sync_result["error"])
+        messages.error(request, "The mailbox could not be synchronized. Check the IMAP configuration.")
     else:
-        messages.success(request, f"Mailbox synchronized. {synced} messages checked.")
+        messages.success(
+            request,
+            f"Email tasks completed. {result['responses']['sent']} responses sent and "
+            f"{sync_result['synced']} messages synchronized.",
+        )
     return redirect("adminContactView")
 
 
@@ -1516,20 +1522,16 @@ def adminMailboxCompose(request):
             messages.success(request, "Draft saved.")
             return redirect("adminContactView")
         if action == "send":
-            mail_record.status = MailDraft.DRAFT
+            mail_record.status = MailDraft.QUEUED
             mail_record.save()
-            try:
-                send_admin_email(mail_record, request.user)
-            except Exception:
-                logger.exception("Admin mailbox email failed to send.")
+            result = process_email_pipeline.call()
+            mail_record.refresh_from_db()
+            if mail_record.status != MailDraft.SENT:
                 messages.error(
                     request,
-                    "The email could not be sent. It was saved as a draft.",
+                    "The email could not be sent. It remains queued for the next email-task run.",
                 )
             else:
-                mail_record.status = MailDraft.SENT
-                mail_record.sent_at = timezone.now()
-                mail_record.save(update_fields=["status", "sent_at", "updated_at"])
                 messages.success(
                     request,
                     f"Email sent from {settings.DEFAULT_FROM_EMAIL}.",
@@ -2079,26 +2081,12 @@ def _portal_home_for_user(user):
 
 def _send_two_factor_code(request, user, backend=None):
     code = f"{secrets.randbelow(1_000_000):06d}"
-    html_message = render_to_string(
-        "email/twoFactorCode.html",
-        {
-            "user": user,
-            "code": code,
-            "expires_minutes": TWO_FACTOR_CODE_LIFETIME_SECONDS // 60,
-        },
-    )
-    email = EmailMultiAlternatives(
-        subject="Your Gurmukhi School verification code",
-        body=(
-            f"Your Gurmukhi School verification code is {code}. "
-            f"It expires in {TWO_FACTOR_CODE_LIFETIME_SECONDS // 60} minutes."
-        ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[user.email],
-    )
-    email.attach_alternative(html_message, "text/html")
     try:
-        email.send(fail_silently=False)
+        send_two_factor_code_email.call(
+            user.pk,
+            code,
+            TWO_FACTOR_CODE_LIFETIME_SECONDS // 60,
+        )
     except Exception:
         logger.exception(
             "Two-factor verification email failed for user_id=%s.",
