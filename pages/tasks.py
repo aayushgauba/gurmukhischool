@@ -1,6 +1,7 @@
 import logging
 import hashlib
 import hmac
+import math
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -20,7 +21,12 @@ from .models import (
     MailboxMessage,
     TwoFactorEmailDelivery,
 )
-from .spam_classifier import is_likely_spam, learn_spam_terms
+from .spam_classifier import (
+    MINIMUM_TERM_DOCUMENT_RATIO,
+    is_likely_spam,
+    learn_spam_terms,
+    match_spam_terms,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -212,10 +218,9 @@ def classify_spam_messages():
         is_spam=False,
         spam_reviewed=False,
     ).only("id", "message"):
-        likely_spam, _ = is_likely_spam(
+        likely_spam, _ = match_spam_terms(
             contact.message,
-            spam_messages,
-            legitimate_messages,
+            learned_terms,
         )
         if likely_spam:
             contact_spam_ids.append(contact.pk)
@@ -225,10 +230,9 @@ def classify_spam_messages():
         is_spam=False,
         spam_reviewed=False,
     ).only("id", "subject", "body"):
-        likely_spam, _ = is_likely_spam(
+        likely_spam, _ = match_spam_terms(
             _mailbox_text(message),
-            spam_messages,
-            legitimate_messages,
+            learned_terms,
         )
         if likely_spam:
             email_spam_ids.append(message.pk)
@@ -238,6 +242,22 @@ def classify_spam_messages():
     return {
         "reviewed_spam_messages": len(spam_messages),
         "legitimate_messages": len(legitimate_messages),
+        "minimum_spam_term_occurrences": (
+            max(
+                2,
+                math.ceil(
+                    len(spam_messages) * MINIMUM_TERM_DOCUMENT_RATIO
+                ),
+            )
+            if len(spam_messages) >= 3
+            else None
+        ),
+        "training_warning": (
+            "Restore several legitimate messages so the classifier can reduce "
+            "false positives."
+            if not legitimate_messages
+            else None
+        ),
         "contacts_classified_as_spam": len(contact_spam_ids),
         "emails_classified_as_spam": len(email_spam_ids),
         "learned_terms": [

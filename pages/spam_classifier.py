@@ -1,4 +1,5 @@
 import re
+import math
 from collections import Counter
 
 
@@ -13,6 +14,7 @@ STOP_WORDS = {
     "who", "will", "with", "would", "you", "your",
 }
 MINIMUM_SPAM_MESSAGES = 3
+MINIMUM_TERM_DOCUMENT_RATIO = 0.05
 
 
 def tokenize(message):
@@ -37,6 +39,10 @@ def learn_spam_terms(spam_messages, legitimate_messages):
     )
     spam_count = len(spam_documents)
     legitimate_count = len(legitimate_documents)
+    minimum_occurrences = max(
+        2,
+        math.ceil(spam_count * MINIMUM_TERM_DOCUMENT_RATIO),
+    )
     learned_terms = {}
 
     for token, occurrences in spam_frequency.items():
@@ -46,13 +52,20 @@ def learn_spam_terms(spam_messages, legitimate_messages):
             if legitimate_count
             else 0
         )
-        if occurrences >= 2 and spam_ratio >= 0.6 and legitimate_ratio <= 0.2:
-            learned_terms[token] = spam_ratio - legitimate_ratio
+        legitimate_limit = max(0.1, spam_ratio * 0.75)
+        if (
+            occurrences >= minimum_occurrences
+            and legitimate_ratio <= legitimate_limit
+        ):
+            learned_terms[token] = max(
+                0.1,
+                min(1.0, 0.55 + (spam_ratio * 3))
+                - min(0.45, legitimate_ratio * 2),
+            )
     return learned_terms
 
 
-def is_likely_spam(message, spam_messages, legitimate_messages):
-    learned_terms = learn_spam_terms(spam_messages, legitimate_messages)
+def match_spam_terms(message, learned_terms):
     matches = {
         token: learned_terms[token]
         for token in tokenize(message)
@@ -61,3 +74,10 @@ def is_likely_spam(message, spam_messages, legitimate_messages):
     if len(matches) >= 2 and sum(matches.values()) >= 1.2:
         return True, sorted(matches)
     return False, sorted(matches)
+
+
+def is_likely_spam(message, spam_messages, legitimate_messages):
+    return match_spam_terms(
+        message,
+        learn_spam_terms(spam_messages, legitimate_messages),
+    )

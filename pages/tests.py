@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.core import mail
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
 from .mailbox import send_admin_email
@@ -20,6 +20,7 @@ from .tasks import (
     send_two_factor_code_email,
     two_factor_code_for_nonce,
 )
+from .spam_classifier import learn_spam_terms, match_spam_terms
 
 
 @override_settings(
@@ -165,6 +166,28 @@ class CombinedSpamClassifierTests(TestCase):
 
         contact.refresh_from_db()
         self.assertFalse(contact.is_spam)
+
+
+class SpamLearningThresholdTests(SimpleTestCase):
+    def test_diverse_large_spam_corpus_learns_repeated_terms(self):
+        spam_messages = [
+            (
+                f"unique-token-{index}"
+                + (" crypto jackpot" if index < 4 else "")
+            )
+            for index in range(65)
+        ]
+
+        learned_terms = learn_spam_terms(spam_messages, [])
+        likely_spam, matches = match_spam_terms(
+            "A new crypto jackpot opportunity",
+            learned_terms,
+        )
+
+        self.assertIn("crypto", learned_terms)
+        self.assertIn("jackpot", learned_terms)
+        self.assertTrue(likely_spam)
+        self.assertEqual(matches, ["crypto", "jackpot"])
 
 
 @override_settings(
