@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 import re
 from urllib.parse import urlparse
 
@@ -11,6 +11,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase, override_settings
 from django.urls import resolve, reverse
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from .models import (
     Assignment,
@@ -25,7 +26,7 @@ from .models import (
 )
 from .forms import UploadedFileForm
 from .decorators import admin_required, teacher_required, web_manager_required
-from .views import _set_user_roles, registration
+from .views import _set_user_roles, registration, resend_activation
 from pages.models import ActivationEmailDelivery
 from pages.tasks import process_email_pipeline
 
@@ -71,9 +72,30 @@ class AccountActivationTests(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ["newstudent@example.com"])
 
+        ActivationEmailDelivery.objects.filter(pk=delivery.pk).update(
+            requested_at=timezone.now() - timedelta(minutes=6)
+        )
+        resend_request = RequestFactory().post(
+            reverse("resend_activation"),
+            {"email": "newstudent@example.com"},
+        )
+        resend_request.session = {}
+        resend_request._messages = FallbackStorage(resend_request)
+
+        resend_response = resend_activation(resend_request)
+
+        self.assertEqual(resend_response.status_code, 302)
+        delivery.refresh_from_db()
+        self.assertEqual(delivery.status, ActivationEmailDelivery.QUEUED)
+        self.assertEqual(len(mail.outbox), 1)
+
+        resend_result = process_email_pipeline.call()
+
+        self.assertEqual(resend_result["activations"]["sent"], 1)
+        self.assertEqual(len(mail.outbox), 2)
         match = re.search(
             r'href="([^"]*/activate/[^"]+)"',
-            mail.outbox[0].alternatives[0].content,
+            mail.outbox[1].alternatives[0].content,
         )
         self.assertIsNotNone(match)
         activation_path = urlparse(match.group(1)).path

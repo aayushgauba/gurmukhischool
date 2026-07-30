@@ -122,6 +122,10 @@ def send_queued_activation_emails():
                 attempts=F("attempts") + 1,
                 last_error=str(exc)[:2000],
             )
+            ActivationEmailDelivery.objects.filter(
+                pk=delivery_id,
+                attempts__gte=settings.ACTIVATION_EMAIL_MAX_ATTEMPTS,
+            ).update(status=ActivationEmailDelivery.FAILED)
             logger.exception(
                 "Queued activation email %s failed to send.",
                 delivery_id,
@@ -135,6 +139,9 @@ def send_queued_activation_emails():
         "failed": failed,
         "queued": ActivationEmailDelivery.objects.filter(
             status=ActivationEmailDelivery.QUEUED
+        ).count(),
+        "permanently_failed": ActivationEmailDelivery.objects.filter(
+            status=ActivationEmailDelivery.FAILED
         ).count(),
     }
 

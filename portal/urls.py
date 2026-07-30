@@ -56,6 +56,7 @@ urlpatterns = [
     path('grades', views.grades, name='grades'),
     path('students/add/<int:course_id>', views.addStudents, name='addStudents'),
     path('registration', views.registration, name='registration'),
+    path('registration/resend-activation', views.resend_activation, name='resend_activation'),
     path('reset/<uidb64>/<token>/', views.reset, name='resetEmail'),
     path('announcements', views.announcements, name = 'announcements'),
     path('announcement/create', views.create_announcement, name='create_announcement'),

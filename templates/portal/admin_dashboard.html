@@ -29,6 +29,18 @@
                 <strong>{{ pending_user.get_full_name|default:pending_user.username }}</strong>
                 <span>{{ pending_user.email|default:'No email provided' }}</span>
                 <small>Registered {{ pending_user.date_joined|date:'M j, Y' }}</small>
+                {% if pending_user.activation_email_delivery %}
+                <small>
+                    Activation:
+                    {% if pending_user.activation_email_delivery.status == 'failed' %}
+                    <span class="text-danger">Failed after {{ pending_user.activation_email_delivery.attempts }} attempts</span>
+                    {% elif pending_user.activation_email_delivery.status == 'sent' %}
+                    <span class="text-success">Sent</span>
+                    {% else %}
+                    <span>Queued</span>
+                    {% endif %}
+                </small>
+                {% endif %}
             </div>
             <form class="admin-approval-form" method="post" action="{% url 'adminViewHome' %}">
                 {% csrf_token %}

@@ -1,0 +1,38 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Request another Gurmukhi School account activation email.">
+    <title>Resend activation email | Gurmukhi School</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/fonts.css' %}" rel="stylesheet">
+    <style nonce="{{ csp_nonce }}">
+        body { min-height:100vh; margin:0; display:grid; place-items:center; padding:1rem; background:#f4f4f4; color:#212529; font-family:'Mukta',Arial,sans-serif; }
+        .activation-card { width:min(100%,28rem); padding:2rem; border-radius:1rem; background:#fff; box-shadow:0 .75rem 2rem rgba(0,0,0,.1); }
+        .activation-logo { color:#ffc107; font-size:2.5rem; line-height:1; text-align:center; }
+        .btn-primary { border-color:#ffc107; background:#ffc107; color:#111; }
+        .btn-primary:hover { border-color:#e0a800; background:#e0a800; color:#111; }
+    </style>
+</head>
+<body>
+    <main class="activation-card">
+        <div class="activation-logo" aria-hidden="true">ੴ</div>
+        <h1 class="h3 mt-2 text-center">Resend activation email</h1>
+        <p class="text-secondary text-center">Enter the email used during registration. Requests are limited to once every {{ cooldown_minutes }} minute{{ cooldown_minutes|pluralize }}.</p>
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }}" role="status">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        <form method="post" action="{% url 'resend_activation' %}">
+            {% csrf_token %}
+            <label class="form-label" for="activationEmail">Email address</label>
+            <input class="form-control" id="activationEmail" name="email" type="email" autocomplete="email" required>
+            <button class="btn btn-primary w-100 mt-3" type="submit">Queue activation email</button>
+        </form>
+        <p class="text-center mt-3 mb-0"><a href="{% url 'login' %}">Back to login</a></p>
+    </main>
+</body>
+</html>

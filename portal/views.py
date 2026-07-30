@@ -1267,7 +1267,9 @@ def adminViewHome(request:HttpRequest):
                 messages.success(request, "The account was approved and the user was notified.")
         return redirect("adminViewHome")
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
-    users = CustomUser.objects.filter(approved=False).order_by("date_joined", "id")
+    users = CustomUser.objects.filter(approved=False).select_related(
+        "activation_email_delivery"
+    ).order_by("date_joined", "id")
     return render(request, "portal/admin_dashboard.html", {
         "users": users,
         "user_roles": CustomUser.USER_TYPES,
@@ -2021,6 +2023,68 @@ def registration(request):
             )
             return redirect('login')
     return render(request,"registration.html")
+
+
+@sensitive_post_parameters("email")
+@never_cache
+def resend_activation(request):
+    if request.method == "POST":
+        email = request.POST.get("email", "").strip().lower()
+        user = CustomUser.objects.filter(
+            email__iexact=email,
+            is_active=False,
+        ).first()
+        if user is not None:
+            current_site = get_current_site(request)
+            delivery, created = ActivationEmailDelivery.objects.get_or_create(
+                user=user,
+                defaults={
+                    "domain": current_site.domain,
+                    "protocol": (
+                        "https" if request.is_secure() else "http"
+                    ),
+                },
+            )
+            cooldown = settings.ACTIVATION_RESEND_COOLDOWN_SECONDS
+            elapsed = (
+                timezone.now() - delivery.requested_at
+            ).total_seconds()
+            if created or elapsed >= cooldown:
+                delivery.domain = current_site.domain
+                delivery.protocol = (
+                    "https" if request.is_secure() else "http"
+                )
+                delivery.status = ActivationEmailDelivery.QUEUED
+                delivery.attempts = 0
+                delivery.last_error = ""
+                delivery.sent_at = None
+                delivery.save(
+                    update_fields=[
+                        "domain",
+                        "protocol",
+                        "status",
+                        "attempts",
+                        "last_error",
+                        "sent_at",
+                        "requested_at",
+                    ]
+                )
+        messages.success(
+            request,
+            "If an inactive account uses that email address, a new "
+            "activation message will be queued when allowed.",
+        )
+        return redirect("resend_activation")
+    return render(
+        request,
+        "portal/resend_activation.html",
+        {
+            "cooldown_minutes": max(
+                1,
+                settings.ACTIVATION_RESEND_COOLDOWN_SECONDS // 60,
+            )
+        },
+    )
 
 def validate_phone_number(phone):
     phone = re.sub(r'\D', '', phone)

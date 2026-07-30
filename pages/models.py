@@ -119,9 +119,11 @@ class TwoFactorEmailDelivery(models.Model):
 class ActivationEmailDelivery(models.Model):
     QUEUED = "queued"
     SENT = "sent"
+    FAILED = "failed"
     STATUS_CHOICES = [
         (QUEUED, "Queued"),
         (SENT, "Sent"),
+        (FAILED, "Failed"),
     ]
 
     user = models.OneToOneField(
@@ -143,6 +145,7 @@ class ActivationEmailDelivery(models.Model):
     attempts = models.PositiveIntegerField(default=0)
     last_error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    requested_at = models.DateTimeField(auto_now=True)
     sent_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
