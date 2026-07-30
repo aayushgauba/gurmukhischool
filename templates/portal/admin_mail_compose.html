@@ -9,7 +9,15 @@
     <a class="btn btn-outline-secondary" href="{% url 'adminContactView' %}">Back to email</a>
 </header>
 
-<section class="admin-user-card">
+<div class="mail-compose-layout{% if mailbox_message or contact %} has-context{% endif %}">
+<section class="admin-user-card mail-compose-card">
+    <div class="mail-compose-card-heading">
+        <span class="mail-compose-icon" aria-hidden="true"><i class="bi bi-pencil-square"></i></span>
+        <div>
+            <h2 class="h5 mb-1">{% if draft %}Continue your draft{% elif mailbox_message or contact %}Write your reply{% else %}New message{% endif %}</h2>
+            <p class="text-secondary small mb-0">Your signature is added automatically.</p>
+        </div>
+    </div>
     <form method="post" novalidate>
         {% csrf_token %}
         {% if draft %}<input name="draft_id" type="hidden" value="{{ draft.id }}">{% endif %}
@@ -19,8 +27,39 @@
         <div class="mb-3"><label class="form-label" for="{{ form.recipient.id_for_label }}">To</label>{{ form.recipient }}{% for error in form.recipient.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
         <div class="mb-3"><label class="form-label" for="{{ form.subject.id_for_label }}">Subject</label>{{ form.subject }}{% for error in form.subject.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
         <div class="mb-3"><label class="form-label" for="{{ form.body.id_for_label }}">Message</label>{{ form.body }}{% for error in form.body.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}</div>
-        <p class="text-secondary small">Your signature is added automatically when the email is sent.</p>
         <div class="d-flex flex-wrap gap-2"><button class="btn btn-portal-primary" name="action" value="send" type="submit"><i class="bi bi-send me-1" aria-hidden="true"></i>Send email</button><button class="btn btn-outline-secondary" name="action" value="save" type="submit">Save draft</button></div>
     </form>
 </section>
+
+{% if mailbox_message %}
+<aside class="mail-reply-context" aria-labelledby="originalEmailTitle">
+    <div class="mail-reply-context-label"><i class="bi bi-reply" aria-hidden="true"></i> Replying to</div>
+    <header class="mail-reply-context-header">
+        <span class="student-initial" aria-hidden="true">{{ mailbox_message.sender_name|default:mailbox_message.sender_email|first|upper }}</span>
+        <div>
+            <h2 class="h6 mb-0" id="originalEmailTitle">{{ mailbox_message.sender_name|default:mailbox_message.sender_email }}</h2>
+            <span class="mail-reply-address">{{ mailbox_message.sender_email }}</span>
+        </div>
+    </header>
+    <div class="mail-reply-metadata">
+        <strong>{{ mailbox_message.subject|default:"(No subject)" }}</strong>
+        <time datetime="{{ mailbox_message.received_at|date:'c' }}">{{ mailbox_message.received_at|date:'M j, Y g:i A' }}</time>
+    </div>
+    <div class="mail-reply-body">{{ mailbox_message.body|default:"No plain-text message body was available."|linebreaksbr }}</div>
+</aside>
+{% elif contact %}
+<aside class="mail-reply-context" aria-labelledby="originalContactTitle">
+    <div class="mail-reply-context-label"><i class="bi bi-reply" aria-hidden="true"></i> Replying to</div>
+    <header class="mail-reply-context-header">
+        <span class="student-initial" aria-hidden="true">{{ contact.name|first|upper }}</span>
+        <div>
+            <h2 class="h6 mb-0" id="originalContactTitle">{{ contact.name }}</h2>
+            <span class="mail-reply-address">{{ contact.email }}</span>
+        </div>
+    </header>
+    <div class="mail-reply-metadata"><strong>Website contact message</strong><time datetime="{{ contact.date|date:'Y-m-d' }}">{{ contact.date|date:'M j, Y' }}</time></div>
+    <div class="mail-reply-body">{{ contact.message|linebreaksbr }}</div>
+</aside>
+{% endif %}
+</div>
 {% endblock %}

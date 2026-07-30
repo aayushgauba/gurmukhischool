@@ -1839,6 +1839,103 @@ body.portal-body {
     gap: 0.45rem;
 }
 
+.mail-compose-layout {
+    display: grid;
+    gap: 1rem;
+}
+
+.mail-compose-layout.has-context {
+    grid-template-columns: minmax(0, 1.45fr) minmax(18rem, 0.75fr);
+    align-items: start;
+}
+
+.mail-compose-card {
+    padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.mail-compose-card-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--portal-border);
+}
+
+.mail-compose-icon {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 0.7rem;
+    background: var(--portal-accent);
+    color: #171717;
+    font-size: 1.1rem;
+}
+
+.mail-reply-context {
+    position: sticky;
+    top: 1rem;
+    overflow: hidden;
+    border: 1px solid var(--portal-border);
+    border-radius: 0.85rem;
+    background: #fff;
+    box-shadow: var(--portal-shadow);
+}
+
+.mail-reply-context-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 0.9rem;
+    border-bottom: 1px solid var(--portal-border);
+    background: var(--portal-surface);
+    color: var(--portal-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.mail-reply-context-header {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.7rem;
+    padding: 1rem 1rem 0.75rem;
+}
+
+.mail-reply-address {
+    display: block;
+    color: var(--portal-muted);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+.mail-reply-metadata {
+    display: grid;
+    gap: 0.2rem;
+    padding: 0 1rem 0.85rem;
+    border-bottom: 1px solid var(--portal-border);
+}
+
+.mail-reply-metadata time {
+    color: var(--portal-muted);
+    font-size: 0.8rem;
+}
+
+.mail-reply-body {
+    max-height: 28rem;
+    padding: 1rem;
+    overflow: auto;
+    background: #fbfbfb;
+    color: #3f4650;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
 .contact-delete {
     position: relative;
 }
@@ -2379,6 +2476,18 @@ body.portal-body {
 
     .contact-message-card > header {
         grid-template-columns: 2.5rem minmax(0, 1fr);
+    }
+
+    .mail-compose-layout.has-context {
+        grid-template-columns: 1fr;
+    }
+
+    .mail-reply-context {
+        position: static;
+    }
+
+    .mail-reply-body {
+        max-height: 20rem;
     }
 
     .contact-message-card time,

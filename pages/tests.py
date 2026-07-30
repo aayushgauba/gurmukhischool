@@ -60,6 +60,34 @@ class AdminMailboxTests(TestCase):
         self.assertFalse(created)
         self.assertEqual(message.subject, "Updated")
 
+    def test_reply_email_contains_standard_thread_headers(self):
+        original = MailboxMessage.objects.create(
+            folder="INBOX",
+            uid="reply-source",
+            message_id="<original-message@example.com>",
+            sender_email="visitor@example.com",
+            subject="Question",
+            body="Could you help me?",
+        )
+        draft = MailDraft.objects.create(
+            recipient="visitor@example.com",
+            subject="Re: Question",
+            body="Yes, we can help.",
+            created_by=self.user,
+            reply_to_message=original,
+        )
+
+        send_admin_email(draft, self.user)
+
+        self.assertEqual(
+            mail.outbox[0].extra_headers["In-Reply-To"],
+            "<original-message@example.com>",
+        )
+        self.assertEqual(
+            mail.outbox[0].extra_headers["References"],
+            "<original-message@example.com>",
+        )
+
     def test_two_factor_email_is_sent_by_django_task(self):
         self.user.email = "admin@example.com"
         self.user.save(update_fields=["email"])

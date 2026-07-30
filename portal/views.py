@@ -1557,9 +1557,15 @@ def adminMailboxCompose(request):
 
     contact_id = request.POST.get("contact_id") or request.GET.get("contact")
     message_id = request.POST.get("message_id") or request.GET.get("message")
-    contact = get_object_or_404(Contact, id=contact_id) if contact_id else None
+    contact = (
+        get_object_or_404(Contact, id=contact_id)
+        if contact_id
+        else draft.contact if draft else None
+    )
     mailbox_message = (
-        get_object_or_404(MailboxMessage, id=message_id) if message_id else None
+        get_object_or_404(MailboxMessage, id=message_id)
+        if message_id
+        else draft.reply_to_message if draft else None
     )
     initial = {}
     if contact:

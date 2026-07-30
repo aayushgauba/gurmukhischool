@@ -116,11 +116,22 @@ def send_admin_email(mail_record, user=None):
     sender_name = sender_name or "Sikh Study Circle Administrator"
     signature = f"—\n{sender_name}\nSikh Study Circle of St. Louis"
     body = f"{mail_record.body.rstrip()}\n\n{signature}"
+    headers = {}
+    if (
+        mail_record.reply_to_message_id
+        and mail_record.reply_to_message.message_id
+    ):
+        original_message_id = mail_record.reply_to_message.message_id
+        headers = {
+            "In-Reply-To": original_message_id,
+            "References": original_message_id,
+        }
     email_message = EmailMultiAlternatives(
         subject=mail_record.subject,
         body=body,
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[mail_record.recipient],
+        headers=headers,
     )
     email_message.attach_alternative(
         render_to_string(
