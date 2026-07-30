@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 from django.core import mail
 from django.contrib.auth.models import Group
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -25,11 +26,14 @@ from .models import (
 from .forms import UploadedFileForm
 from .decorators import admin_required, teacher_required, web_manager_required
 from .views import _set_user_roles, registration
+from pages.models import ActivationEmailDelivery
+from pages.tasks import process_email_pipeline
 
 
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     DEFAULT_FROM_EMAIL="configured@example.com",
+    EMAIL_IMAP_HOST="",
     ALLOWED_HOSTS=["testserver"],
 )
 class AccountActivationTests(TestCase):
@@ -46,6 +50,8 @@ class AccountActivationTests(TestCase):
                 "confirmPassword": "StrongPass!483",
             },
         )
+        request.session = {}
+        request._messages = FallbackStorage(request)
 
         response = registration(request)
 
@@ -53,12 +59,21 @@ class AccountActivationTests(TestCase):
         user = CustomUser.objects.get(username="newstudent")
         self.assertEqual(user.email, "newstudent@example.com")
         self.assertFalse(user.is_active)
+        self.assertEqual(len(mail.outbox), 0)
+        delivery = ActivationEmailDelivery.objects.get(user=user)
+        self.assertEqual(delivery.status, ActivationEmailDelivery.QUEUED)
+
+        task_result = process_email_pipeline.call()
+
+        delivery.refresh_from_db()
+        self.assertEqual(task_result["activations"]["sent"], 1)
+        self.assertEqual(delivery.status, ActivationEmailDelivery.SENT)
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ["newstudent@example.com"])
 
         match = re.search(
             r'href="([^"]*/activate/[^"]+)"',
-            mail.outbox[0].alternatives[0].body,
+            mail.outbox[0].alternatives[0].content,
         )
         self.assertIsNotNone(match)
         activation_path = urlparse(match.group(1)).path

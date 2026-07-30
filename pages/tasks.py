@@ -6,16 +6,20 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
 from django.db.models import F, Q
 from django.tasks import task
 from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django.utils import timezone
 
 from portal.models import CustomUser
 
 from .mailbox import mailbox_is_configured, send_admin_email, sync_inbox
 from .models import (
+    ActivationEmailDelivery,
     AdminMessageNotification,
     Contact,
     MailDraft,
@@ -46,6 +50,93 @@ def two_factor_code_for_nonce(nonce):
 
 def _mailbox_text(message):
     return "\n".join(part for part in [message.subject, message.body] if part)
+
+
+@task
+def send_queued_activation_emails():
+    sent = 0
+    failed = 0
+    delivery_ids = list(
+        ActivationEmailDelivery.objects.filter(
+            status=ActivationEmailDelivery.QUEUED
+        ).values_list("id", flat=True)
+    )
+    for delivery_id in delivery_ids:
+        try:
+            with transaction.atomic():
+                delivery = (
+                    ActivationEmailDelivery.objects.select_for_update()
+                    .select_related("user")
+                    .get(pk=delivery_id)
+                )
+                if delivery.status != ActivationEmailDelivery.QUEUED:
+                    continue
+                if delivery.user.is_active:
+                    delivery.status = ActivationEmailDelivery.SENT
+                    delivery.sent_at = timezone.now()
+                    delivery.last_error = ""
+                    delivery.save(
+                        update_fields=["status", "sent_at", "last_error"]
+                    )
+                    continue
+
+                html_message = render_to_string(
+                    "email/activation.html",
+                    {
+                        "user": delivery.user,
+                        "domain": delivery.domain,
+                        "uid": urlsafe_base64_encode(
+                            force_bytes(delivery.user.pk)
+                        ),
+                        "token": default_token_generator.make_token(
+                            delivery.user
+                        ),
+                        "protocol": delivery.protocol,
+                    },
+                )
+                email = EmailMultiAlternatives(
+                    subject="Activate Your Account",
+                    body=(
+                        "Activate your Gurmukhi School account using the "
+                        "secure link in this email."
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[delivery.user.email],
+                )
+                email.attach_alternative(html_message, "text/html")
+                email.send(fail_silently=False)
+                delivery.status = ActivationEmailDelivery.SENT
+                delivery.attempts += 1
+                delivery.last_error = ""
+                delivery.sent_at = timezone.now()
+                delivery.save(
+                    update_fields=[
+                        "status",
+                        "attempts",
+                        "last_error",
+                        "sent_at",
+                    ]
+                )
+        except Exception as exc:
+            ActivationEmailDelivery.objects.filter(pk=delivery_id).update(
+                attempts=F("attempts") + 1,
+                last_error=str(exc)[:2000],
+            )
+            logger.exception(
+                "Queued activation email %s failed to send.",
+                delivery_id,
+            )
+            failed += 1
+        else:
+            if delivery.status == ActivationEmailDelivery.SENT:
+                sent += 1
+    return {
+        "sent": sent,
+        "failed": failed,
+        "queued": ActivationEmailDelivery.objects.filter(
+            status=ActivationEmailDelivery.QUEUED
+        ).count(),
+    }
 
 
 @task
@@ -424,6 +515,7 @@ def sync_incoming_email():
 def process_email_pipeline():
     results = {
         "two_factor": check_two_factor_delivery_stage.call(),
+        "activations": send_queued_activation_emails.call(),
         "responses": send_queued_email_responses.call(),
     }
     try:

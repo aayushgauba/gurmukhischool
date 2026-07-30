@@ -33,6 +33,7 @@ from asgiref.sync import sync_to_async
 from pages.forms import MailComposeForm
 from pages.mailbox import mailbox_is_configured
 from pages.models import (
+    ActivationEmailDelivery,
     Contact,
     MailboxMessage,
     MailDraft,
@@ -1985,16 +1986,25 @@ def registration(request):
                 validate_password(password)
             except ValidationError as error:
                 return render(request, "registration.html", {"error": " ".join(error.messages)})
+            current_site = get_current_site(request)
             try:
-                user = CustomUser.objects.create_user(
-                    first_name=firstname,
-                    last_name=lastname,
-                    phone_number=phone,
-                    username=username,
-                    email=email,
-                    password=password,
-                    is_active=False,
-                )
+                with transaction.atomic():
+                    user = CustomUser.objects.create_user(
+                        first_name=firstname,
+                        last_name=lastname,
+                        phone_number=phone,
+                        username=username,
+                        email=email,
+                        password=password,
+                        is_active=False,
+                    )
+                    ActivationEmailDelivery.objects.create(
+                        user=user,
+                        domain=current_site.domain,
+                        protocol=(
+                            "https" if request.is_secure() else "http"
+                        ),
+                    )
             except IntegrityError:
                 return render(
                     request,
@@ -2005,21 +2015,9 @@ def registration(request):
                         )
                     },
                 )
-            current_site = get_current_site(request)
-            subject = 'Activate Your Account'
-            message = render_to_string('email/activation.html', {
-                'user': user,
-                'domain': current_site.domain,
-                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                'token': default_token_generator.make_token(user),
-                'protocol': 'https' if request.is_secure() else 'http',
-            })
-            send_mail(
-                subject,
-                '',
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                html_message=message,
+            messages.success(
+                request,
+                "Registration received. Your activation email has been queued.",
             )
             return redirect('login')
     return render(request,"registration.html")

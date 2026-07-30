@@ -8,7 +8,8 @@ from pages.tasks import process_email_pipeline
 class Command(BaseCommand):
     help = (
         "Process email operations in order: verify the two-factor delivery "
-        "stage, send queued responses, then synchronize incoming email."
+        "stage, send account activations, send queued responses, then "
+        "synchronize incoming email."
     )
 
     def add_arguments(self, parser):

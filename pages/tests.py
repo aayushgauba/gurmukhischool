@@ -116,12 +116,13 @@ class AdminMailboxTests(TestCase):
         draft.refresh_from_db()
         self.assertEqual(
             list(result),
-            ["two_factor", "responses", "sync"],
+            ["two_factor", "activations", "responses", "sync"],
         )
         delivery.refresh_from_db()
         self.assertEqual(result["two_factor"]["sent"], 1)
         self.assertEqual(delivery.status, TwoFactorEmailDelivery.SENT)
         self.assertIn(two_factor_code_for_nonce(delivery.nonce), mail.outbox[0].body)
+        self.assertEqual(result["activations"]["sent"], 0)
         self.assertEqual(result["responses"]["sent"], 1)
         self.assertEqual(draft.status, MailDraft.SENT)
         self.assertFalse(result["sync"]["configured"])

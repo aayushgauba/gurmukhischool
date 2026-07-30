@@ -116,6 +116,39 @@ class TwoFactorEmailDelivery(models.Model):
         ordering = ["created_at", "id"]
 
 
+class ActivationEmailDelivery(models.Model):
+    QUEUED = "queued"
+    SENT = "sent"
+    STATUS_CHOICES = [
+        (QUEUED, "Queued"),
+        (SENT, "Sent"),
+    ]
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="activation_email_delivery",
+    )
+    domain = models.CharField(max_length=255)
+    protocol = models.CharField(
+        max_length=5,
+        choices=[("http", "HTTP"), ("https", "HTTPS")],
+        default="https",
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default=QUEUED,
+    )
+    attempts = models.PositiveIntegerField(default=0)
+    last_error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+
+
 class AdminMessageNotification(models.Model):
     QUEUED = "queued"
     SENT = "sent"
