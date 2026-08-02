@@ -107,15 +107,7 @@ MIDDLEWARE = [
     'django.middleware.csp.ContentSecurityPolicyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'aiwaf.django.middleware.JsonExceptionMiddleware',
-    'aiwaf.django.middleware.GeoBlockMiddleware',
-    'aiwaf.django.middleware.IPAndKeywordBlockMiddleware',
-    'aiwaf.django.middleware.RateLimitMiddleware',
-    'aiwaf.django.middleware.AIAnomalyMiddleware',
-    'aiwaf.django.middleware.HoneypotTimingMiddleware',
-    'aiwaf.django.middleware.UUIDTamperMiddleware',
-    'aiwaf.django.middleware.HeaderValidationMiddleware',
-    'aiwaf.django.middleware_logger.AIWAFLoggerMiddleware',
+    'aiwaf.django.middleware.all',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -286,7 +278,7 @@ if env_bool('DJANGO_TRUST_X_FORWARDED_PROTO', False):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 SECURE_HSTS_SECONDS = (
-    env_int('DJANGO_HSTS_SECONDS', 300)
+    env_int('DJANGO_HSTS_SECONDS', 31536000)
     if not DEBUG
     else 0
 )
