@@ -84,6 +84,8 @@
             <time datetime="{{ contact.date|date:'Y-m-d' }}">{{ contact.date|date:'M j, Y' }}</time>
             {% if contact.is_spam %}<span class="portal-status-badge">Spam</span>{% endif %}
             {% if contact.spam_reviewed and not contact.is_spam %}<span class="portal-status-badge success">Trusted</span>{% endif %}
+            {% if contact.admin_notification.status == 'queued' %}<span class="portal-status-badge">Notification queued</span>{% endif %}
+            {% if contact.admin_notification.status == 'sent' %}<span class="portal-status-badge success">Notified</span>{% endif %}
         </header>
         <p class="contact-message-text">{{ contact.message|linebreaksbr }}</p>
         <footer>
@@ -91,6 +93,7 @@
             {% if contact.is_spam %}
             <form method="post" action="{% url 'contactRestore' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Restore</button></form>
             {% else %}
+            <form method="post" action="{% url 'contactNotify' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit"{% if contact.admin_notification.status == 'queued' %} disabled{% endif %}><i class="bi bi-bell me-1" aria-hidden="true"></i>{% if contact.admin_notification.status == 'sent' %}Notify again{% elif contact.admin_notification.status == 'queued' %}Queued{% else %}Notify{% endif %}</button></form>
             {% if not contact.spam_reviewed %}
             <form method="post" action="{% url 'contactTrust' contact.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success" type="submit">Trust as legitimate</button></form>
             {% endif %}

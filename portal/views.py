@@ -407,6 +407,28 @@ def contactTrust(request, contact_id):
 @login_required
 @approved_required
 @admin_required
+def contactNotify(request, contact_id):
+    contact = get_object_or_404(Contact, id=contact_id, is_spam=False)
+    notification, created = AdminMessageNotification.objects.get_or_create(
+        contact=contact,
+    )
+    if not created and notification.status != AdminMessageNotification.QUEUED:
+        notification.status = AdminMessageNotification.QUEUED
+        notification.last_error = ""
+        notification.sent_at = None
+        notification.save(update_fields=["status", "last_error", "sent_at"])
+
+    messages.success(
+        request,
+        "The contact message is queued for administrators and notification subscribers.",
+    )
+    return redirect("adminContactView")
+
+
+@require_POST
+@login_required
+@approved_required
+@admin_required
 def mailboxSpam(request, message_id):
     mailbox_message = get_object_or_404(MailboxMessage, id=message_id)
     MailboxMessage.objects.filter(pk=mailbox_message.pk).update(
@@ -1547,7 +1569,7 @@ def adminContactView(request:HttpRequest):
             contacts = contacts.filter(date=filter_date)
             mailbox_messages = mailbox_messages.filter(received_at__date=filter_date)
             drafts = drafts.filter(updated_at__date=filter_date)
-    contacts = contacts.order_by("-date", "-id")
+    contacts = contacts.select_related("admin_notification").order_by("-date", "-id")
     mailbox_messages = mailbox_messages.select_related("admin_notification").order_by(
         "-received_at",
         "-id",

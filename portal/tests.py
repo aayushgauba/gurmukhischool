@@ -30,6 +30,7 @@ from .views import _set_user_roles, registration, resend_activation
 from pages.models import (
     ActivationEmailDelivery,
     AdminMessageNotification,
+    Contact,
     MailboxMessage,
 )
 from pages.tasks import process_email_pipeline
@@ -63,6 +64,11 @@ class ManualMailboxNotificationTests(TestCase):
             uid="manual-notify",
             sender_email="configured@example.com",
             subject="Message to share",
+        )
+        self.contact = Contact.objects.create(
+            name="Website visitor",
+            email="visitor@example.com",
+            message="Please share this with the notification recipients.",
         )
 
     def test_notify_button_queues_mailbox_message(self):
@@ -120,6 +126,28 @@ class ManualMailboxNotificationTests(TestCase):
             AdminMessageNotification.objects.filter(
                 mailbox_message=self.mailbox_message
             ).exists()
+        )
+
+    def test_notify_button_queues_contact_message(self):
+        response = self.client.post(
+            reverse("contactNotify", args=[self.contact.pk])
+        )
+
+        self.assertRedirects(response, reverse("adminContactView"))
+        notification = AdminMessageNotification.objects.get(contact=self.contact)
+        self.assertEqual(notification.status, AdminMessageNotification.QUEUED)
+
+    def test_spam_contact_cannot_be_queued_manually(self):
+        self.contact.is_spam = True
+        self.contact.save(update_fields=["is_spam"])
+
+        response = self.client.post(
+            reverse("contactNotify", args=[self.contact.pk])
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(
+            AdminMessageNotification.objects.filter(contact=self.contact).exists()
         )
 
 
