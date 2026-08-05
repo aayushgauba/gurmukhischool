@@ -27,8 +27,100 @@ from .models import (
 from .forms import UploadedFileForm
 from .decorators import admin_required, teacher_required, web_manager_required
 from .views import _set_user_roles, registration, resend_activation
-from pages.models import ActivationEmailDelivery
+from pages.models import (
+    ActivationEmailDelivery,
+    AdminMessageNotification,
+    MailboxMessage,
+)
 from pages.tasks import process_email_pipeline
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="configured@example.com",
+    EMAIL_HOST_USER="configured@example.com",
+    EMAIL_IMAP_HOST="",
+)
+class ManualMailboxNotificationTests(TestCase):
+    def setUp(self):
+        self.admin = CustomUser.objects.create_user(
+            username="admin@example.com",
+            email="admin@example.com",
+            password="a-long-test-password",
+            user_type=CustomUser.ADMIN,
+            approved=True,
+        )
+        self.subscriber = CustomUser.objects.create_user(
+            username="subscriber@example.com",
+            email="subscriber@example.com",
+            user_type=CustomUser.STUDENT,
+            approved=True,
+            contact_notifications_enabled=True,
+        )
+        self.client.force_login(self.admin)
+        self.mailbox_message = MailboxMessage.objects.create(
+            folder="INBOX",
+            uid="manual-notify",
+            sender_email="configured@example.com",
+            subject="Message to share",
+        )
+
+    def test_notify_button_queues_mailbox_message(self):
+        response = self.client.post(
+            reverse("mailboxNotify", args=[self.mailbox_message.pk])
+        )
+
+        self.assertRedirects(response, reverse("adminContactView"))
+        notification = AdminMessageNotification.objects.get(
+            mailbox_message=self.mailbox_message
+        )
+        self.assertEqual(notification.status, AdminMessageNotification.QUEUED)
+
+    def test_regular_email_pipeline_sends_manual_notification_to_recipients(self):
+        self.client.post(reverse("mailboxNotify", args=[self.mailbox_message.pk]))
+
+        result = process_email_pipeline.call()
+
+        notification = AdminMessageNotification.objects.get(
+            mailbox_message=self.mailbox_message
+        )
+        self.assertEqual(result["admin_notifications"]["sent"], 1)
+        self.assertEqual(notification.status, AdminMessageNotification.SENT)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertCountEqual(
+            mail.outbox[0].bcc,
+            ["admin@example.com", "subscriber@example.com"],
+        )
+
+    def test_notify_again_requeues_sent_notification(self):
+        notification = AdminMessageNotification.objects.create(
+            mailbox_message=self.mailbox_message,
+            status=AdminMessageNotification.SENT,
+            sent_at=timezone.now(),
+            last_error="old error",
+        )
+
+        self.client.post(reverse("mailboxNotify", args=[self.mailbox_message.pk]))
+
+        notification.refresh_from_db()
+        self.assertEqual(notification.status, AdminMessageNotification.QUEUED)
+        self.assertIsNone(notification.sent_at)
+        self.assertEqual(notification.last_error, "")
+
+    def test_spam_message_cannot_be_queued_manually(self):
+        self.mailbox_message.is_spam = True
+        self.mailbox_message.save(update_fields=["is_spam"])
+
+        response = self.client.post(
+            reverse("mailboxNotify", args=[self.mailbox_message.pk])
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(
+            AdminMessageNotification.objects.filter(
+                mailbox_message=self.mailbox_message
+            ).exists()
+        )
 
 
 @override_settings(

@@ -34,6 +34,7 @@ from pages.forms import MailComposeForm
 from pages.mailbox import mailbox_is_configured
 from pages.models import (
     ActivationEmailDelivery,
+    AdminMessageNotification,
     Contact,
     MailboxMessage,
     MailDraft,
@@ -444,6 +445,33 @@ def mailboxTrust(request, message_id):
         spam_reviewed=True,
     )
     messages.success(request, "The email was trusted as legitimate.")
+    return redirect("adminContactView")
+
+
+@require_POST
+@login_required
+@approved_required
+@admin_required
+def mailboxNotify(request, message_id):
+    mailbox_message = get_object_or_404(
+        MailboxMessage,
+        id=message_id,
+        is_spam=False,
+    )
+    notification, created = AdminMessageNotification.objects.get_or_create(
+        mailbox_message=mailbox_message,
+    )
+    if not created and notification.status != AdminMessageNotification.QUEUED:
+        notification.status = AdminMessageNotification.QUEUED
+        notification.last_error = ""
+        notification.sent_at = None
+        notification.save(update_fields=["status", "last_error", "sent_at"])
+
+    if created or notification.status == AdminMessageNotification.QUEUED:
+        messages.success(
+            request,
+            "The email is queued for administrators and notification subscribers.",
+        )
     return redirect("adminContactView")
     
 @require_POST
@@ -1520,7 +1548,10 @@ def adminContactView(request:HttpRequest):
             mailbox_messages = mailbox_messages.filter(received_at__date=filter_date)
             drafts = drafts.filter(updated_at__date=filter_date)
     contacts = contacts.order_by("-date", "-id")
-    mailbox_messages = mailbox_messages.order_by("-received_at", "-id")
+    mailbox_messages = mailbox_messages.select_related("admin_notification").order_by(
+        "-received_at",
+        "-id",
+    )
     drafts = drafts.order_by("-updated_at", "-id")
     profile_photo = request.user.profile_photos.order_by('-uploaded_at').first()
     return render(request, "portal/admin_contact.html", {

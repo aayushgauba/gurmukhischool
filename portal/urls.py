@@ -89,5 +89,6 @@ urlpatterns = [
     path('mailbox/spam/<int:message_id>/', views.mailboxSpam, name='mailboxSpam'),
     path('mailbox/restore/<int:message_id>/', views.mailboxRestore, name='mailboxRestore'),
     path('mailbox/trust/<int:message_id>/', views.mailboxTrust, name='mailboxTrust'),
+    path('mailbox/notify/<int:message_id>/', views.mailboxNotify, name='mailboxNotify'),
     path('contact/delete/<int:contact_id>/', views.contactDelete, name='contactDelete'),
 ]

@@ -51,6 +51,8 @@
             <time datetime="{{ email_message.received_at|date:'c' }}">{{ email_message.received_at|date:'M j, Y g:i A' }}</time>
             {% if email_message.is_spam %}<span class="portal-status-badge">Spam</span>{% endif %}
             {% if email_message.spam_reviewed and not email_message.is_spam %}<span class="portal-status-badge success">Trusted</span>{% endif %}
+            {% if email_message.admin_notification.status == 'queued' %}<span class="portal-status-badge">Notification queued</span>{% endif %}
+            {% if email_message.admin_notification.status == 'sent' %}<span class="portal-status-badge success">Notified</span>{% endif %}
         </header>
         <h4 class="h6 mt-3">{{ email_message.subject|default:'(No subject)' }}</h4>
         <p class="contact-message-text">{{ email_message.body|default:'No plain-text message body was available.'|linebreaksbr }}</p>
@@ -59,6 +61,7 @@
             {% if email_message.is_spam %}
             <form method="post" action="{% url 'mailboxRestore' email_message.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Restore</button></form>
             {% else %}
+            <form method="post" action="{% url 'mailboxNotify' email_message.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit"{% if email_message.admin_notification.status == 'queued' %} disabled{% endif %}><i class="bi bi-bell me-1" aria-hidden="true"></i>{% if email_message.admin_notification.status == 'sent' %}Notify again{% elif email_message.admin_notification.status == 'queued' %}Queued{% else %}Notify{% endif %}</button></form>
             {% if not email_message.spam_reviewed %}
             <form method="post" action="{% url 'mailboxTrust' email_message.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success" type="submit">Trust as legitimate</button></form>
             {% endif %}

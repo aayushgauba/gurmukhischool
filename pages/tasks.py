@@ -533,4 +533,5 @@ def process_email_pipeline():
             "synced": 0,
             "error": str(exc),
         }
+    results["admin_notifications"] = send_queued_admin_notifications.call()
     return results

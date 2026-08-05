@@ -9,7 +9,7 @@ class Command(BaseCommand):
     help = (
         "Process email operations in order: verify the two-factor delivery "
         "stage, send account activations, send queued responses, then "
-        "synchronize incoming email."
+        "synchronize incoming email and send administrator notifications."
     )
 
     def add_arguments(self, parser):
